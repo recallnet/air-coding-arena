@@ -38,7 +38,7 @@ export default defineConfig({
     mockReset: true,
 
     // === PREVENT .only IN CI ===
-    allowOnly: process.env.CI !== 'true',
+    allowOnly: process.env['CI'] !== 'true',
   },
   resolve: {
     alias: {
