@@ -29,6 +29,7 @@ export default [
       'dist/**',
       'build/**',
       'docs/api/**',
+      'next.config.js',
     ],
   },
   {
@@ -47,6 +48,7 @@ export default [
         React: 'readonly',
         JSX: 'readonly',
         NodeJS: 'readonly',
+        process: 'readonly',
       },
     },
     settings: {
