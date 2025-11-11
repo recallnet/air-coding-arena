@@ -59,6 +59,7 @@ coding-arena/
 ### Type Centralization Strategy
 
 All TypeScript types and interfaces are centralized in `src/types/`:
+
 - Components MUST import types from `@/types`, never define them inline
 - All imports go through `src/types/index.ts` (no direct subdirectory imports)
 - ESLint boundaries plugin enforces architectural rules
@@ -120,31 +121,38 @@ All of these settings are **NEVER to be disabled**:
 ### ESLint Plugin Strategy (18 plugins)
 
 **Core TypeScript:**
+
 - `@typescript-eslint/eslint-plugin` (strict + type-checking rules)
 - `@typescript-eslint/parser`
 
 **React/Next.js:**
+
 - `eslint-plugin-react`
 - `eslint-plugin-react-hooks`
 - `@next/eslint-plugin-next`
 
 **Code Quality:**
+
 - `eslint-plugin-sonarjs` (code smell detection)
 - `eslint-plugin-unicorn` (best practices)
 - `eslint-plugin-import` (import/export rules)
 
 **Testing:**
+
 - `eslint-plugin-vitest`
 - `eslint-plugin-testing-library`
 
 **Accessibility:**
+
 - `eslint-plugin-jsx-a11y`
 
 **Security:**
+
 - `eslint-plugin-security`
 - `eslint-plugin-no-secrets`
 
 **Additional Strictness:**
+
 - `eslint-plugin-functional` (immutability rules)
 - `eslint-plugin-promise` (promise handling)
 - `eslint-plugin-jsdoc` (TSDoc enforcement)
@@ -212,7 +220,7 @@ mockUserService.getUser.mockResolvedValue({ id: '1', name: 'Test' })
 
 ### TSDoc Comment Format
 
-```typescript
+````typescript
 /**
  * Brief description of the function.
  *
@@ -225,7 +233,7 @@ mockUserService.getUser.mockResolvedValue({ id: '1', name: 'Test' })
  * const result = myFunction('value1', 'value2')
  * ```
  */
-```
+````
 
 ## Package Scripts
 
@@ -266,16 +274,19 @@ All scripts include enforcement mechanisms:
 ## Dependencies
 
 ### Core Framework
+
 - `next@^15.0.0`
 - `react@^18.3.0`, `react-dom@^18.3.0`
 - `typescript@^5.6.0`
 
 ### Styling
+
 - `tailwindcss@^3.4.0`
 - `postcss@^8.4.0`
 - `autoprefixer@^10.4.0`
 
 ### Testing (8 packages)
+
 - `vitest@^2.0.0`
 - `@vitest/ui@^2.0.0`
 - `@vitest/coverage-v8@^2.0.0`
@@ -287,6 +298,7 @@ All scripts include enforcement mechanisms:
 - `type-coverage@^2.27.0`
 
 ### ESLint (18 plugins)
+
 - `eslint@^9.0.0`
 - `@typescript-eslint/eslint-plugin@^8.0.0`
 - `@typescript-eslint/parser@^8.0.0`
@@ -308,11 +320,13 @@ All scripts include enforcement mechanisms:
 - `@next/eslint-plugin-next@^15.0.0`
 
 ### Code Quality
+
 - `prettier@^3.3.0`
 - `husky@^9.0.0`
 - `lint-staged@^15.0.0`
 
 ### Documentation
+
 - `typedoc@^0.26.0`
 
 ## Implementation Phases

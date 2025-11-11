@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+# === PRE-PUSH HOOK - DO NOT MODIFY ===
+# This hook runs before pushing and ensures production-ready code.
+
+echo "🚀 Running pre-push validation..."
+
+# Full validation suite
+echo "\n🔬 Running complete validation suite..."
+npm run validate || {
+  echo "❌ Validation failed. Code must pass all checks before pushing."
+  exit 1
+}
+
+# Production build test
+echo "\n🏗️  Testing production build..."
+npm run build || {
+  echo "❌ Production build failed. Fix build errors before pushing."
+  exit 1
+}
+
+echo "\n✅ All pre-push checks passed! Safe to push."

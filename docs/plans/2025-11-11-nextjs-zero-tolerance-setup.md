@@ -13,6 +13,7 @@
 ## Task 1: Initialize Package.json and Git Configuration
 
 **Files:**
+
 - Create: `package.json`
 - Create: `.gitignore`
 - Create: `.npmrc`
@@ -188,6 +189,7 @@ Expected: All dependencies installed without errors
 **Step 5: Commit**
 
 Run:
+
 ```bash
 git add package.json package-lock.json .gitignore .npmrc
 git commit -m "chore: initialize project with dependencies and git configuration
@@ -202,6 +204,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 2: TypeScript Configuration
 
 **Files:**
+
 - Create: `tsconfig.json`
 - Auto-generate (do not commit): `next-env.d.ts`
 
@@ -265,19 +268,8 @@ Create `tsconfig.json`:
       }
     ]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "out",
-    "dist",
-    "coverage"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "out", "dist", "coverage"]
 }
 ```
 
@@ -300,6 +292,7 @@ Expected: No errors (project files not created yet, but config should parse)
 Note: Only `tsconfig.json` is committed. The auto-generated `next-env.d.ts` is correctly excluded by `.gitignore` and should NOT be committed.
 
 Run:
+
 ```bash
 git add tsconfig.json
 git commit -m "chore: add strict TypeScript configuration
@@ -319,6 +312,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 3: ESLint Configuration
 
 **Files:**
+
 - Create: `eslint.config.mjs`
 - Create: `.eslintignore`
 
@@ -637,6 +631,7 @@ Expected: ESLint runs (may show errors if no source files exist yet)
 **Step 4: Commit**
 
 Run:
+
 ```bash
 git add eslint.config.mjs .eslintignore
 git commit -m "chore: add ESLint configuration with 18 plugins
@@ -651,6 +646,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 4: Prettier Configuration
 
 **Files:**
+
 - Create: `.prettierrc`
 - Create: `.prettierignore`
 
@@ -698,6 +694,7 @@ Expected: Prettier runs successfully
 **Step 4: Commit**
 
 Run:
+
 ```bash
 git add .prettierrc .prettierignore
 git commit -m "chore: add Prettier configuration
@@ -712,6 +709,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 5: Vitest Configuration
 
 **Files:**
+
 - Create: `vitest.config.ts`
 - Create: `src/__tests__/vitest-setup.ts`
 
@@ -798,6 +796,7 @@ Expected: Vitest runs (no tests to run yet, but should not error)
 **Step 4: Commit**
 
 Run:
+
 ```bash
 git add vitest.config.ts src/__tests__/vitest-setup.ts
 git commit -m "chore: add Vitest configuration with 90% coverage threshold
@@ -812,6 +811,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 6: Tailwind CSS Configuration
 
 **Files:**
+
 - Create: `tailwind.config.ts`
 - Create: `postcss.config.mjs`
 
@@ -861,6 +861,7 @@ export default config
 **Step 3: Commit**
 
 Run:
+
 ```bash
 git add tailwind.config.ts postcss.config.mjs
 git commit -m "chore: add Tailwind CSS configuration
@@ -875,6 +876,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 7: TypeDoc Configuration
 
 **Files:**
+
 - Create: `typedoc.json`
 
 **Step 1: Create TypeDoc configuration**
@@ -925,6 +927,7 @@ Create `typedoc.json`:
 **Step 2: Commit**
 
 Run:
+
 ```bash
 git add typedoc.json
 git commit -m "chore: add TypeDoc configuration
@@ -939,6 +942,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 8: Centralized Types Structure
 
 **Files:**
+
 - Create: `src/types/index.ts`
 - Create: `src/types/api/index.ts`
 - Create: `src/types/domain/index.ts`
@@ -1095,6 +1099,7 @@ export type KeysOfType<T, V> = {
 **Step 6: Commit**
 
 Run:
+
 ```bash
 git add src/types/
 git commit -m "feat: add centralized type definitions structure
@@ -1109,6 +1114,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 9: Next.js App Router Setup
 
 **Files:**
+
 - Create: `src/app/layout.tsx`
 - Create: `src/app/page.tsx`
 - Create: `src/app/globals.css`
@@ -1242,6 +1248,7 @@ Expected: TypeScript compilation succeeds
 **Step 6: Commit**
 
 Run:
+
 ```bash
 git add src/app/ next.config.js
 git commit -m "feat: add Next.js App Router setup with home page
@@ -1256,6 +1263,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 10: Example Component with Tests
 
 **Files:**
+
 - Create: `src/components/ui/Button.tsx`
 - Create: `src/components/ui/Button.test.tsx`
 
@@ -1341,7 +1349,7 @@ Expected: Test fails with "Cannot find module './Button'"
 
 Create `src/components/ui/Button.tsx`:
 
-```typescript
+````typescript
 import type { BaseProps } from '@/types'
 
 /**
@@ -1405,7 +1413,7 @@ export function Button({
     </button>
   )
 }
-```
+````
 
 **Step 4: Run test to verify it passes**
 
@@ -1422,6 +1430,7 @@ Expected: 100% coverage for Button.tsx
 **Step 6: Commit**
 
 Run:
+
 ```bash
 git add src/components/ui/
 git commit -m "feat: add Button component with comprehensive tests
@@ -1436,6 +1445,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 11: Husky Hooks Setup
 
 **Files:**
+
 - Create: `.husky/pre-commit`
 - Create: `.husky/pre-push`
 - Create: `.lintstagedrc.json`
@@ -1550,19 +1560,15 @@ Create `.lintstagedrc.json`:
 
 ```json
 {
-  "*.{ts,tsx}": [
-    "eslint --max-warnings 0 --fix",
-    "prettier --write"
-  ],
-  "*.{json,md,css}": [
-    "prettier --write"
-  ]
+  "*.{ts,tsx}": ["eslint --max-warnings 0 --fix", "prettier --write"],
+  "*.{json,md,css}": ["prettier --write"]
 }
 ```
 
 **Step 6: Commit**
 
 Run:
+
 ```bash
 git add .husky/ .lintstagedrc.json
 git commit -m "chore: add Husky hooks with zero-tolerance quality gates
@@ -1577,6 +1583,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 12: VS Code Workspace Configuration
 
 **Files:**
+
 - Create: `.vscode/settings.json`
 - Create: `.vscode/extensions.json`
 
@@ -1646,6 +1653,7 @@ Create `.vscode/extensions.json`:
 **Step 3: Commit**
 
 Run:
+
 ```bash
 git add .vscode/
 git commit -m "chore: add VS Code workspace configuration
@@ -1660,13 +1668,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ## Task 13: Documentation and README
 
 **Files:**
+
 - Create: `README.md`
 
 **Step 1: Create comprehensive README**
 
 Create `README.md`:
 
-```markdown
+````markdown
 # Coding Arena
 
 Next.js 15 application with zero-tolerance quality gates enforcing maximum type safety, linting, and test coverage.
@@ -1691,6 +1700,7 @@ Next.js 15 application with zero-tolerance quality gates enforcing maximum type 
 ```bash
 npm install
 ```
+````
 
 ### Development
 
@@ -1703,11 +1713,13 @@ Open [http://localhost:3109](http://localhost:3109) to view the application.
 ## 📝 Available Scripts
 
 ### Development
+
 - `npm run dev` - Start development server
 - `npm run build` - Build production application (runs validation first)
 - `npm start` - Start production server
 
 ### Quality Checks
+
 - `npm run type-check` - TypeScript compilation + type coverage
 - `npm run lint` - ESLint with zero warnings policy
 - `npm run lint:fix` - Auto-fix ESLint errors where possible
@@ -1811,7 +1823,7 @@ mockUserService.getUser.mockResolvedValue({ id: '1', name: 'Test' })
 
 All public functions and components require TSDoc comments:
 
-```typescript
+````typescript
 /**
  * Brief description of the function.
  *
@@ -1825,7 +1837,7 @@ All public functions and components require TSDoc comments:
 export function myFunction(param1: string): string {
   return param1
 }
-```
+````
 
 Generate documentation:
 
@@ -1870,7 +1882,8 @@ These settings enforce quality standards and should not be modified without team
 ## 📄 License
 
 MIT
-```
+
+````
 
 **Step 2: Commit**
 
@@ -1882,7 +1895,7 @@ git commit -m "docs: add comprehensive README with setup and quality gate docume
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
-```
+````
 
 ---
 
@@ -1921,6 +1934,7 @@ Expected: Pre-commit hook runs and executes all 7 stages
 **Step 6: Final commit**
 
 Run:
+
 ```bash
 git commit --allow-empty -m "chore: verify complete setup with all quality gates
 

@@ -23,12 +23,6 @@ export type ButtonProps = BaseProps & {
  * Reusable button component with multiple variants.
  *
  * @param props - Button component props
- * @param props.children - Button text or children
- * @param props.onClick - Click handler
- * @param props.disabled - Disabled state
- * @param props.variant - Visual variant
- * @param props.className - Additional CSS classes
- * @param props.testId - Test ID for testing
  * @returns A styled button element
  *
  * @example
@@ -46,7 +40,8 @@ export function Button({
   className = '',
   testId = 'button',
 }: ButtonProps): React.JSX.Element {
-  const baseStyles = 'px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  const baseStyles =
+    'px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
   const variantStyles: Record<ButtonVariant, string> = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700',

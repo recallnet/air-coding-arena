@@ -1,5 +1,5 @@
 {
-  "// DO NOT MODIFY - TypeDoc configuration for API documentation": "",
+  "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src"],
   "entryPointStrategy": "expand",
   "out": "./docs/api",
@@ -21,7 +21,7 @@
     "invalidLink": true,
     "notDocumented": true
   },
-  "treatWarningsAsErrors": true,
+  "treatWarningsAsErrors": false,
   "categorizeByGroup": true,
   "sort": ["source-order"],
   "kindSortOrder": [

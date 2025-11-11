@@ -27,6 +27,7 @@ export default defineConfig({
         '**/types/**',
         '.next/',
         'coverage/',
+        'docs/',
       ],
       thresholds: {
         lines: 90,

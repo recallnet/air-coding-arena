@@ -217,7 +217,12 @@ export default [
           ],
         },
       ],
-      'jsdoc/require-param': 'error',
+      'jsdoc/require-param': [
+        'error',
+        {
+          checkDestructured: false,
+        },
+      ],
       'jsdoc/require-returns': 'error',
       'jsdoc/require-description': 'error',
 

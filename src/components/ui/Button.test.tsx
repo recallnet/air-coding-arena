@@ -9,7 +9,9 @@ describe('Button', () => {
     it('should display the button text', () => {
       render(<Button>Click me</Button>)
 
-      expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Click me' })
+      ).toBeInTheDocument()
     })
   })
 
@@ -31,7 +33,11 @@ describe('Button', () => {
       const handleClick = vi.fn()
       const user = userEvent.setup()
 
-      render(<Button onClick={handleClick} disabled>Click me</Button>)
+      render(
+        <Button onClick={handleClick} disabled>
+          Click me
+        </Button>
+      )
 
       await user.click(screen.getByRole('button', { name: 'Click me' }))
 
