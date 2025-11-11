@@ -25,6 +25,7 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         '**/types/**',
+        'src/db/**',
         '.next/',
         'coverage/',
         'docs/',
