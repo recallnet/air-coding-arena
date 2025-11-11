@@ -1,34 +1,288 @@
+/**
+ * Tests for Dashboard home page.
+ */
+
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
+
+import type { AgentStats } from '@/types/database'
 
 import Home from './page'
 
+// Mock the getAgentStats query function
+vi.mock('@/lib/queries', () => ({
+  getAgentStats: vi.fn(),
+}))
+
+// Import after mocking to get the mocked version
+// eslint-disable-next-line import/order -- Must import after mock
+import { getAgentStats } from '@/lib/queries'
+
+const mockGetAgentStats = vi.mocked(getAgentStats)
+
+// Test constants to avoid duplication
+const TOP_PERFORMER_TEXT = 'Top Performer'
+
 describe('Home', () => {
-  describe('when rendered', () => {
-    it('should display the page title', () => {
-      render(<Home />)
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('when agent stats are available', () => {
+    it('should display the page title and subtitle', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
 
       expect(
-        screen.getByRole('heading', { name: 'Coding Arena' })
+        screen.getByRole('heading', { name: 'Arena Dashboard' })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Track and compare AI coding agent performance across challenges'
+        )
       ).toBeInTheDocument()
     })
 
-    it('should display the subtitle', () => {
-      render(<Home />)
+    it('should display the leaderboard card with title and description', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+      ]
 
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      expect(screen.getByText('Agent Leaderboard')).toBeInTheDocument()
       expect(
-        screen.getByText('Next.js 15 with Zero-Tolerance Quality Gates')
+        screen.getByText('Performance rankings based on merged pull requests')
       ).toBeInTheDocument()
     })
 
-    it('should display all quality gate features', () => {
-      render(<Home />)
+    it('should display table headers', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+      ]
 
-      expect(screen.getByText('✅ 100% Type Coverage')).toBeInTheDocument()
-      expect(screen.getByText('✅ Zero ESLint Warnings')).toBeInTheDocument()
-      expect(screen.getByText('✅ 90% Test Coverage')).toBeInTheDocument()
-      expect(screen.getByText('✅ 18 ESLint Plugins')).toBeInTheDocument()
-      expect(screen.getByText('✅ Husky Pre-Commit Hooks')).toBeInTheDocument()
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      expect(screen.getByText('Agent Name')).toBeInTheDocument()
+      expect(screen.getByText('Attempts')).toBeInTheDocument()
+      expect(screen.getByText('Wins')).toBeInTheDocument()
+      expect(screen.getByText('Acceptance Rate')).toBeInTheDocument()
+    })
+
+    it('should display agent stats in table rows', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+        {
+          agentName: 'engine',
+          attempts: 5,
+          wins: 3,
+          acceptancePct: 60.0,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      expect(screen.getByText('cursor')).toBeInTheDocument()
+      expect(screen.getByText('engine')).toBeInTheDocument()
+      expect(screen.getByText('10')).toBeInTheDocument()
+      expect(screen.getByText('8')).toBeInTheDocument()
+      expect(screen.getByText('5')).toBeInTheDocument()
+      expect(screen.getByText('3')).toBeInTheDocument()
+      expect(screen.getByText('80.0%')).toBeInTheDocument()
+      expect(screen.getByText('60.0%')).toBeInTheDocument()
+    })
+
+    it('should format acceptance percentage with one decimal place', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.12345,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      expect(screen.getByText('80.1%')).toBeInTheDocument()
+      expect(screen.queryByText('80.12345%')).not.toBeInTheDocument()
+    })
+
+    it('should display Top Performer badge for agent with highest acceptance rate', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+        {
+          agentName: 'engine',
+          attempts: 5,
+          wins: 3,
+          acceptancePct: 60.0,
+        },
+        {
+          agentName: 'cyrus',
+          attempts: 8,
+          wins: 7,
+          acceptancePct: 87.5,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      // Should have exactly one Top Performer badge
+      const badges = screen.getAllByText(TOP_PERFORMER_TEXT)
+      expect(badges).toHaveLength(1)
+
+      // The badge should be in the same row as 'cyrus'
+      const cyrusRow = screen.getByText('cyrus').closest('tr')
+      expect(cyrusRow).toBeInTheDocument()
+      if (cyrusRow) {
+        expect(cyrusRow.textContent).toContain(TOP_PERFORMER_TEXT)
+      }
+    })
+
+    it('should handle single agent as top performer', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      expect(screen.getByText(TOP_PERFORMER_TEXT)).toBeInTheDocument()
+    })
+
+    it('should display Top Performer badge for first agent when there is a tie', async () => {
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+        {
+          agentName: 'engine',
+          attempts: 5,
+          wins: 4,
+          acceptancePct: 80.0,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockStats)
+
+      render(await Home())
+
+      // Should have exactly one Top Performer badge (reduce picks first one in case of tie)
+      const badges = screen.getAllByText(TOP_PERFORMER_TEXT)
+      expect(badges).toHaveLength(1)
+
+      // The badge should be in the same row as 'cursor' (first in array)
+      const cursorRow = screen.getByText('cursor').closest('tr')
+      expect(cursorRow).toBeInTheDocument()
+      if (cursorRow) {
+        expect(cursorRow.textContent).toContain(TOP_PERFORMER_TEXT)
+      }
+    })
+  })
+
+  describe('when no agent stats are available', () => {
+    it('should display empty state message', async () => {
+      mockGetAgentStats.mockResolvedValue([])
+
+      render(await Home())
+
+      expect(
+        screen.getByText('No agent statistics available yet')
+      ).toBeInTheDocument()
+    })
+
+    it('should not display table headers when empty', async () => {
+      mockGetAgentStats.mockResolvedValue([])
+
+      render(await Home())
+
+      expect(screen.queryByText('Agent Name')).not.toBeInTheDocument()
+      expect(screen.queryByText('Attempts')).not.toBeInTheDocument()
+      expect(screen.queryByText('Wins')).not.toBeInTheDocument()
+      expect(screen.queryByText('Acceptance Rate')).not.toBeInTheDocument()
+    })
+
+    it('should not display Top Performer badge when empty', async () => {
+      mockGetAgentStats.mockResolvedValue([])
+
+      render(await Home())
+
+      expect(screen.queryByText(TOP_PERFORMER_TEXT)).not.toBeInTheDocument()
+    })
+
+    it('should still display page title and subtitle when empty', async () => {
+      mockGetAgentStats.mockResolvedValue([])
+
+      render(await Home())
+
+      expect(
+        screen.getByRole('heading', { name: 'Arena Dashboard' })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Track and compare AI coding agent performance across challenges'
+        )
+      ).toBeInTheDocument()
+    })
+
+    it('should still display leaderboard card header when empty', async () => {
+      mockGetAgentStats.mockResolvedValue([])
+
+      render(await Home())
+
+      expect(screen.getByText('Agent Leaderboard')).toBeInTheDocument()
+      expect(
+        screen.getByText('Performance rankings based on merged pull requests')
+      ).toBeInTheDocument()
     })
   })
 })
