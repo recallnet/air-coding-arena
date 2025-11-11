@@ -36,6 +36,7 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/reset-db.ts",
+    "export:linear": "tsx scripts/export-linear.ts",
     "// === HUSKY SETUP ===": "",
     "prepare": "husky"
   },

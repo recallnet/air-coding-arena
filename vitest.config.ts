@@ -26,6 +26,8 @@ export default defineConfig({
         '**/*.spec.{ts,tsx}',
         '**/types/**',
         'src/db/**',
+        'scripts/**',
+        'drizzle/**',
         '.next/',
         'coverage/',
         'docs/',

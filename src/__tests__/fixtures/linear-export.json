@@ -1,0 +1,42 @@
+[
+  {
+    "linearId": "a1b2c3d4-1111-1111-1111-111111111111",
+    "linearKey": "ENG-101",
+    "title": "Implement user authentication with OAuth2",
+    "url": "https://linear.app/workspace/issue/ENG-101",
+    "status": "In Progress",
+    "arenaReadyLabeledAt": "2025-10-15T10:30:00.000Z"
+  },
+  {
+    "linearId": "a1b2c3d4-2222-2222-2222-222222222222",
+    "linearKey": "ENG-102",
+    "title": "Add pagination to API endpoints",
+    "url": "https://linear.app/workspace/issue/ENG-102",
+    "status": "Todo",
+    "arenaReadyLabeledAt": "2025-10-20T14:15:00.000Z"
+  },
+  {
+    "linearId": "a1b2c3d4-3333-3333-3333-333333333333",
+    "linearKey": "APP-201",
+    "title": "Fix mobile responsiveness on dashboard",
+    "url": "https://linear.app/workspace/issue/APP-201",
+    "status": "Done",
+    "arenaReadyLabeledAt": "2025-10-18T09:00:00.000Z"
+  },
+  {
+    "linearId": "a1b2c3d4-4444-4444-4444-444444444444",
+    "linearKey": "APP-202",
+    "title": "Optimize database query performance",
+    "url": "https://linear.app/workspace/issue/APP-202",
+    "status": "In Review",
+    "arenaReadyLabeledAt": "2025-10-22T16:45:00.000Z"
+  },
+  {
+    "linearId": "a1b2c3d4-5555-5555-5555-555555555555",
+    "linearKey": "ENG-103",
+    "title": "Add real-time notifications with WebSockets",
+    "url": "https://linear.app/workspace/issue/ENG-103",
+    "status": "Backlog",
+    "arenaReadyLabeledAt": "2025-10-25T11:20:00.000Z"
+  }
+]
