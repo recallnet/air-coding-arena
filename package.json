@@ -8,34 +8,26 @@
     "predev": "lsof -ti:3109 | xargs kill -9 2>/dev/null || true",
     "dev": "next dev -p 3109",
     "start": "next start -p 3109",
-
     "// === VALIDATION SCRIPTS - DO NOT MODIFY ===": "",
     "type-check": "tsc --noEmit && type-coverage --at-least 100 --strict --ignore-files '**/*.test.ts*' --ignore-files '**/*.config.*' --ignore-files '**/vitest-setup.ts'",
     "type-coverage": "type-coverage --at-least 100 --strict --ignore-files '**/*.test.ts*' --ignore-files '**/*.config.*' --ignore-files '**/vitest-setup.ts'",
-
     "// === LINT SCRIPTS - ZERO TOLERANCE ===": "",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix --max-warnings 0",
-
     "// === TEST SCRIPTS - 90% COVERAGE REQUIRED ===": "",
     "test": "vitest run --coverage --coverage.lines=90 --coverage.functions=90 --coverage.branches=90 --coverage.statements=90",
     "test:watch": "vitest --coverage",
     "test:ui": "vitest --ui --coverage",
-
     "// === FORMAT SCRIPTS ===": "",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-
     "// === VALIDATION GATE - ALL CHECKS ===": "",
     "validate": "npm run type-check && npm run lint && npm run test && npm run format:check",
-
     "// === BUILD - RUNS VALIDATION FIRST ===": "",
     "build": "npm run validate && next build",
-
     "// === DOCS GENERATION ===": "",
     "docs": "typedoc",
     "docs:serve": "npm run docs && npx serve docs/api",
-
     "// === HUSKY SETUP ===": "",
     "prepare": "husky"
   },
@@ -54,6 +46,7 @@
     "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "^2.1.3",
     "@vitest/ui": "^2.1.3",
     "autoprefixer": "^10.4.20",
