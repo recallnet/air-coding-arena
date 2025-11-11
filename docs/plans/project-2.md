@@ -1232,16 +1232,20 @@ Use Chart.js or Recharts.
 
 ## Summary: Your Path to Production
 
-| Milestone        | Features                           | Duration | Deployable?              |
+| Milestone        | Features                           | Duration | Environment              |
 | ---------------- | ---------------------------------- | -------- | ------------------------ |
-| **M1: UI-First** | Dashboard with demo data           | 1–2 days | ✅ Yes (demo mode)       |
-| **M2: GitHub**   | Live PR tracking                   | 1 day    | ✅ Yes (manual labeling) |
-| **M3: Linear**   | Full automation (label → dispatch) | 1 day    | ✅ Yes (production)      |
-| **M4: Polish**   | Cron, admin, monitoring, charts    | 1–2 days | ✅ Yes (hardened prod)   |
+| **M1: UI-First** | Dashboard with demo data           | 1–2 days | ✅ Localhost (demo mode)       |
+| **Optional**     | Deploy M1 to show team             | 30 min   | ✅ Vercel (demo mode)       |
+| **M2: GitHub**   | Live PR tracking                   | 1 day    | ✅ Vercel (manual labeling) |
+| **M3: Linear**   | Full automation (label → dispatch) | 1 day    | ✅ Vercel (production)      |
+| **M4: Polish**   | Cron, admin, monitoring, charts    | 1–2 days | ✅ Vercel (hardened prod)   |
 
 **Total:** ~4–6 days for a coding agent to implement M1–M3.
 
-**Recommendation:** Ship M1 to get feedback on UI/UX, then implement M2–M3 in one sprint.
+**Recommendation:**
+- Build M1 locally first to iterate fast
+- Deploy to Vercel when ready to show your team (optional)
+- Then add M2–M3 webhooks in one sprint
 
 ---
 
@@ -1271,8 +1275,11 @@ Use Chart.js or Recharts.
 
 ## What I Need to Start Milestone 1
 
-- ✅ Neon connection string
-- ✅ Vercel project created
+- ✅ Neon connection string (we have it)
 - ✅ Small `fixtures/linear-issues.json` (10–30 issues) or permission to export from Linear API
 
-Once M1 is approved, we'll add the webhook secrets and API keys for M2–M3.
+**No Vercel needed yet!** M1 runs on localhost. We'll deploy to Vercel later when you want to show your team or enable webhooks.
+
+Once M1 is working locally, we'll:
+1. Optionally deploy to Vercel (to show team)
+2. Add webhook secrets when implementing M2–M3
