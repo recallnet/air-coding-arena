@@ -83,3 +83,12 @@ export type AgentStats = {
   wins: number
   acceptancePct: number
 }
+
+/**
+ * Issue with aggregated attempt data and winner information.
+ * Used by the issues list page to display summary data.
+ */
+export type IssueWithAttemptData = Issue & {
+  attemptCount: number
+  winnerAgentName: string | null
+}

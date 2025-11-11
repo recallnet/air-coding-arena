@@ -6,7 +6,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { mockDeep, mockReset } from 'vitest-mock-extended'
 
 import { db } from '@/db/client'
-import type { Attempt, Issue } from '@/types/database'
+import type { Attempt, Issue, IssueWithAttemptData } from '@/types/database'
 
 import {
   getAgentStats,
@@ -29,6 +29,7 @@ const MOCK_ISSUE_ID = 'issue-1'
 const MOCK_AGENT_NAME = 'cursor'
 const MOCK_REPO = 'repo1'
 const MOCK_STATUS_OPEN = 'open'
+const MOCK_STATUS_IN_PROGRESS = 'In Progress'
 const MOCK_DATE_1 = new Date('2024-01-01')
 const MOCK_DATE_2 = new Date('2024-01-02')
 const MOCK_DATE_3 = new Date('2024-01-03')
@@ -118,19 +119,55 @@ describe('getIssues', () => {
   })
 
   describe('when issues exist', () => {
-    it('should fetch all issues ordered by arenaReadyLabeledAt DESC', async () => {
-      const mockIssues: Issue[] = [
+    it('should fetch all issues with attempt counts and winner info ordered by arenaReadyLabeledAt DESC', async () => {
+      const mockDbResult = [
         {
           id: '1',
-          linearId: 'linear-1',
+          linear_id: 'linear-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue 1',
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arena_ready_labeled_at: MOCK_DATE_2,
+          winner_attempt_id: null,
+          created_at: MOCK_DATE_1,
+          attempt_count: 3,
+          winner_agent_name: null,
+        },
+        {
+          id: '2',
+          linear_id: 'linear-2',
+          linear_key: 'ISSUE-2',
+          title: 'Issue 2',
+          url: MOCK_LINEAR_URL_2,
+          repo: 'repo2',
+          status: 'Done',
+          arena_ready_labeled_at: MOCK_DATE_1,
+          winner_attempt_id: 'attempt-1',
+          created_at: MOCK_DATE_1,
+          attempt_count: 5,
+          winner_agent_name: MOCK_AGENT_NAME,
+        },
+      ]
+
+      const EXPECTED_ISSUE_ID = '1'
+      const EXPECTED_LINEAR_ID = 'linear-1'
+
+      const expectedResult: IssueWithAttemptData[] = [
+        {
+          id: EXPECTED_ISSUE_ID,
+          linearId: EXPECTED_LINEAR_ID,
           linearKey: 'ISSUE-1',
           title: 'Issue 1',
           url: MOCK_LINEAR_URL,
           repo: MOCK_REPO,
-          status: 'In Progress',
+          status: MOCK_STATUS_IN_PROGRESS,
           arenaReadyLabeledAt: MOCK_DATE_2,
           winnerAttemptId: null,
           createdAt: MOCK_DATE_1,
+          attemptCount: 3,
+          winnerAgentName: null,
         },
         {
           id: '2',
@@ -143,31 +180,28 @@ describe('getIssues', () => {
           arenaReadyLabeledAt: MOCK_DATE_1,
           winnerAttemptId: 'attempt-1',
           createdAt: MOCK_DATE_1,
+          attemptCount: 5,
+          winnerAgentName: MOCK_AGENT_NAME,
         },
       ]
 
-      const mockSelect = {
-        from: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockResolvedValue(mockIssues),
-      }
-
-      mockDb.select.mockReturnValue(mockSelect as never)
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
 
       const result = await getIssues()
 
-      expect(result).toEqual(mockIssues)
-      expect(mockDb.select).toHaveBeenCalledTimes(1)
+      expect(result).toEqual(expectedResult)
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+      expect(mockDb.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryChunks: expect.any(Array),
+        })
+      )
     })
   })
 
   describe('when no issues exist', () => {
     it(EMPTY_ARRAY_MESSAGE, async () => {
-      const mockSelect = {
-        from: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockResolvedValue([]),
-      }
-
-      mockDb.select.mockReturnValue(mockSelect as never)
+      mockDb.execute.mockResolvedValue([] as never)
 
       const result = await getIssues()
 
@@ -179,12 +213,8 @@ describe('getIssues', () => {
     it(PROPAGATE_ERROR_MESSAGE, async () => {
       const errorMessage = 'Query failed'
       const error = new Error(errorMessage)
-      const mockSelect = {
-        from: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockRejectedValue(error),
-      }
 
-      mockDb.select.mockReturnValue(mockSelect as never)
+      mockDb.execute.mockRejectedValue(error)
 
       await expect(getIssues()).rejects.toThrow(errorMessage)
     })

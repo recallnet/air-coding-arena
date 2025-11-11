@@ -9,7 +9,12 @@ import { desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import { attempts, issues } from '@/db/schema'
-import type { AgentStats, Attempt, Issue } from '@/types/database'
+import type {
+  AgentStats,
+  Attempt,
+  Issue,
+  IssueWithAttemptData,
+} from '@/types/database'
 
 /**
  * Fetches aggregated statistics for all agents from the agent_stats view.
@@ -51,24 +56,70 @@ export async function getAgentStats(): Promise<AgentStats[]> {
 }
 
 /**
- * Fetches all issues with their winner attempt information.
+ * Fetches all issues with attempt counts and winner information.
  * Returns issues ordered by arena_ready_labeled_at (most recent first).
  *
- * @returns Promise resolving to array of issues
+ * Uses a SQL query with LEFT JOINs to:
+ * - Count total attempts per issue
+ * - Get winner agent name when a winner exists
+ *
+ * @returns Promise resolving to array of issues with attempt data
  *
  * @example
  * ```ts
  * const allIssues = await getIssues()
- * // [{ id: 'uuid', linearKey: 'ISSUE-123', ... }, ...]
+ * // [{ id: 'uuid', linearKey: 'ISSUE-123', attemptCount: 3, winnerAgentName: 'cursor', ... }, ...]
  * ```
  */
-export async function getIssues(): Promise<Issue[]> {
-  const result = await db
-    .select()
-    .from(issues)
-    .orderBy(desc(issues.arenaReadyLabeledAt))
+export async function getIssues(): Promise<IssueWithAttemptData[]> {
+  const result = await db.execute<{
+    id: string
+    linear_id: string
+    linear_key: string
+    title: string
+    url: string
+    repo: string | null
+    status: string | null
+    arena_ready_labeled_at: Date | null
+    winner_attempt_id: string | null
+    created_at: Date
+    attempt_count: number
+    winner_agent_name: string | null
+  }>(sql`
+    SELECT
+      i.id,
+      i.linear_id,
+      i.linear_key,
+      i.title,
+      i.url,
+      i.repo,
+      i.status,
+      i.arena_ready_labeled_at,
+      i.winner_attempt_id,
+      i.created_at,
+      COUNT(a.id)::int AS attempt_count,
+      wa.agent_name AS winner_agent_name
+    FROM issues i
+    LEFT JOIN attempts a ON a.issue_id = i.id
+    LEFT JOIN attempts wa ON wa.id = i.winner_attempt_id
+    GROUP BY i.id, i.linear_id, i.linear_key, i.title, i.url, i.repo, i.status, i.arena_ready_labeled_at, i.winner_attempt_id, i.created_at, wa.agent_name
+    ORDER BY i.arena_ready_labeled_at DESC
+  `)
 
-  return result
+  return result.map((row) => ({
+    id: row.id,
+    linearId: row.linear_id,
+    linearKey: row.linear_key,
+    title: row.title,
+    url: row.url,
+    repo: row.repo,
+    status: row.status,
+    arenaReadyLabeledAt: row.arena_ready_labeled_at,
+    winnerAttemptId: row.winner_attempt_id,
+    createdAt: row.created_at,
+    attemptCount: Number(row.attempt_count),
+    winnerAgentName: row.winner_agent_name,
+  }))
 }
 
 /**
