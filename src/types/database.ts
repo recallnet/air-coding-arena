@@ -72,3 +72,14 @@ export type AttemptStatus = 'open' | 'merged' | 'closed'
  * Issue agent status values.
  */
 export type IssueAgentStatus = 'queued' | 'triggered' | 'failed' | 'skipped'
+
+/**
+ * Agent stats from the agent_stats view.
+ * Aggregates performance metrics per agent.
+ */
+export type AgentStats = {
+  agentName: string
+  attempts: number
+  wins: number
+  acceptancePct: number
+}

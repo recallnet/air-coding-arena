@@ -276,4 +276,16 @@ export default [
       'jsdoc/require-jsdoc': 'off',
     },
   },
+  {
+    files: ['scripts/**/*.ts'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'jsdoc/require-jsdoc': 'off',
+      'no-console': 'off',
+    },
+  },
 ]
