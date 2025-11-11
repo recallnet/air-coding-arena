@@ -273,3 +273,82 @@ export async function getAttemptsByAgent(
     issueLinearKey: row.issue_linear_key,
   }))
 }
+
+/**
+ * Temporal statistics for a single day.
+ */
+export type TemporalStat = {
+  date: string
+  attempts: number
+  wins: number
+  failures: number
+}
+
+/**
+ * Fetches temporal statistics aggregated by day.
+ * Returns daily metrics for attempts, wins (merged PRs), and failures (arena:ready issues with no attempts).
+ *
+ * @param days - Number of days to include in the result (default: 30)
+ * @returns Promise resolving to array of daily statistics, ordered by date DESC
+ *
+ * @example
+ * ```ts
+ * const stats = await getTemporalStats(30)
+ * // [{ date: '2024-01-15', attempts: 5, wins: 3, failures: 2 }, ...]
+ * ```
+ */
+export async function getTemporalStats(
+  days: number = 30
+): Promise<TemporalStat[]> {
+  const result = await db.execute<{
+    date: string
+    attempts: number
+    wins: number
+    failures: number
+  }>(sql`
+    WITH date_series AS (
+      SELECT generate_series(
+        CURRENT_DATE - ${days - 1}::integer,
+        CURRENT_DATE,
+        '1 day'::interval
+      )::date AS date
+    ),
+    daily_attempts AS (
+      SELECT
+        DATE(opened_at) AS date,
+        COUNT(*) AS attempts,
+        COUNT(*) FILTER (WHERE status = 'merged') AS wins
+      FROM attempts
+      WHERE opened_at >= CURRENT_DATE - ${days - 1}::integer
+      GROUP BY DATE(opened_at)
+    ),
+    daily_failures AS (
+      SELECT
+        DATE(arena_ready_labeled_at) AS date,
+        COUNT(*) AS failures
+      FROM issues
+      WHERE arena_ready_labeled_at >= CURRENT_DATE - ${days - 1}::integer
+        AND arena_ready_labeled_at IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM attempts a WHERE a.issue_id = issues.id
+        )
+      GROUP BY DATE(arena_ready_labeled_at)
+    )
+    SELECT
+      TO_CHAR(ds.date, 'YYYY-MM-DD') AS date,
+      COALESCE(da.attempts, 0)::int AS attempts,
+      COALESCE(da.wins, 0)::int AS wins,
+      COALESCE(df.failures, 0)::int AS failures
+    FROM date_series ds
+    LEFT JOIN daily_attempts da ON ds.date = da.date
+    LEFT JOIN daily_failures df ON ds.date = df.date
+    ORDER BY ds.date DESC
+  `)
+
+  return result.map((row) => ({
+    date: row.date,
+    attempts: Number(row.attempts),
+    wins: Number(row.wins),
+    failures: Number(row.failures),
+  }))
+}

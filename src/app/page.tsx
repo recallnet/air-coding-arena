@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
 import { Badge } from '@/components/ui/Badge'
 import {
   Card,
@@ -21,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { getAgentStats } from '@/lib/queries'
+import { getAgentStats, getTemporalStats } from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
 
 /**
@@ -32,6 +33,7 @@ import type { AgentStats } from '@/types/database'
  */
 export default async function Home(): Promise<React.JSX.Element> {
   const agentStats = await getAgentStats()
+  const temporalStats = await getTemporalStats()
 
   // Find the top performer (highest acceptance rate)
   const topPerformer =
@@ -48,6 +50,10 @@ export default async function Home(): Promise<React.JSX.Element> {
         <p className="mt-2 text-lg text-muted-foreground">
           Track and compare AI coding agent performance across challenges
         </p>
+      </div>
+
+      <div className="mb-8">
+        <TemporalLeaderboard stats={temporalStats} />
       </div>
 
       <Card>

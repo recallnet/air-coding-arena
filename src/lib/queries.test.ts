@@ -14,6 +14,7 @@ import {
   getIssueById,
   getAttemptsByIssue,
   getAttemptsByAgent,
+  getTemporalStats,
 } from './queries'
 
 // Mock the db client before importing queries
@@ -551,6 +552,219 @@ describe('getAttemptsByAgent', () => {
       await expect(getAttemptsByAgent(MOCK_AGENT_NAME)).rejects.toThrow(
         errorMessage
       )
+    })
+  })
+})
+
+// Test constants for getTemporalStats tests
+const MOCK_DATE_2024_01_01 = '2024-01-01'
+const MOCK_DATE_2024_01_02 = '2024-01-02'
+const MOCK_DATE_2024_01_03 = '2024-01-03'
+const MOCK_DATE_2024_01_07 = '2024-01-07'
+const MOCK_DATE_2024_01_08 = '2024-01-08'
+
+describe('getTemporalStats', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when temporal stats exist', () => {
+    it('should fetch and transform temporal stats with default 30 days', async () => {
+      const mockDbResult = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          attempts: 5,
+          wins: 3,
+          failures: 1,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          attempts: 3,
+          wins: 2,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_01,
+          attempts: 0,
+          wins: 0,
+          failures: 2,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getTemporalStats()
+
+      expect(result).toEqual([
+        {
+          date: MOCK_DATE_2024_01_03,
+          attempts: 5,
+          wins: 3,
+          failures: 1,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          attempts: 3,
+          wins: 2,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_01,
+          attempts: 0,
+          wins: 0,
+          failures: 2,
+        },
+      ])
+
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+      expect(mockDb.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryChunks: expect.any(Array),
+        })
+      )
+    })
+
+    it('should accept custom number of days', async () => {
+      const mockDbResult = [
+        {
+          date: MOCK_DATE_2024_01_08,
+          attempts: 2,
+          wins: 1,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_07,
+          attempts: 4,
+          wins: 2,
+          failures: 1,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getTemporalStats(7)
+
+      expect(result).toEqual([
+        {
+          date: MOCK_DATE_2024_01_08,
+          attempts: 2,
+          wins: 1,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_07,
+          attempts: 4,
+          wins: 2,
+          failures: 1,
+        },
+      ])
+
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle days with zero activity', async () => {
+      const mockDbResult = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          attempts: 0,
+          wins: 0,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          attempts: 0,
+          wins: 0,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_01,
+          attempts: 5,
+          wins: 3,
+          failures: 1,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getTemporalStats(3)
+
+      expect(result).toEqual([
+        {
+          date: MOCK_DATE_2024_01_03,
+          attempts: 0,
+          wins: 0,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          attempts: 0,
+          wins: 0,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_01,
+          attempts: 5,
+          wins: 3,
+          failures: 1,
+        },
+      ])
+    })
+
+    it('should handle mixed activity with some metrics zero', async () => {
+      const mockDbResult = [
+        {
+          date: MOCK_DATE_2024_01_02,
+          attempts: 5,
+          wins: 0,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_01,
+          attempts: 0,
+          wins: 0,
+          failures: 3,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getTemporalStats(2)
+
+      expect(result).toEqual([
+        {
+          date: MOCK_DATE_2024_01_02,
+          attempts: 5,
+          wins: 0,
+          failures: 0,
+        },
+        {
+          date: MOCK_DATE_2024_01_01,
+          attempts: 0,
+          wins: 0,
+          failures: 3,
+        },
+      ])
+    })
+  })
+
+  describe('when no temporal stats exist', () => {
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      mockDb.execute.mockResolvedValue([] as never)
+
+      const result = await getTemporalStats()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const errorMessage = 'Temporal query failed'
+      const error = new Error(errorMessage)
+
+      mockDb.execute.mockRejectedValue(error as never)
+
+      await expect(getTemporalStats()).rejects.toThrow(errorMessage)
     })
   })
 })

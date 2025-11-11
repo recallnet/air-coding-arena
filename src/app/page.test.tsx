@@ -9,30 +9,37 @@ import type { AgentStats } from '@/types/database'
 
 import Home from './page'
 
-// Mock the getAgentStats query function
+// Mock the query functions
 vi.mock('@/lib/queries', () => ({
   getAgentStats: vi.fn(),
+  getTemporalStats: vi.fn(),
 }))
 
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock
-import { getAgentStats } from '@/lib/queries'
+import { getAgentStats, getTemporalStats } from '@/lib/queries'
 
 const mockGetAgentStats = vi.mocked(getAgentStats)
+const mockGetTemporalStats = vi.mocked(getTemporalStats)
 
 // Test constants to avoid duplication
 const TOP_PERFORMER_TEXT = 'Top Performer'
+const ACTIVITY_TIMELINE_TEXT = 'Activity Timeline'
+const MOCK_AGENT_CURSOR = 'cursor'
+const AGENT_LEADERBOARD_TEXT = 'Agent Leaderboard'
 
 describe('Home', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default mock for temporal stats
+    mockGetTemporalStats.mockResolvedValue([])
   })
 
   describe('when agent stats are available', () => {
     it('should display the page title and subtitle', async () => {
       const mockStats: AgentStats[] = [
         {
-          agentName: 'cursor',
+          agentName: MOCK_AGENT_CURSOR,
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
@@ -56,7 +63,7 @@ describe('Home', () => {
     it('should display the leaderboard card with title and description', async () => {
       const mockStats: AgentStats[] = [
         {
-          agentName: 'cursor',
+          agentName: MOCK_AGENT_CURSOR,
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
@@ -67,7 +74,7 @@ describe('Home', () => {
 
       render(await Home())
 
-      expect(screen.getByText('Agent Leaderboard')).toBeInTheDocument()
+      expect(screen.getByText(AGENT_LEADERBOARD_TEXT)).toBeInTheDocument()
       expect(
         screen.getByText('Performance rankings based on merged pull requests')
       ).toBeInTheDocument()
@@ -76,7 +83,7 @@ describe('Home', () => {
     it('should display table headers', async () => {
       const mockStats: AgentStats[] = [
         {
-          agentName: 'cursor',
+          agentName: MOCK_AGENT_CURSOR,
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
@@ -229,6 +236,79 @@ describe('Home', () => {
     })
   })
 
+  describe('when temporal stats are available', () => {
+    it('should display the temporal leaderboard', async () => {
+      const mockAgentStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+      ]
+
+      const mockTemporalStats = [
+        {
+          date: '2024-01-03',
+          attempts: 5,
+          wins: 3,
+          failures: 1,
+        },
+        {
+          date: '2024-01-02',
+          attempts: 3,
+          wins: 2,
+          failures: 0,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockAgentStats)
+      mockGetTemporalStats.mockResolvedValue(mockTemporalStats)
+
+      render(await Home())
+
+      expect(screen.getByText(ACTIVITY_TIMELINE_TEXT)).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Daily attempts, wins, and failures over the last 30 days'
+        )
+      ).toBeInTheDocument()
+    })
+
+    it('should display temporal leaderboard before agent stats table', async () => {
+      const mockAgentStats: AgentStats[] = [
+        {
+          agentName: 'cursor',
+          attempts: 10,
+          wins: 8,
+          acceptancePct: 80.0,
+        },
+      ]
+
+      const mockTemporalStats = [
+        {
+          date: '2024-01-03',
+          attempts: 5,
+          wins: 3,
+          failures: 1,
+        },
+      ]
+
+      mockGetAgentStats.mockResolvedValue(mockAgentStats)
+      mockGetTemporalStats.mockResolvedValue(mockTemporalStats)
+
+      render(await Home())
+
+      const temporalTitle = screen.getByText(ACTIVITY_TIMELINE_TEXT)
+      const agentLeaderboardTitle = screen.getByText(AGENT_LEADERBOARD_TEXT)
+
+      // Check that temporal leaderboard appears before agent leaderboard in DOM
+      expect(temporalTitle.compareDocumentPosition(agentLeaderboardTitle)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING
+      )
+    })
+  })
+
   describe('when no agent stats are available', () => {
     it('should display empty state message', async () => {
       mockGetAgentStats.mockResolvedValue([])
@@ -279,7 +359,7 @@ describe('Home', () => {
 
       render(await Home())
 
-      expect(screen.getByText('Agent Leaderboard')).toBeInTheDocument()
+      expect(screen.getByText(AGENT_LEADERBOARD_TEXT)).toBeInTheDocument()
       expect(
         screen.getByText('Performance rankings based on merged pull requests')
       ).toBeInTheDocument()
