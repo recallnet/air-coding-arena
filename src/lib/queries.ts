@@ -197,26 +197,79 @@ export async function getAttemptsByIssue(issueId: string): Promise<Attempt[]> {
 }
 
 /**
- * Fetches all attempts by a specific agent.
+ * Attempt with issue information for agent detail page.
+ */
+export type AttemptWithIssue = Attempt & {
+  issueLinearKey: string
+}
+
+/**
+ * Fetches all attempts by a specific agent with issue linear keys.
  * Returns attempts ordered by opened_at (most recent first).
  *
  * @param agentName - Name of the agent (e.g., 'cursor', 'engine', 'cyrus')
- * @returns Promise resolving to array of attempts by the agent
+ * @returns Promise resolving to array of attempts by the agent with issue linear keys
  *
  * @example
  * ```ts
  * const cursorAttempts = await getAttemptsByAgent('cursor')
- * // [{ id: 'uuid', issueId: 'issue-uuid', ... }, ...]
+ * // [{ id: 'uuid', issueId: 'issue-uuid', issueLinearKey: 'ISSUE-123', ... }, ...]
  * ```
  */
 export async function getAttemptsByAgent(
   agentName: string
-): Promise<Attempt[]> {
-  const result = await db
-    .select()
-    .from(attempts)
-    .where(eq(attempts.agentName, agentName))
-    .orderBy(desc(attempts.openedAt))
+): Promise<AttemptWithIssue[]> {
+  const result = await db.execute<{
+    id: string
+    issue_id: string
+    agent_name: string
+    repo: string
+    pr_number: number
+    pr_url: string
+    branch: string | null
+    opened_at: Date
+    merged_at: Date | null
+    closed_at: Date | null
+    status: string
+    commit_count: number
+    last_commit_sha: string | null
+    issue_linear_key: string
+  }>(sql`
+    SELECT
+      a.id,
+      a.issue_id,
+      a.agent_name,
+      a.repo,
+      a.pr_number,
+      a.pr_url,
+      a.branch,
+      a.opened_at,
+      a.merged_at,
+      a.closed_at,
+      a.status,
+      a.commit_count,
+      a.last_commit_sha,
+      i.linear_key AS issue_linear_key
+    FROM attempts a
+    INNER JOIN issues i ON i.id = a.issue_id
+    WHERE a.agent_name = ${agentName}
+    ORDER BY a.opened_at DESC
+  `)
 
-  return result
+  return result.map((row) => ({
+    id: row.id,
+    issueId: row.issue_id,
+    agentName: row.agent_name,
+    repo: row.repo,
+    prNumber: row.pr_number,
+    prUrl: row.pr_url,
+    branch: row.branch,
+    openedAt: row.opened_at,
+    mergedAt: row.merged_at,
+    closedAt: row.closed_at,
+    status: row.status,
+    commitCount: row.commit_count,
+    lastCommitSha: row.last_commit_sha,
+    issueLinearKey: row.issue_linear_key,
+  }))
 }

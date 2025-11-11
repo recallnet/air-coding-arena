@@ -446,8 +446,43 @@ describe('getAttemptsByAgent', () => {
   })
 
   describe('when attempts exist', () => {
-    it('should fetch attempts by agent ordered by openedAt DESC', async () => {
-      const mockAttempts: Attempt[] = [
+    it('should fetch attempts by agent with issue linear keys ordered by openedAt DESC', async () => {
+      const mockDbResult = [
+        {
+          id: 'attempt-1',
+          issue_id: MOCK_ISSUE_ID,
+          agent_name: MOCK_AGENT_NAME,
+          repo: MOCK_REPO,
+          pr_number: 1,
+          pr_url: MOCK_PR_URL,
+          branch: MOCK_BRANCH,
+          opened_at: MOCK_DATE_2,
+          merged_at: null,
+          closed_at: null,
+          status: MOCK_STATUS_OPEN,
+          commit_count: 3,
+          last_commit_sha: 'abc123',
+          issue_linear_key: 'ISSUE-1',
+        },
+        {
+          id: 'attempt-2',
+          issue_id: 'issue-2',
+          agent_name: MOCK_AGENT_NAME,
+          repo: MOCK_REPO,
+          pr_number: 3,
+          pr_url: 'https://github.com/pr/3',
+          branch: 'fix/issue-2',
+          opened_at: MOCK_DATE_1,
+          merged_at: MOCK_DATE_3,
+          closed_at: MOCK_DATE_3,
+          status: 'merged',
+          commit_count: 5,
+          last_commit_sha: 'ghi789',
+          issue_linear_key: 'ISSUE-2',
+        },
+      ]
+
+      const expectedResult = [
         {
           id: 'attempt-1',
           issueId: MOCK_ISSUE_ID,
@@ -462,6 +497,7 @@ describe('getAttemptsByAgent', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: 'abc123',
+          issueLinearKey: 'ISSUE-1',
         },
         {
           id: 'attempt-2',
@@ -477,32 +513,27 @@ describe('getAttemptsByAgent', () => {
           status: 'merged',
           commitCount: 5,
           lastCommitSha: 'ghi789',
+          issueLinearKey: 'ISSUE-2',
         },
       ]
 
-      const mockSelect = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockResolvedValue(mockAttempts),
-      }
-
-      mockDb.select.mockReturnValue(mockSelect as never)
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
 
       const result = await getAttemptsByAgent(MOCK_AGENT_NAME)
 
-      expect(result).toEqual(mockAttempts)
+      expect(result).toEqual(expectedResult)
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+      expect(mockDb.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryChunks: expect.any(Array),
+        })
+      )
     })
   })
 
   describe('when no attempts exist', () => {
     it(EMPTY_ARRAY_MESSAGE, async () => {
-      const mockSelect = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockResolvedValue([]),
-      }
-
-      mockDb.select.mockReturnValue(mockSelect as never)
+      mockDb.execute.mockResolvedValue([] as never)
 
       const result = await getAttemptsByAgent('nonexistent')
 
@@ -514,13 +545,8 @@ describe('getAttemptsByAgent', () => {
     it(PROPAGATE_ERROR_MESSAGE, async () => {
       const errorMessage = 'Connection error'
       const error = new Error(errorMessage)
-      const mockSelect = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockRejectedValue(error),
-      }
 
-      mockDb.select.mockReturnValue(mockSelect as never)
+      mockDb.execute.mockRejectedValue(error as never)
 
       await expect(getAttemptsByAgent(MOCK_AGENT_NAME)).rejects.toThrow(
         errorMessage
