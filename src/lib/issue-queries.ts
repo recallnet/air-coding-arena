@@ -32,10 +32,7 @@ export async function getIssuesByLabel(labelName: string) {
  * @returns Issues with the priority
  */
 export async function getIssuesByPriority(priority: number) {
-  return db
-    .select()
-    .from(issues)
-    .where(eq(issues.priority, priority))
+  return db.select().from(issues).where(eq(issues.priority, priority))
 }
 
 /**
@@ -53,10 +50,7 @@ export async function getIssuesByEstimate(
     .select()
     .from(issues)
     .where(
-      and(
-        gte(issues.estimate, minEstimate),
-        lte(issues.estimate, maxEstimate)
-      )
+      and(gte(issues.estimate, minEstimate), lte(issues.estimate, maxEstimate))
     )
 }
 
@@ -67,10 +61,7 @@ export async function getIssuesByEstimate(
  * @returns Issues assigned to the user
  */
 export async function getIssuesByAssignee(assigneeId: string) {
-  return db
-    .select()
-    .from(issues)
-    .where(eq(issues.assigneeId, assigneeId))
+  return db.select().from(issues).where(eq(issues.assigneeId, assigneeId))
 }
 
 /**
@@ -80,10 +71,7 @@ export async function getIssuesByAssignee(assigneeId: string) {
  * @returns Issues in the cycle
  */
 export async function getIssuesInCycle(cycleId: string) {
-  return db
-    .select()
-    .from(issues)
-    .where(eq(issues.cycleId, cycleId))
+  return db.select().from(issues).where(eq(issues.cycleId, cycleId))
 }
 
 /**
@@ -93,10 +81,7 @@ export async function getIssuesInCycle(cycleId: string) {
  * @returns Issues in the project
  */
 export async function getIssuesInProject(projectId: string) {
-  return db
-    .select()
-    .from(issues)
-    .where(eq(issues.projectId, projectId))
+  return db.select().from(issues).where(eq(issues.projectId, projectId))
 }
 
 /**
@@ -109,9 +94,6 @@ export async function getOverdueIssues() {
     .select()
     .from(issues)
     .where(
-      and(
-        sql`${issues.dueDate} IS NOT NULL`,
-        sql`${issues.dueDate} < NOW()`
-      )
+      and(sql`${issues.dueDate} IS NOT NULL`, sql`${issues.dueDate} < NOW()`)
     )
 }

@@ -646,11 +646,7 @@ describe('/api/linear/webhook', () => {
           url: TEST_ISSUE_URL,
           team: { key: 'engineering' },
           state: { name: 'In Progress' },
-          labels: [
-            { name: ARENA_LABEL },
-            { name: 'bug' },
-            { name: 'urgent' },
-          ],
+          labels: [{ name: ARENA_LABEL }, { name: 'bug' }, { name: 'urgent' }],
         },
         updatedAt: TEST_TIMESTAMP,
         createdAt: TEST_TIMESTAMP,
