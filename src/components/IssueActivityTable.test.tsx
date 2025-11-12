@@ -4,11 +4,19 @@
 
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { IssueWithAgents } from '@/lib/queries'
 
 import { IssueActivityTable } from './IssueActivityTable'
+
+// Mock Next.js router
+const mockPush = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}))
 
 describe('IssueActivityTable', () => {
   const IN_PROGRESS_STATUS = 'In Progress'

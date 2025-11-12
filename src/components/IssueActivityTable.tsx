@@ -7,7 +7,9 @@
 
 'use client'
 
+import { ExternalLink } from '@geist-ui/icons'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import * as React from 'react'
 
 import { Badge } from '@/components/ui/Badge'
@@ -50,6 +52,7 @@ export function IssueActivityTable({
   issues,
 }: IssueActivityTableProps): React.ReactElement {
   const [filter, setFilter] = React.useState<IssueFilter>('all')
+  const router = useRouter()
 
   const filteredIssues = filterIssues(issues, filter)
 
@@ -63,43 +66,73 @@ export function IssueActivityTable({
         <div className="py-8 text-center text-gray-600">No active issues</div>
       ) : (
         <div className="divide-y divide-gray-300 rounded-geist border border-gray-300 bg-background">
-          {filteredIssues.map((issue) => (
-            <div
-              key={issue.id}
-              className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-gray-100"
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant(issue.status)}>
-                    {issue.status ?? 'Unknown'}
-                  </Badge>
-                  <Link
-                    href={`/issues/${issue.id}`}
-                    className="font-semibold text-blue-700 hover:text-blue-800 hover:underline"
-                  >
-                    {issue.linearKey}
-                  </Link>
-                  <span className="text-gray-900">{issue.title}</span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-3 text-sm text-gray-600">
-                  <span>{formatRelativeTime(issue.lastActivityAt)}</span>
-                  {issue.openPRCount > 0 && (
-                    <span>
-                      {issue.openPRCount} open PR
-                      {issue.openPRCount > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {issue.mergedPRCount > 0 && (
-                    <span>{issue.mergedPRCount} merged</span>
-                  )}
-                </div>
-              </div>
+          {filteredIssues.map((issue) => {
+            const agentProgress = getAgentProgress(issue.agents)
+            const isOpen = isIssueOpen(issue.status)
 
-              <div className="flex-shrink-0">
-                <AgentAvatarGroup agents={issue.agents} />
+            return (
+              <div
+                key={issue.id}
+                role="button"
+                tabIndex={0}
+                className={`group relative flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-gray-100 ${
+                  isOpen
+                    ? 'border-l-2 border-l-green-600'
+                    : 'border-l-2 border-l-purple-600'
+                }`}
+                onClick={() => router.push(`/issues/${issue.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    router.push(`/issues/${issue.id}`)
+                  }
+                }}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getStatusBadgeVariant(issue.status)}>
+                      {issue.status ?? 'Unknown'}
+                    </Badge>
+                    <Link
+                      href={`/issues/${issue.id}`}
+                      className="font-semibold text-blue-700 hover:text-blue-800 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {issue.linearKey}
+                    </Link>
+                    <a
+                      href={issue.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 opacity-0 transition-opacity hover:text-gray-700 group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Open in Linear"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                    <span className="text-gray-900">{issue.title}</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-3 text-sm text-gray-600">
+                    <span>{formatRelativeTime(issue.lastActivityAt)}</span>
+                    {agentProgress !== null && <span>{agentProgress}</span>}
+                    {issue.openPRCount > 0 && (
+                      <span>
+                        {issue.openPRCount} open PR
+                        {issue.openPRCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {issue.mergedPRCount > 0 && (
+                      <span>{issue.mergedPRCount} merged</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0">
+                  <AgentAvatarGroup agents={issue.agents} />
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -189,4 +222,45 @@ function formatRelativeTime(date: Date): string {
     month: 'short',
     day: 'numeric',
   })
+}
+
+/**
+ * Determines if an issue is open (not completed or canceled).
+ *
+ * @param status - Issue status from database
+ * @returns True if issue is open, false otherwise
+ */
+function isIssueOpen(status: string | null): boolean {
+  if (!status) return true
+  const lowerStatus = status.toLowerCase()
+  return lowerStatus !== 'done' && lowerStatus !== 'canceled'
+}
+
+/**
+ * Generates agent progress text like "2/3 in progress" or "1/3 complete".
+ *
+ * @param agents - Array of agents assigned to the issue
+ * @returns Progress string or null if no agents
+ */
+function getAgentProgress(
+  agents: Array<{ agentName: string; status: string }>
+): string | null {
+  if (agents.length === 0) return null
+
+  const total = agents.length
+  const accepted = agents.filter((a) => a.status === 'accepted').length
+  const submitted = agents.filter((a) => a.status === 'submitted').length
+  const inProgress = agents.filter(
+    (a) => a.status === 'pending' || a.status === 'submitted'
+  ).length
+
+  if (accepted > 0) {
+    return `${accepted}/${total} complete`
+  } else if (submitted > 0) {
+    return `${submitted}/${total} in review`
+  } else if (inProgress > 0) {
+    return `${inProgress}/${total} in progress`
+  }
+
+  return `${total} assigned`
 }

@@ -16,6 +16,13 @@ vi.mock('@/lib/queries', () => ({
   getIssuesWithAgents: vi.fn(),
 }))
 
+// Mock Next.js router
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}))
+
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock
 import {
