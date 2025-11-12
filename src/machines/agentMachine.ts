@@ -1,4 +1,4 @@
-import { setup } from 'xstate';
+import { setup } from 'xstate'
 
 /**
  * Agent lifecycle state machine for arena competitions.
@@ -9,25 +9,27 @@ import { setup } from 'xstate';
  * - accepted: Agent's PR was merged (winner)
  * - rejected: Another agent won OR PR closed without merge
  * - ignored: Issue closed before agent submitted PR
+ *
+ * This machine is used to track agent state through the competition lifecycle.
  */
 
 type AgentContext = {
-  agentName: string;
-  issueId: string;
-  prUrl?: string;
-};
+  agentName: string
+  issueId: string
+  prUrl?: string
+}
 
 type AgentEvents =
   | { type: 'PR_SUBMITTED'; prUrl: string }
   | { type: 'PR_MERGED' }
   | { type: 'OTHER_AGENT_WON' }
   | { type: 'PR_CLOSED' }
-  | { type: 'ISSUE_CLOSED' };
+  | { type: 'ISSUE_CLOSED' }
 
 export const agentMachine = setup({
   types: {} as {
-    context: AgentContext;
-    events: AgentEvents;
+    context: AgentContext
+    events: AgentEvents
   },
 }).createMachine({
   id: 'agent',
@@ -70,4 +72,4 @@ export const agentMachine = setup({
       type: 'final',
     },
   },
-});
+})

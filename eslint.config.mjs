@@ -330,4 +330,30 @@ export default [
       '@typescript-eslint/no-unsafe-argument': 'off',
     },
   },
+  {
+    files: ['src/instrumentation.ts'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
+    files: [
+      'src/lib/agent-dispatch.ts',
+      'src/lib/linear-reconcile.ts',
+      'src/lib/linear-sync.ts',
+    ],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ]

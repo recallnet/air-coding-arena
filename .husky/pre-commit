@@ -5,6 +5,14 @@
 
 echo "🔒 Running pre-commit quality gates..."
 
+# Stage 0: Generate state machine diagrams
+echo "\n🎨 Stage 0/7: Generating state machine diagrams..."
+npm run generate-diagrams || {
+  echo "❌ Failed to generate state machine diagrams."
+  exit 1
+}
+git add docs/diagrams/
+
 # Stage 1: Type check
 echo "\n📘 Stage 1/7: TypeScript compilation check..."
 npm run type-check || {
