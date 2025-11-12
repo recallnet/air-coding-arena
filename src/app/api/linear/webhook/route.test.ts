@@ -116,7 +116,9 @@ describe('/api/linear/webhook', () => {
           onConflictDoNothing: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([{ id: 1 }]),
           }),
-          onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+          onConflictDoUpdate: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([]),
+          }),
         }),
       } as never)
 
@@ -182,7 +184,9 @@ describe('/api/linear/webhook', () => {
         onConflictDoNothing: vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue([{ id: 1 }]),
         }),
-        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([]),
+        }),
       })
 
       vi.mocked(db.insert).mockReturnValue({

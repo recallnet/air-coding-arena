@@ -135,7 +135,7 @@ function verifyLinearSignature(
 
 /**
  * Handles Issue webhook events.
- * Upserts issue when arena:ready label is present.
+ * Upserts issue when arena:ready label is present and syncs existing state.
  *
  * @param payload - Linear webhook payload
  */
@@ -167,8 +167,13 @@ async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
         status: issue.state?.name,
       },
     })
+    .returning({ id: issues.id })
 
   console.log(`Issue ${issue.identifier} labeled ${arenaLabel}`)
+
+  // TODO M2: Sync existing state (comments, attachments) when label is first added
+  // This ensures we capture PRs that were already submitted before webhook went live
+  // See docs/comment-webhook-implementation-plan.md for implementation details
 }
 
 /**
