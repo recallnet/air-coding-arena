@@ -13,7 +13,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
-import { issues, attempts, events } from '@/db/schema'
+import { issues, attempts, events, issueAgents } from '@/db/schema'
 
 /**
  * Linear webhook payload type (simplified).
@@ -49,6 +49,16 @@ type LinearAttachment = {
   title: string
   subtitle?: string
   metadata?: Record<string, unknown>
+  issue: { id: string }
+}
+
+/**
+ * Linear Comment data structure.
+ */
+type LinearComment = {
+  id: string
+  body: string
+  createdAt: string
   issue: { id: string }
 }
 
@@ -97,6 +107,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       await handleIssueEvent(payload)
     } else if (payload.type === 'Attachment') {
       await handleAttachmentEvent(payload)
+    } else if (payload.type === 'Comment') {
+      await handleCommentEvent(payload)
     }
 
     return NextResponse.json({ success: true })
@@ -312,4 +324,64 @@ async function updateWinner(issueId: string): Promise<void> {
     .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'open')))
 
   console.log(`Winner set for issue ${issueId}`)
+}
+
+/**
+ * Handles Comment webhook events.
+ * Extracts agent mentions and records in issue_agents table.
+ *
+ * @param payload - Linear webhook payload
+ */
+async function handleCommentEvent(
+  payload: LinearWebhookPayload
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const comment = payload.data as any as LinearComment
+
+  // Extract agent mentions (@cursor, @engine, @cyrus, @claude)
+  const agentHandles = ['@cursor', '@engine', '@cyrus', '@claude']
+  const mentionedAgents: string[] = []
+
+  for (const handle of agentHandles) {
+    if (comment.body.toLowerCase().includes(handle.toLowerCase())) {
+      mentionedAgents.push(handle.substring(1)) // Remove @
+    }
+  }
+
+  if (mentionedAgents.length === 0) return
+
+  // Get issue from database
+  const issueResult = await db
+    .select({ id: issues.id })
+    .from(issues)
+    .where(eq(issues.linearId, comment.issue.id))
+    .limit(1)
+
+  if (issueResult.length === 0) {
+    console.warn(`Comment on unknown issue: ${comment.issue.id}`)
+    return
+  }
+
+  const issueId = issueResult[0]?.id
+  if (!issueId) return
+
+  // Record agent mentions
+  for (const agentName of mentionedAgents) {
+    await db
+      .insert(issueAgents)
+      .values({
+        issueId,
+        agentName,
+        status: 'pending',
+        triggeredAt: new Date(comment.createdAt),
+      })
+      .onConflictDoUpdate({
+        target: [issueAgents.issueId, issueAgents.agentName],
+        set: {
+          triggeredAt: new Date(comment.createdAt),
+        },
+      })
+
+    console.log(`Agent ${agentName} mentioned on issue ${issueId}`)
+  }
 }

@@ -231,6 +231,76 @@ describe('/api/linear/webhook', () => {
     })
   })
 
+  describe('Comment events', () => {
+    it('should extract agent mentions from comment body', async () => {
+      const payload = {
+        type: 'Comment',
+        action: 'create',
+        data: {
+          id: 'comment-123',
+          body: 'Hey @cursor can you fix this? Also @engine please review.',
+          createdAt: TEST_TIMESTAMP,
+          issue: { id: TEST_ISSUE_ID },
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([{ id: 'db-issue-id' }]),
+          }),
+        }),
+      })
+
+      const mockValues = vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+      })
+
+      vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+      vi.mocked(db.insert).mockReturnValue({ values: mockValues } as never)
+
+      const req = createMockRequest(payload)
+      const response = await POST(req)
+
+      expect(response.status).toBe(200)
+      expect(mockValues).toHaveBeenCalledTimes(3) // 1 for event + 2 for agents (cursor and engine)
+    })
+
+    it('should ignore comments without agent mentions', async () => {
+      const payload = {
+        type: 'Comment',
+        action: 'create',
+        data: {
+          id: 'comment-456',
+          body: 'This is a regular comment',
+          createdAt: TEST_TIMESTAMP,
+          issue: { id: TEST_ISSUE_ID },
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const req = createMockRequest(payload)
+      await POST(req)
+
+      // Only event insert, no issue_agents insert
+      expect(db.insert).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('Attachment events', () => {
     it('should create attempt for GitHub PR attachment', async () => {
       const payload = {
