@@ -44,6 +44,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@geist-ui/icons": "^1.0.2",
     "@linear/sdk": "^63.4.0",
     "drizzle-orm": "^0.44.7",
     "geist": "^1.5.1",

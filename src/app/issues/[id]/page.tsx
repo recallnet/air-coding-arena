@@ -149,7 +149,8 @@ function formatDate(date: Date | null): string {
 export default async function IssuePage({
   params,
 }: PageProps): Promise<React.JSX.Element> {
-  const issue = await getIssueById(params.id)
+  const { id } = await params
+  const issue = await getIssueById(id)
 
   if (!issue) {
     notFound()

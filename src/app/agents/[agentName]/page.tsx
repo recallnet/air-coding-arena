@@ -98,8 +98,10 @@ function formatDate(date: Date | null): string {
 export default async function AgentPage({
   params,
 }: PageProps): Promise<React.JSX.Element> {
+  const { agentName } = await params
+
   // Fetch all attempts for this agent
-  const attempts = await getAttemptsByAgent(params.agentName)
+  const attempts = await getAttemptsByAgent(agentName)
 
   // If no attempts, return 404
   if (attempts.length === 0) {
@@ -108,9 +110,7 @@ export default async function AgentPage({
 
   // Fetch all agent stats and find this agent's stats
   const allStats = await getAgentStats()
-  const agentStats = allStats.find(
-    (stats) => stats.agentName === params.agentName
-  )
+  const agentStats = allStats.find((stats) => stats.agentName === agentName)
 
   // Calculate stats (should always exist if attempts exist, but handle null safely)
   const totalAttempts = agentStats?.attempts ?? attempts.length
@@ -134,7 +134,7 @@ export default async function AgentPage({
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{params.agentName}</span>
+              <span className="text-3xl">{agentName}</span>
               {isTopPerformer === true ? (
                 <Badge variant="success">Top Performer</Badge>
               ) : (
