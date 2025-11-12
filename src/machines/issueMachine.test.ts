@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createActor } from 'xstate';
+
 import { issueMachine } from './issueMachine';
 
 describe('issueMachine', () => {

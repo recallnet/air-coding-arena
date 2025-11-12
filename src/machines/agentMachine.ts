@@ -25,9 +25,9 @@ type AgentEvents =
   | { type: 'ISSUE_CLOSED' };
 
 export const agentMachine = setup({
-  types: {
-    context: {} as AgentContext,
-    events: {} as AgentEvents,
+  types: {} as {
+    context: AgentContext;
+    events: AgentEvents;
   },
 }).createMachine({
   id: 'agent',

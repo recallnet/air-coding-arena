@@ -23,9 +23,9 @@ type IssueEvents =
   | { type: 'ISSUE_CLOSED' };
 
 export const issueMachine = setup({
-  types: {
-    context: {} as IssueContext,
-    events: {} as IssueEvents,
+  types: {} as {
+    context: IssueContext;
+    events: IssueEvents;
   },
 }).createMachine({
   id: 'issue',

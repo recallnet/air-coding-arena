@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createActor } from 'xstate';
+
 import { agentMachine } from './agentMachine';
+
+const TEST_PR_URL = 'https://github.com/org/repo/pull/1';
 
 describe('agentMachine', () => {
   it('transitions from pending to submitted on PR_SUBMITTED', () => {
@@ -9,7 +12,7 @@ describe('agentMachine', () => {
 
     expect(actor.getSnapshot().value).toBe('pending');
 
-    actor.send({ type: 'PR_SUBMITTED', prUrl: 'https://github.com/org/repo/pull/1' });
+    actor.send({ type: 'PR_SUBMITTED', prUrl: TEST_PR_URL });
 
     expect(actor.getSnapshot().value).toBe('submitted');
   });
@@ -28,7 +31,7 @@ describe('agentMachine', () => {
     actor.start();
 
     // First transition to submitted state
-    actor.send({ type: 'PR_SUBMITTED', prUrl: 'https://github.com/org/repo/pull/1' });
+    actor.send({ type: 'PR_SUBMITTED', prUrl: TEST_PR_URL });
     expect(actor.getSnapshot().value).toBe('submitted');
 
     // Then test transition to accepted
@@ -42,7 +45,7 @@ describe('agentMachine', () => {
     actor.start();
 
     // First transition to submitted state
-    actor.send({ type: 'PR_SUBMITTED', prUrl: 'https://github.com/org/repo/pull/1' });
+    actor.send({ type: 'PR_SUBMITTED', prUrl: TEST_PR_URL });
     expect(actor.getSnapshot().value).toBe('submitted');
 
     // Then test transition to rejected
