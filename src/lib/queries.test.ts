@@ -17,6 +17,7 @@ import {
   getTemporalStats,
   getAgentTemporalStats,
   getRecentActivity,
+  getIssuesWithAgents,
 } from './queries'
 
 // Mock the db client before importing queries
@@ -45,6 +46,8 @@ const MOCK_LINEAR_URL_2 = 'https://linear.app/2'
 const EMPTY_ARRAY_MESSAGE = 'should return empty array'
 const PROPAGATE_ERROR_MESSAGE = 'should propagate the error'
 const DB_QUERY_FAILS_DESCRIPTION = 'when database query fails'
+const MOCK_ISSUE_TITLE_1 = 'Fix bug in dashboard'
+const MOCK_ISSUE_TITLE_2 = 'Add new feature'
 
 describe('getAgentStats', () => {
   beforeEach(() => {
@@ -925,7 +928,7 @@ describe('getRecentActivity', () => {
           id: 'attempt-1',
           agent_name: MOCK_AGENT_NAME,
           issue_id: MOCK_ISSUE_ID,
-          issue_title: 'Fix bug in dashboard',
+          issue_title: MOCK_ISSUE_TITLE_1,
           issue_linear_key: 'ISSUE-1',
           pr_url: MOCK_PR_URL,
           pr_number: 1,
@@ -936,7 +939,7 @@ describe('getRecentActivity', () => {
           id: 'attempt-2',
           agent_name: 'engine',
           issue_id: 'issue-2',
-          issue_title: 'Add new feature',
+          issue_title: MOCK_ISSUE_TITLE_2,
           issue_linear_key: 'ISSUE-2',
           pr_url: MOCK_PR_URL_2,
           pr_number: 2,
@@ -954,7 +957,7 @@ describe('getRecentActivity', () => {
           id: 'attempt-1',
           agentName: MOCK_AGENT_NAME,
           issueId: MOCK_ISSUE_ID,
-          issueTitle: 'Fix bug in dashboard',
+          issueTitle: MOCK_ISSUE_TITLE_1,
           issueLinearKey: 'ISSUE-1',
           prUrl: MOCK_PR_URL,
           prNumber: 1,
@@ -965,7 +968,7 @@ describe('getRecentActivity', () => {
           id: 'attempt-2',
           agentName: 'engine',
           issueId: 'issue-2',
-          issueTitle: 'Add new feature',
+          issueTitle: MOCK_ISSUE_TITLE_2,
           issueLinearKey: 'ISSUE-2',
           prUrl: 'https://github.com/pr/2',
           prNumber: 2,
@@ -1019,6 +1022,221 @@ describe('getRecentActivity', () => {
       mockDb.execute.mockRejectedValue(error as never)
 
       await expect(getRecentActivity()).rejects.toThrow(errorMessage)
+    })
+  })
+})
+
+describe('getIssuesWithAgents', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when issues with agents exist', () => {
+    it('should fetch and transform issues grouped with agent data', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: MOCK_ISSUE_TITLE_1,
+          status: MOCK_STATUS_IN_PROGRESS,
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_3,
+          open_pr_count: 2,
+          merged_pr_count: 0,
+          agents: [
+            {
+              agent_name: MOCK_AGENT_NAME,
+              status: 'submitted',
+            },
+            {
+              agent_name: 'engine',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'issue-2',
+          linear_key: 'ISSUE-2',
+          title: MOCK_ISSUE_TITLE_2,
+          status: 'Done',
+          url: MOCK_LINEAR_URL_2,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_2,
+          open_pr_count: 0,
+          merged_pr_count: 1,
+          agents: [
+            {
+              agent_name: 'cyrus',
+              status: 'accepted',
+            },
+          ],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result).toEqual([
+        {
+          id: 'issue-1',
+          linearKey: 'ISSUE-1',
+          title: MOCK_ISSUE_TITLE_1,
+          status: MOCK_STATUS_IN_PROGRESS,
+          url: MOCK_LINEAR_URL,
+          arenaReadyLabeledAt: MOCK_DATE_1,
+          lastActivityAt: MOCK_DATE_3,
+          openPRCount: 2,
+          mergedPRCount: 0,
+          agents: [
+            {
+              agentName: MOCK_AGENT_NAME,
+              status: 'submitted',
+            },
+            {
+              agentName: 'engine',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'issue-2',
+          linearKey: 'ISSUE-2',
+          title: MOCK_ISSUE_TITLE_2,
+          status: 'Done',
+          url: MOCK_LINEAR_URL_2,
+          arenaReadyLabeledAt: MOCK_DATE_1,
+          lastActivityAt: MOCK_DATE_2,
+          openPRCount: 0,
+          mergedPRCount: 1,
+          agents: [
+            {
+              agentName: 'cyrus',
+              status: 'accepted',
+            },
+          ],
+        },
+      ])
+
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle issue with no agents', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Unassigned issue',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_1,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result).toEqual([
+        {
+          id: 'issue-1',
+          linearKey: 'ISSUE-1',
+          title: 'Unassigned issue',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arenaReadyLabeledAt: MOCK_DATE_1,
+          lastActivityAt: MOCK_DATE_1,
+          openPRCount: 0,
+          mergedPRCount: 0,
+          agents: [],
+        },
+      ])
+    })
+
+    it('should accept custom limit', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue 1',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_1,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents(10)
+
+      expect(result).toHaveLength(1)
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should order by most recent activity', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-2',
+          linear_key: 'ISSUE-2',
+          title: 'Recent issue',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL_2,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_3,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Old issue',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_2,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result[0]?.linearKey).toBe('ISSUE-2')
+      expect(result[1]?.linearKey).toBe('ISSUE-1')
+    })
+  })
+
+  describe('when no issues exist', () => {
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      mockDb.execute.mockResolvedValue([] as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const errorMessage = 'Issues with agents query failed'
+      const error = new Error(errorMessage)
+
+      mockDb.execute.mockRejectedValue(error as never)
+
+      await expect(getIssuesWithAgents()).rejects.toThrow(errorMessage)
     })
   })
 })

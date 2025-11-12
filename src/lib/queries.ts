@@ -477,6 +477,30 @@ export type RecentActivity = {
 }
 
 /**
+ * Agent information within an issue.
+ */
+export type IssueAgent = {
+  agentName: string
+  status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
+}
+
+/**
+ * Issue with associated agents and PR counts.
+ */
+export type IssueWithAgents = {
+  id: string
+  linearKey: string
+  title: string
+  status: string | null
+  url: string
+  arenaReadyLabeledAt: Date | null
+  agents: IssueAgent[]
+  lastActivityAt: Date
+  openPRCount: number
+  mergedPRCount: number
+}
+
+/**
  * Fetches recent PR activity with issue details.
  * Returns most recent attempts ordered by opened_at DESC.
  *
@@ -533,4 +557,164 @@ export async function getRecentActivity(
         ? row.opened_at.toISOString()
         : row.opened_at,
   }))
+}
+
+/**
+ * Fetches issues grouped with their agents and PR counts.
+ * Returns issues ordered by most recent activity (attempt or arena_ready_labeled_at).
+ *
+ * This query:
+ * - Groups issues with all agents working on them from issue_agents table
+ * - Includes agent status (pending, submitted, accepted, rejected, ignored)
+ * - Counts open and merged PRs per issue
+ * - Orders by most recent activity first
+ *
+ * Agent statuses are determined by:
+ * - pending: Agent assigned in issue_agents but no PR opened yet
+ * - submitted: Agent has open PR(s)
+ * - accepted: Agent has merged PR (winner)
+ * - rejected: Agent has closed PR(s) without merge
+ * - ignored: Agent assigned but never opened PR (same as pending for now)
+ *
+ * @param limit - Maximum number of issues to return (default: 30)
+ * @returns Promise resolving to array of issues with agents
+ *
+ * @example
+ * ```ts
+ * const issues = await getIssuesWithAgents(30)
+ * // [{ id: 'uuid', linearKey: 'ISSUE-123', agents: [{ agentName: 'cursor', status: 'submitted' }], ... }, ...]
+ * ```
+ */
+export async function getIssuesWithAgents(
+  limit: number = 30
+): Promise<IssueWithAgents[]> {
+  const result = await db.execute<{
+    id: string
+    linear_key: string
+    title: string
+    status: string | null
+    url: string
+    arena_ready_labeled_at: Date | null
+    last_activity_at: Date
+    open_pr_count: number
+    merged_pr_count: number
+    agents: Array<{
+      agent_name: string
+      status: string
+    }>
+  }>(sql`
+    WITH issue_pr_counts AS (
+      SELECT
+        a.issue_id,
+        COUNT(*) FILTER (WHERE a.status = 'open') AS open_pr_count,
+        COUNT(*) FILTER (WHERE a.status = 'merged') AS merged_pr_count,
+        MAX(a.opened_at) AS max_attempt_time
+      FROM attempts a
+      GROUP BY a.issue_id
+    ),
+    issue_agent_status AS (
+      SELECT
+        ia.issue_id,
+        ia.agent_name,
+        CASE
+          WHEN i.winner_attempt_id IS NOT NULL AND wa.agent_name = ia.agent_name THEN 'accepted'
+          WHEN EXISTS (
+            SELECT 1 FROM attempts a
+            WHERE a.issue_id = ia.issue_id
+              AND a.agent_name = ia.agent_name
+              AND a.status = 'merged'
+          ) THEN 'accepted'
+          WHEN EXISTS (
+            SELECT 1 FROM attempts a
+            WHERE a.issue_id = ia.issue_id
+              AND a.agent_name = ia.agent_name
+              AND a.status = 'open'
+          ) THEN 'submitted'
+          WHEN EXISTS (
+            SELECT 1 FROM attempts a
+            WHERE a.issue_id = ia.issue_id
+              AND a.agent_name = ia.agent_name
+              AND a.status = 'closed'
+          ) THEN 'rejected'
+          ELSE 'pending'
+        END AS status
+      FROM issue_agents ia
+      INNER JOIN issues i ON i.id = ia.issue_id
+      LEFT JOIN attempts wa ON wa.id = i.winner_attempt_id
+    ),
+    issue_agents_agg AS (
+      SELECT
+        issue_id,
+        jsonb_agg(
+          jsonb_build_object(
+            'agent_name', agent_name,
+            'status', status
+          )
+          ORDER BY
+            CASE status
+              WHEN 'accepted' THEN 1
+              WHEN 'submitted' THEN 2
+              WHEN 'rejected' THEN 3
+              WHEN 'pending' THEN 4
+              ELSE 5
+            END,
+            agent_name
+        ) AS agents
+      FROM issue_agent_status
+      GROUP BY issue_id
+    )
+    SELECT
+      i.id,
+      i.linear_key,
+      i.title,
+      i.status,
+      i.url,
+      i.arena_ready_labeled_at,
+      COALESCE(ipc.max_attempt_time, i.arena_ready_labeled_at, i.created_at) AS last_activity_at,
+      COALESCE(ipc.open_pr_count, 0)::int AS open_pr_count,
+      COALESCE(ipc.merged_pr_count, 0)::int AS merged_pr_count,
+      COALESCE(iaa.agents, '[]'::jsonb) AS agents
+    FROM issues i
+    LEFT JOIN issue_pr_counts ipc ON ipc.issue_id = i.id
+    LEFT JOIN issue_agents_agg iaa ON iaa.issue_id = i.id
+    WHERE i.arena_ready_labeled_at IS NOT NULL
+    ORDER BY last_activity_at DESC
+    LIMIT ${limit}
+  `)
+
+  return result.map((row) => {
+    const agents = Array.isArray(row.agents)
+      ? row.agents.map(
+          (agent: { agent_name: string; status: string }): IssueAgent => {
+            const agentStatus = agent.status
+            if (
+              agentStatus !== 'pending' &&
+              agentStatus !== 'submitted' &&
+              agentStatus !== 'accepted' &&
+              agentStatus !== 'rejected' &&
+              agentStatus !== 'ignored'
+            ) {
+              throw new Error(`Invalid agent status: ${agentStatus}`)
+            }
+            return {
+              agentName: agent.agent_name,
+              status: agentStatus,
+            }
+          }
+        )
+      : []
+
+    return {
+      id: row.id,
+      linearKey: row.linear_key,
+      title: row.title,
+      status: row.status,
+      url: row.url,
+      arenaReadyLabeledAt: row.arena_ready_labeled_at,
+      lastActivityAt: row.last_activity_at,
+      openPRCount: Number(row.open_pr_count),
+      mergedPRCount: Number(row.merged_pr_count),
+      agents,
+    }
+  })
 }
