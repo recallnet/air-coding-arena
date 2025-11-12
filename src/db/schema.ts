@@ -52,6 +52,8 @@ export const attempts = pgTable(
     status: text('status').notNull(),
     commitCount: integer('commit_count').notNull().default(1),
     lastCommitSha: text('last_commit_sha'),
+    sourceAttachmentId: text('source_attachment_id'),
+    sourceAttachmentUrl: text('source_attachment_url'),
   },
   (table) => ({
     uniqueAttempt: unique().on(table.issueId, table.agentName, table.prNumber),

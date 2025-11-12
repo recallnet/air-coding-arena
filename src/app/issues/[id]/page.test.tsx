@@ -284,6 +284,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_MERGED,
         commitCount: 5,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -455,6 +457,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -498,6 +502,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_MERGED,
         commitCount: 5,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -541,6 +547,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -580,6 +588,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -621,6 +631,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -668,6 +680,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_MERGED,
         commitCount: 5,
         lastCommitSha: MOCK_COMMIT_SHA,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockAttempt2: Attempt = {
@@ -684,6 +698,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_CLOSED,
         commitCount: 2,
         lastCommitSha: 'def456',
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -728,6 +744,8 @@ describe('IssuePage', () => {
           status: MOCK_STATUS_MERGED,
           commitCount: 5,
           lastCommitSha: MOCK_COMMIT_SHA,
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -766,6 +784,8 @@ describe('IssuePage', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -804,6 +824,8 @@ describe('IssuePage', () => {
           status: MOCK_STATUS_CLOSED,
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
@@ -842,6 +864,8 @@ describe('IssuePage', () => {
           status: 'invalid-status' as 'open', // Type assertion to test invalid status
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {

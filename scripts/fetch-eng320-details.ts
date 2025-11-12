@@ -5,15 +5,35 @@
  * This script queries Linear's API to get the real state of issue ENG-320
  * including attachments (PRs), comments (agent activity), etc.
  *
- * Run with: pnpm tsx scripts/fetch-eng320-details.ts
+ * Run with: pnpm fetch:eng320
+ * Or with explicit key: LINEAR_API_KEY=lin_api_... pnpm tsx scripts/fetch-eng320-details.ts
  */
 
-import * as dotenv from 'dotenv';
+import { readFileSync } from 'fs';
 
-// Load environment variables
-dotenv.config({ path: '.env.local' });
+// Load .env.local manually (Next.js auto-loads it, but tsx doesn't)
+function loadEnvLocal(): Record<string, string> {
+  try {
+    const envContent = readFileSync('.env.local', 'utf-8');
+    const vars: Record<string, string> = {};
 
-const LINEAR_API_KEY = process.env.LINEAR_API_KEY;
+    envContent.split('\n').forEach(line => {
+      // Skip comments and empty lines
+      if (line.trim().startsWith('#') || !line.includes('=')) return;
+
+      const [key, ...valueParts] = line.split('=');
+      const value = valueParts.join('=').trim();
+      vars[key.trim()] = value;
+    });
+
+    return vars;
+  } catch {
+    return {};
+  }
+}
+
+const env = loadEnvLocal();
+const LINEAR_API_KEY = process.env.LINEAR_API_KEY || env.LINEAR_API_KEY;
 
 if (!LINEAR_API_KEY) {
   console.error('❌ LINEAR_API_KEY not found in .env.local');

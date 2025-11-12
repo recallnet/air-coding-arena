@@ -233,6 +233,8 @@ export async function getAttemptsByAgent(
     status: string
     commit_count: number
     last_commit_sha: string | null
+    source_attachment_id: string | null
+    source_attachment_url: string | null
     issue_linear_key: string
   }>(sql`
     SELECT
@@ -249,6 +251,8 @@ export async function getAttemptsByAgent(
       a.status,
       a.commit_count,
       a.last_commit_sha,
+      a.source_attachment_id,
+      a.source_attachment_url,
       i.linear_key AS issue_linear_key
     FROM attempts a
     INNER JOIN issues i ON i.id = a.issue_id
@@ -270,6 +274,8 @@ export async function getAttemptsByAgent(
     status: row.status,
     commitCount: row.commit_count,
     lastCommitSha: row.last_commit_sha,
+    sourceAttachmentId: row.source_attachment_id,
+    sourceAttachmentUrl: row.source_attachment_url,
     issueLinearKey: row.issue_linear_key,
   }))
 }

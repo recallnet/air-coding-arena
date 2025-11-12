@@ -106,6 +106,8 @@ describe('AgentPage', () => {
           status: MOCK_STATUS_MERGED,
           commitCount: 5,
           lastCommitSha: MOCK_COMMIT_SHA,
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
           issueLinearKey: MOCK_LINEAR_KEY,
         },
       ])
@@ -147,6 +149,8 @@ describe('AgentPage', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
           issueLinearKey: MOCK_LINEAR_KEY,
         },
       ])
@@ -182,6 +186,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -217,6 +223,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_MERGED,
             commitCount: 5,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -252,6 +260,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_MERGED,
             commitCount: 5,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -287,6 +297,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -329,6 +341,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_MERGED,
             commitCount: 5,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -364,6 +378,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -401,6 +417,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_MERGED,
             commitCount: 5,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -440,6 +458,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -477,6 +497,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -516,6 +538,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_MERGED,
             commitCount: 5,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -555,6 +579,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -590,6 +616,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -627,6 +655,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_OPEN,
             commitCount: 3,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
         ])
@@ -670,6 +700,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_MERGED,
             commitCount: 5,
             lastCommitSha: MOCK_COMMIT_SHA,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: MOCK_LINEAR_KEY,
           },
           {
@@ -686,6 +718,8 @@ describe('AgentPage', () => {
             status: MOCK_STATUS_CLOSED,
             commitCount: 2,
             lastCommitSha: 'def456',
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
             issueLinearKey: 'ENG-102',
           },
         ])
@@ -726,6 +760,8 @@ describe('AgentPage', () => {
               status: MOCK_STATUS_MERGED,
               commitCount: 5,
               lastCommitSha: MOCK_COMMIT_SHA,
+              sourceAttachmentId: null,
+              sourceAttachmentUrl: null,
               issueLinearKey: MOCK_LINEAR_KEY,
             },
           ])
@@ -760,6 +796,8 @@ describe('AgentPage', () => {
               status: MOCK_STATUS_OPEN,
               commitCount: 3,
               lastCommitSha: MOCK_COMMIT_SHA,
+              sourceAttachmentId: null,
+              sourceAttachmentUrl: null,
               issueLinearKey: MOCK_LINEAR_KEY,
             },
           ])
@@ -794,6 +832,8 @@ describe('AgentPage', () => {
               status: MOCK_STATUS_CLOSED,
               commitCount: 3,
               lastCommitSha: MOCK_COMMIT_SHA,
+              sourceAttachmentId: null,
+              sourceAttachmentUrl: null,
               issueLinearKey: MOCK_LINEAR_KEY,
             },
           ])
@@ -828,6 +868,8 @@ describe('AgentPage', () => {
               status: 'invalid-status' as 'open', // Type assertion to test invalid status
               commitCount: 3,
               lastCommitSha: MOCK_COMMIT_SHA,
+              sourceAttachmentId: null,
+              sourceAttachmentUrl: null,
               issueLinearKey: MOCK_LINEAR_KEY,
             },
           ])

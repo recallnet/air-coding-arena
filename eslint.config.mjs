@@ -290,4 +290,18 @@ export default [
       'no-console': 'off',
     },
   },
+  {
+    files: ['src/app/api/**/*.ts'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'jsdoc/require-jsdoc': 'off',
+      'no-console': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
 ]

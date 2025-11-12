@@ -260,6 +260,8 @@ describe('getIssueById', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: 'abc123',
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         },
       ]
 
@@ -377,6 +379,8 @@ describe('getAttemptsByIssue', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: 'abc123',
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         },
         {
           id: 'attempt-2',
@@ -392,6 +396,8 @@ describe('getAttemptsByIssue', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 2,
           lastCommitSha: 'def456',
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
         },
       ]
 
@@ -466,6 +472,8 @@ describe('getAttemptsByAgent', () => {
           status: MOCK_STATUS_OPEN,
           commit_count: 3,
           last_commit_sha: 'abc123',
+          source_attachment_id: null,
+          source_attachment_url: null,
           issue_linear_key: 'ISSUE-1',
         },
         {
@@ -482,6 +490,8 @@ describe('getAttemptsByAgent', () => {
           status: 'merged',
           commit_count: 5,
           last_commit_sha: 'ghi789',
+          source_attachment_id: null,
+          source_attachment_url: null,
           issue_linear_key: 'ISSUE-2',
         },
       ]
@@ -501,6 +511,8 @@ describe('getAttemptsByAgent', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: 'abc123',
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
           issueLinearKey: 'ISSUE-1',
         },
         {
@@ -517,6 +529,8 @@ describe('getAttemptsByAgent', () => {
           status: 'merged',
           commitCount: 5,
           lastCommitSha: 'ghi789',
+          sourceAttachmentId: null,
+          sourceAttachmentUrl: null,
           issueLinearKey: 'ISSUE-2',
         },
       ]
