@@ -352,3 +352,179 @@ export async function getTemporalStats(
     failures: Number(row.failures),
   }))
 }
+
+/**
+ * Temporal statistics for a single agent on a single day.
+ */
+export type AgentTemporalStat = {
+  date: string
+  agentName: string
+  cumulativeAttempts: number
+  cumulativeWins: number
+  cumulativeFailures: number
+}
+
+/**
+ * Fetches cumulative temporal statistics per agent.
+ * Returns daily cumulative metrics for each agent's attempts, wins, and failures.
+ *
+ * @param days - Number of days to include in the result (default: 30)
+ * @returns Promise resolving to array of daily cumulative statistics per agent, ordered by date DESC
+ *
+ * @example
+ * ```ts
+ * const stats = await getAgentTemporalStats(30)
+ * // [{ date: '2024-01-15', agentName: 'cursor', cumulativeAttempts: 10, cumulativeWins: 8, cumulativeFailures: 2 }, ...]
+ * ```
+ */
+export async function getAgentTemporalStats(
+  days: number = 30
+): Promise<AgentTemporalStat[]> {
+  const result = await db.execute<{
+    date: string
+    agent_name: string
+    cumulative_attempts: number
+    cumulative_wins: number
+    cumulative_failures: number
+  }>(sql`
+    WITH date_series AS (
+      SELECT generate_series(
+        CURRENT_DATE - ${days - 1}::integer,
+        CURRENT_DATE,
+        '1 day'::interval
+      )::date AS date
+    ),
+    agents AS (
+      SELECT DISTINCT agent_name
+      FROM attempts
+    ),
+    agent_dates AS (
+      SELECT ds.date, a.agent_name
+      FROM date_series ds
+      CROSS JOIN agents a
+    ),
+    daily_attempts AS (
+      SELECT
+        DATE(opened_at) AS date,
+        agent_name,
+        COUNT(*) AS attempts,
+        COUNT(*) FILTER (WHERE status = 'merged') AS wins,
+        COUNT(*) FILTER (WHERE status = 'closed' AND merged_at IS NULL) AS failures
+      FROM attempts
+      WHERE opened_at >= CURRENT_DATE - ${days - 1}::integer
+      GROUP BY DATE(opened_at), agent_name
+    ),
+    cumulative_stats AS (
+      SELECT
+        ad.date,
+        ad.agent_name,
+        SUM(COALESCE(da.attempts, 0)) OVER (
+          PARTITION BY ad.agent_name
+          ORDER BY ad.date
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS cumulative_attempts,
+        SUM(COALESCE(da.wins, 0)) OVER (
+          PARTITION BY ad.agent_name
+          ORDER BY ad.date
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS cumulative_wins,
+        SUM(COALESCE(da.failures, 0)) OVER (
+          PARTITION BY ad.agent_name
+          ORDER BY ad.date
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS cumulative_failures
+      FROM agent_dates ad
+      LEFT JOIN daily_attempts da ON ad.date = da.date AND ad.agent_name = da.agent_name
+    )
+    SELECT
+      TO_CHAR(date, 'YYYY-MM-DD') AS date,
+      agent_name,
+      cumulative_attempts::int AS cumulative_attempts,
+      cumulative_wins::int AS cumulative_wins,
+      cumulative_failures::int AS cumulative_failures
+    FROM cumulative_stats
+    ORDER BY date DESC, agent_name
+  `)
+
+  return result.map((row) => ({
+    date: row.date,
+    agentName: row.agent_name,
+    cumulativeAttempts: Number(row.cumulative_attempts),
+    cumulativeWins: Number(row.cumulative_wins),
+    cumulativeFailures: Number(row.cumulative_failures),
+  }))
+}
+
+/**
+ * Recent activity entry with issue details.
+ */
+export type RecentActivity = {
+  id: string
+  agentName: string
+  issueId: string
+  issueTitle: string
+  issueLinearKey: string
+  prUrl: string
+  prNumber: number
+  status: string
+  openedAt: string
+}
+
+/**
+ * Fetches recent PR activity with issue details.
+ * Returns most recent attempts ordered by opened_at DESC.
+ *
+ * @param limit - Maximum number of entries to return (default: 30)
+ * @returns Promise resolving to array of recent activity entries
+ *
+ * @example
+ * ```ts
+ * const activity = await getRecentActivity(30)
+ * // [{ agentName: 'cursor', issueTitle: 'Fix bug', prUrl: '...', status: 'merged', openedAt: Date, ... }, ...]
+ * ```
+ */
+export async function getRecentActivity(
+  limit: number = 30
+): Promise<RecentActivity[]> {
+  const result = await db.execute<{
+    id: string
+    agent_name: string
+    issue_id: string
+    issue_title: string
+    issue_linear_key: string
+    pr_url: string
+    pr_number: number
+    status: string
+    opened_at: Date
+  }>(sql`
+    SELECT
+      a.id,
+      a.agent_name,
+      a.issue_id,
+      i.title AS issue_title,
+      i.linear_key AS issue_linear_key,
+      a.pr_url,
+      a.pr_number,
+      a.status,
+      a.opened_at
+    FROM attempts a
+    INNER JOIN issues i ON i.id = a.issue_id
+    ORDER BY a.opened_at DESC
+    LIMIT ${limit}
+  `)
+
+  return result.map((row) => ({
+    id: row.id,
+    agentName: row.agent_name,
+    issueId: row.issue_id,
+    issueTitle: row.issue_title,
+    issueLinearKey: row.issue_linear_key,
+    prUrl: row.pr_url,
+    prNumber: Number(row.pr_number),
+    status: row.status,
+    openedAt:
+      row.opened_at instanceof Date
+        ? row.opened_at.toISOString()
+        : row.opened_at,
+  }))
+}

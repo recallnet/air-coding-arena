@@ -12,15 +12,21 @@ import Home from './page'
 // Mock the query functions
 vi.mock('@/lib/queries', () => ({
   getAgentStats: vi.fn(),
-  getTemporalStats: vi.fn(),
+  getAgentTemporalStats: vi.fn(),
+  getRecentActivity: vi.fn(),
 }))
 
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock
-import { getAgentStats, getTemporalStats } from '@/lib/queries'
+import {
+  getAgentStats,
+  getAgentTemporalStats,
+  getRecentActivity,
+} from '@/lib/queries'
 
 const mockGetAgentStats = vi.mocked(getAgentStats)
-const mockGetTemporalStats = vi.mocked(getTemporalStats)
+const mockGetAgentTemporalStats = vi.mocked(getAgentTemporalStats)
+const mockGetRecentActivity = vi.mocked(getRecentActivity)
 
 // Test constants to avoid duplication
 const TOP_PERFORMER_TEXT = 'Top Performer'
@@ -31,8 +37,9 @@ const AGENT_LEADERBOARD_TEXT = 'Agent Leaderboard'
 describe('Home', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Default mock for temporal stats
-    mockGetTemporalStats.mockResolvedValue([])
+    // Default mock for all queries
+    mockGetAgentTemporalStats.mockResolvedValue([])
+    mockGetRecentActivity.mockResolvedValue([])
   })
 
   describe('when agent stats are available', () => {
@@ -247,30 +254,15 @@ describe('Home', () => {
         },
       ]
 
-      const mockTemporalStats = [
-        {
-          date: '2024-01-03',
-          attempts: 5,
-          wins: 3,
-          failures: 1,
-        },
-        {
-          date: '2024-01-02',
-          attempts: 3,
-          wins: 2,
-          failures: 0,
-        },
-      ]
-
       mockGetAgentStats.mockResolvedValue(mockAgentStats)
-      mockGetTemporalStats.mockResolvedValue(mockTemporalStats)
+      mockGetAgentTemporalStats.mockResolvedValue([])
 
       render(await Home())
 
       expect(screen.getByText(ACTIVITY_TIMELINE_TEXT)).toBeInTheDocument()
       expect(
         screen.getByText(
-          'Daily attempts, wins, and failures over the last 30 days'
+          'Cumulative attempts, wins, and failures per agent over the last 30 days'
         )
       ).toBeInTheDocument()
     })
@@ -285,17 +277,8 @@ describe('Home', () => {
         },
       ]
 
-      const mockTemporalStats = [
-        {
-          date: '2024-01-03',
-          attempts: 5,
-          wins: 3,
-          failures: 1,
-        },
-      ]
-
       mockGetAgentStats.mockResolvedValue(mockAgentStats)
-      mockGetTemporalStats.mockResolvedValue(mockTemporalStats)
+      mockGetAgentTemporalStats.mockResolvedValue([])
 
       render(await Home())
 

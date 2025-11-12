@@ -15,6 +15,8 @@ import {
   getAttemptsByIssue,
   getAttemptsByAgent,
   getTemporalStats,
+  getAgentTemporalStats,
+  getRecentActivity,
 } from './queries'
 
 // Mock the db client before importing queries
@@ -35,6 +37,7 @@ const MOCK_DATE_1 = new Date('2024-01-01')
 const MOCK_DATE_2 = new Date('2024-01-02')
 const MOCK_DATE_3 = new Date('2024-01-03')
 const MOCK_PR_URL = 'https://github.com/pr/1'
+const MOCK_PR_URL_2 = 'https://github.com/pr/2'
 const MOCK_BRANCH = 'fix/issue-1'
 // eslint-disable-next-line sonarjs/no-duplicate-string -- Constant definition for reuse
 const MOCK_LINEAR_URL = 'https://linear.app/1'
@@ -381,7 +384,7 @@ describe('getAttemptsByIssue', () => {
           agentName: 'engine',
           repo: MOCK_REPO,
           prNumber: 2,
-          prUrl: 'https://github.com/pr/2',
+          prUrl: MOCK_PR_URL_2,
           branch: 'fix/issue-1-engine',
           openedAt: MOCK_DATE_1,
           mergedAt: null,
@@ -765,6 +768,243 @@ describe('getTemporalStats', () => {
       mockDb.execute.mockRejectedValue(error as never)
 
       await expect(getTemporalStats()).rejects.toThrow(errorMessage)
+    })
+  })
+})
+
+describe('getAgentTemporalStats', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when agent temporal stats exist', () => {
+    it('should fetch and transform cumulative stats per agent', async () => {
+      const mockDbResult = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          agent_name: MOCK_AGENT_NAME,
+          cumulative_attempts: 10,
+          cumulative_wins: 8,
+          cumulative_failures: 2,
+        },
+        {
+          date: MOCK_DATE_2024_01_03,
+          agent_name: 'engine',
+          cumulative_attempts: 5,
+          cumulative_wins: 3,
+          cumulative_failures: 2,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          agent_name: MOCK_AGENT_NAME,
+          cumulative_attempts: 5,
+          cumulative_wins: 4,
+          cumulative_failures: 1,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          agent_name: 'engine',
+          cumulative_attempts: 3,
+          cumulative_wins: 2,
+          cumulative_failures: 1,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getAgentTemporalStats()
+
+      expect(result).toEqual([
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: MOCK_AGENT_NAME,
+          cumulativeAttempts: 10,
+          cumulativeWins: 8,
+          cumulativeFailures: 2,
+        },
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'engine',
+          cumulativeAttempts: 5,
+          cumulativeWins: 3,
+          cumulativeFailures: 2,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          agentName: MOCK_AGENT_NAME,
+          cumulativeAttempts: 5,
+          cumulativeWins: 4,
+          cumulativeFailures: 1,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          agentName: 'engine',
+          cumulativeAttempts: 3,
+          cumulativeWins: 2,
+          cumulativeFailures: 1,
+        },
+      ])
+
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should accept custom number of days', async () => {
+      const mockDbResult = [
+        {
+          date: MOCK_DATE_2024_01_07,
+          agent_name: MOCK_AGENT_NAME,
+          cumulative_attempts: 15,
+          cumulative_wins: 10,
+          cumulative_failures: 5,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getAgentTemporalStats(7)
+
+      expect(result).toEqual([
+        {
+          date: MOCK_DATE_2024_01_07,
+          agentName: MOCK_AGENT_NAME,
+          cumulativeAttempts: 15,
+          cumulativeWins: 10,
+          cumulativeFailures: 5,
+        },
+      ])
+
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('when no agent temporal stats exist', () => {
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      mockDb.execute.mockResolvedValue([] as never)
+
+      const result = await getAgentTemporalStats()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const errorMessage = 'Agent temporal query failed'
+      const error = new Error(errorMessage)
+
+      mockDb.execute.mockRejectedValue(error as never)
+
+      await expect(getAgentTemporalStats()).rejects.toThrow(errorMessage)
+    })
+  })
+})
+
+describe('getRecentActivity', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when activity exists', () => {
+    it('should fetch and transform recent activity with issue details', async () => {
+      const mockDbResult = [
+        {
+          id: 'attempt-1',
+          agent_name: MOCK_AGENT_NAME,
+          issue_id: MOCK_ISSUE_ID,
+          issue_title: 'Fix bug in dashboard',
+          issue_linear_key: 'ISSUE-1',
+          pr_url: MOCK_PR_URL,
+          pr_number: 1,
+          status: 'merged',
+          opened_at: MOCK_DATE_2,
+        },
+        {
+          id: 'attempt-2',
+          agent_name: 'engine',
+          issue_id: 'issue-2',
+          issue_title: 'Add new feature',
+          issue_linear_key: 'ISSUE-2',
+          pr_url: MOCK_PR_URL_2,
+          pr_number: 2,
+          status: MOCK_STATUS_OPEN,
+          opened_at: MOCK_DATE_1,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getRecentActivity()
+
+      expect(result).toEqual([
+        {
+          id: 'attempt-1',
+          agentName: MOCK_AGENT_NAME,
+          issueId: MOCK_ISSUE_ID,
+          issueTitle: 'Fix bug in dashboard',
+          issueLinearKey: 'ISSUE-1',
+          prUrl: MOCK_PR_URL,
+          prNumber: 1,
+          status: 'merged',
+          openedAt: MOCK_DATE_2.toISOString(),
+        },
+        {
+          id: 'attempt-2',
+          agentName: 'engine',
+          issueId: 'issue-2',
+          issueTitle: 'Add new feature',
+          issueLinearKey: 'ISSUE-2',
+          prUrl: 'https://github.com/pr/2',
+          prNumber: 2,
+          status: MOCK_STATUS_OPEN,
+          openedAt: MOCK_DATE_1.toISOString(),
+        },
+      ])
+
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should accept custom limit', async () => {
+      const mockDbResult = [
+        {
+          id: 'attempt-1',
+          agent_name: MOCK_AGENT_NAME,
+          issue_id: MOCK_ISSUE_ID,
+          issue_title: 'Fix bug',
+          issue_linear_key: 'ISSUE-1',
+          pr_url: MOCK_PR_URL,
+          pr_number: 1,
+          status: 'merged',
+          opened_at: MOCK_DATE_1,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getRecentActivity(10)
+
+      expect(result).toHaveLength(1)
+      expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('when no activity exists', () => {
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      mockDb.execute.mockResolvedValue([] as never)
+
+      const result = await getRecentActivity()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const errorMessage = 'Recent activity query failed'
+      const error = new Error(errorMessage)
+
+      mockDb.execute.mockRejectedValue(error as never)
+
+      await expect(getRecentActivity()).rejects.toThrow(errorMessage)
     })
   })
 })

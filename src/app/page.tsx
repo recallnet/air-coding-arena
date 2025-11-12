@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import { ActivityLog } from '@/components/ActivityLog'
 import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
 import { Badge } from '@/components/ui/Badge'
 import {
@@ -22,7 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { getAgentStats, getTemporalStats } from '@/lib/queries'
+import {
+  getAgentStats,
+  getAgentTemporalStats,
+  getRecentActivity,
+} from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
 
 /**
@@ -33,7 +38,8 @@ import type { AgentStats } from '@/types/database'
  */
 export default async function Home(): Promise<React.JSX.Element> {
   const agentStats = await getAgentStats()
-  const temporalStats = await getTemporalStats()
+  const agentTemporalStats = await getAgentTemporalStats()
+  const recentActivity = await getRecentActivity()
 
   // Find the top performer (highest acceptance rate)
   const topPerformer =
@@ -55,57 +61,65 @@ export default async function Home(): Promise<React.JSX.Element> {
       </div>
 
       <div className="mb-8">
-        <TemporalLeaderboard stats={temporalStats} />
+        <TemporalLeaderboard stats={agentTemporalStats} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Agent Leaderboard</CardTitle>
-          <CardDescription>
-            Performance rankings based on merged pull requests
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {agentStats.length === 0 ? (
-            <div className="py-8 text-center text-foreground-secondary">
-              No agent statistics available yet
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Agent Name</TableHead>
-                  <TableHead className="text-right">Attempts</TableHead>
-                  <TableHead className="text-right">Wins</TableHead>
-                  <TableHead className="text-right">Acceptance Rate</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {agentStats.map((stat: AgentStats) => (
-                  <TableRow key={stat.agentName}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {stat.agentName}
-                        {topPerformer !== null &&
-                          stat.agentName === topPerformer.agentName && (
-                            <Badge variant="success">Top Performer</Badge>
-                          )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {stat.attempts}
-                    </TableCell>
-                    <TableCell className="text-right">{stat.wins}</TableCell>
-                    <TableCell className="text-right">
-                      {stat.acceptancePct.toFixed(1)}%
-                    </TableCell>
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Agent Leaderboard</CardTitle>
+            <CardDescription>
+              Performance rankings based on merged pull requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {agentStats.length === 0 ? (
+              <div className="py-8 text-center text-foreground-secondary">
+                No agent statistics available yet
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Agent Name</TableHead>
+                    <TableHead className="text-right">Attempts</TableHead>
+                    <TableHead className="text-right">Wins</TableHead>
+                    <TableHead className="text-right">
+                      Acceptance Rate
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {agentStats.map((stat: AgentStats) => (
+                    <TableRow key={stat.agentName}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {stat.agentName}
+                          {topPerformer !== null &&
+                            stat.agentName === topPerformer.agentName && (
+                              <Badge variant="success">Top Performer</Badge>
+                            )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {stat.attempts}
+                      </TableCell>
+                      <TableCell className="text-right">{stat.wins}</TableCell>
+                      <TableCell className="text-right">
+                        {stat.acceptancePct.toFixed(1)}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mb-8">
+        <ActivityLog activities={recentActivity} />
+      </div>
     </main>
   )
 }

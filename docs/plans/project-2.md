@@ -405,7 +405,30 @@ The plan below breaks the full implementation into **3 clear milestones**, each 
 
 ---
 
-## 🎯 MILESTONE 1: UI-First Dashboard (Demo Mode)
+# MILESTONE STATUS
+
+## ✅ MILESTONE 1: COMPLETE
+
+**What was built:** A fully functional Arena dashboard with seeded demo data running on localhost.
+
+**Delivered:**
+- ✅ Next.js app with Tailwind CSS
+- ✅ Neon Postgres database with production-ready schema
+- ✅ Leaderboard page showing agent stats (attempts, wins, acceptance %)
+- ✅ Issues list with filters (date range, repo, status)
+- ✅ Issue detail pages with attempts timeline
+- ✅ Agent detail pages with performance metrics
+- ✅ Seed script that populates realistic demo data from fixtures
+- ✅ All UI polish: empty states, loading skeletons, filters
+- ✅ JSON API endpoints (`/api/public/*`)
+
+**Current status:** UI refinement in progress with coding agent.
+
+**Next step:** Add live Linear integration (M2) to make dashboard update from real events.
+
+---
+
+## 🎯 MILESTONE 1: UI-First Dashboard (Demo Mode) [COMPLETE]
 
 **What you get:** A beautiful, fully functional Arena dashboard showing agent performance metrics, using seeded data. Runs locally for development.
 
