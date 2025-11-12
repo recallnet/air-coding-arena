@@ -318,15 +318,22 @@ describe('getIssueById', () => {
         orderBy: vi.fn().mockResolvedValue(mockAttempts),
       }
 
+      const mockAgentsSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([]),
+      }
+
       mockDb.select
         .mockReturnValueOnce(mockIssueSelect as never)
         .mockReturnValueOnce(mockAttemptsSelect as never)
+        .mockReturnValueOnce(mockAgentsSelect as never)
 
       const result = await getIssueById('1')
 
       expect(result).toEqual({
         ...mockIssue,
         attempts: mockAttempts,
+        agents: [],
       })
     })
 
@@ -354,15 +361,22 @@ describe('getIssueById', () => {
         orderBy: vi.fn().mockResolvedValue([]),
       }
 
+      const mockAgentsSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([]),
+      }
+
       mockDb.select
         .mockReturnValueOnce(mockIssueSelect as never)
         .mockReturnValueOnce(mockAttemptsSelect as never)
+        .mockReturnValueOnce(mockAgentsSelect as never)
 
       const result = await getIssueById('1')
 
       expect(result).toEqual({
         ...mockIssue,
         attempts: [],
+        agents: [],
       })
     })
   })

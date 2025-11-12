@@ -5,6 +5,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
+import type { IssueAgent } from '@/lib/queries'
 import { createMockIssue } from '@/test-utils/factories'
 import type { Issue, Attempt } from '@/types/database'
 
@@ -78,7 +79,7 @@ describe('IssuePage', () => {
 
   describe('when issue exists', () => {
     it('should display page title and subtitle', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -91,6 +92,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -106,7 +108,7 @@ describe('IssuePage', () => {
     })
 
     it('should display issue linear key as link to Linear', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -119,6 +121,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -132,7 +135,7 @@ describe('IssuePage', () => {
     })
 
     it('should display issue title', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -145,6 +148,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -155,7 +159,7 @@ describe('IssuePage', () => {
     })
 
     it('should display issue status badge', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -168,6 +172,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -178,7 +183,7 @@ describe('IssuePage', () => {
     })
 
     it('should display repository name when available', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -191,6 +196,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -202,7 +208,7 @@ describe('IssuePage', () => {
     })
 
     it('should not display repository when null', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -215,6 +221,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -225,7 +232,7 @@ describe('IssuePage', () => {
     })
 
     it('should display formatted arena ready labeled date', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -238,6 +245,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -251,7 +259,7 @@ describe('IssuePage', () => {
     })
 
     it('should display "-" when arena ready labeled date is null', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -264,6 +272,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -297,7 +306,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -311,6 +320,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -325,7 +335,7 @@ describe('IssuePage', () => {
     })
 
     it('should not display winner section when no winner', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -338,6 +348,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -349,7 +360,7 @@ describe('IssuePage', () => {
 
     describe('status badges', () => {
       it('should display "Unknown" badge for null status', async () => {
-        const mockIssue: Issue & { attempts: Attempt[] } = {
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
           ...createMockIssue({
             id: MOCK_ISSUE_ID,
             linearId: MOCK_LINEAR_ID,
@@ -362,6 +373,7 @@ describe('IssuePage', () => {
             createdAt: MOCK_CREATED_DATE,
           }),
           attempts: [],
+          agents: [],
         }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
@@ -377,7 +389,7 @@ describe('IssuePage', () => {
         > = ['Done', 'In Progress', 'In Review', 'Todo', 'Backlog', 'Canceled']
 
         for (const status of statuses) {
-          const mockIssue: Issue & { attempts: Attempt[] } = {
+          const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
             ...createMockIssue({
               id: MOCK_ISSUE_ID,
               linearId: MOCK_LINEAR_ID,
@@ -390,6 +402,7 @@ describe('IssuePage', () => {
               createdAt: MOCK_CREATED_DATE,
             }),
             attempts: [],
+            agents: [],
           }
 
           mockGetIssueById.mockResolvedValue(mockIssue)
@@ -409,7 +422,7 @@ describe('IssuePage', () => {
 
   describe('attempts table', () => {
     it('should display attempts card header', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -422,6 +435,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -435,7 +449,7 @@ describe('IssuePage', () => {
     })
 
     it('should display empty state when no attempts', async () => {
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -448,6 +462,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -477,7 +492,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -490,6 +505,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -523,7 +539,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -536,6 +552,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -569,7 +586,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -582,6 +599,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -611,7 +629,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -624,6 +642,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -655,7 +674,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -668,6 +687,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -723,7 +743,7 @@ describe('IssuePage', () => {
         sourceAttachmentUrl: null,
       }
 
-      const mockIssue: Issue & { attempts: Attempt[] } = {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
           linearId: MOCK_LINEAR_ID,
@@ -736,6 +756,7 @@ describe('IssuePage', () => {
           createdAt: MOCK_CREATED_DATE,
         }),
         attempts: [mockAttempt1, mockAttempt2],
+        agents: [],
       }
 
       mockGetIssueById.mockResolvedValue(mockIssue)
@@ -770,7 +791,7 @@ describe('IssuePage', () => {
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[] } = {
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
           ...createMockIssue({
             id: MOCK_ISSUE_ID,
             linearId: MOCK_LINEAR_ID,
@@ -783,6 +804,7 @@ describe('IssuePage', () => {
             createdAt: MOCK_CREATED_DATE,
           }),
           attempts: [mockAttempt],
+          agents: [],
         }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
@@ -811,7 +833,7 @@ describe('IssuePage', () => {
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[] } = {
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
           ...createMockIssue({
             id: MOCK_ISSUE_ID,
             linearId: MOCK_LINEAR_ID,
@@ -824,6 +846,7 @@ describe('IssuePage', () => {
             createdAt: MOCK_CREATED_DATE,
           }),
           attempts: [mockAttempt],
+          agents: [],
         }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
@@ -852,7 +875,7 @@ describe('IssuePage', () => {
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[] } = {
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
           ...createMockIssue({
             id: MOCK_ISSUE_ID,
             linearId: MOCK_LINEAR_ID,
@@ -865,6 +888,7 @@ describe('IssuePage', () => {
             createdAt: MOCK_CREATED_DATE,
           }),
           attempts: [mockAttempt],
+          agents: [],
         }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
@@ -893,7 +917,7 @@ describe('IssuePage', () => {
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[] } = {
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
           ...createMockIssue({
             id: MOCK_ISSUE_ID,
             linearId: MOCK_LINEAR_ID,
@@ -906,6 +930,7 @@ describe('IssuePage', () => {
             createdAt: MOCK_CREATED_DATE,
           }),
           attempts: [mockAttempt],
+          agents: [],
         }
 
         mockGetIssueById.mockResolvedValue(mockIssue)

@@ -8,7 +8,7 @@
 import { desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { attempts, issues } from '@/db/schema'
+import { attempts, issues, issueAgents } from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
@@ -170,7 +170,7 @@ export async function getIssues(): Promise<IssueWithAttemptData[]> {
  */
 export async function getIssueById(
   id: string
-): Promise<(Issue & { attempts: Attempt[] }) | null> {
+): Promise<(Issue & { attempts: Attempt[]; agents: IssueAgent[] }) | null> {
   const issueResult = await db.select().from(issues).where(eq(issues.id, id))
 
   if (issueResult.length === 0) {
@@ -189,9 +189,30 @@ export async function getIssueById(
     .where(eq(attempts.issueId, id))
     .orderBy(desc(attempts.openedAt))
 
+  const agents = await db
+    .select()
+    .from(issueAgents)
+    .where(eq(issueAgents.issueId, id))
+
   return {
     ...issue,
     attempts: issueAttempts,
+    agents: agents.map((agent) => {
+      const status = agent.status as 'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
+      if (
+        status !== 'pending' &&
+        status !== 'submitted' &&
+        status !== 'accepted' &&
+        status !== 'rejected' &&
+        status !== 'ignored'
+      ) {
+        throw new Error(`Invalid agent status: ${status}`)
+      }
+      return {
+        agentName: agent.agentName,
+        status,
+      }
+    }),
   }
 }
 
