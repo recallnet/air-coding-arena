@@ -1,5 +1,15 @@
 # Arena State Machine & Sync Strategy
 
+> **⚠️ DEPRECATED DIAGRAMS**: The Mermaid diagrams in this file are now auto-generated from code.
+>
+> **See:**
+> - Agent state machine: [docs/diagrams/agent-state-machine.md](diagrams/agent-state-machine.md)
+> - Issue state machine: [docs/diagrams/issue-state-machine.md](diagrams/issue-state-machine.md)
+>
+> **Source of truth:**
+> - `src/machines/agentMachine.ts`
+> - `src/machines/issueMachine.ts`
+
 **Version:** 1.0
 **Date:** 2025-11-12
 **Status:** Design Approved
