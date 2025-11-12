@@ -30,18 +30,6 @@ type LinearWebhookPayload = {
   createdAt: string
 }
 
-/**
- * Linear Issue data structure.
- */
-type LinearIssue = {
-  id: string
-  identifier: string
-  title: string
-  url: string
-  team?: { key: string }
-  state?: { name: string }
-  labels?: Array<{ name: string }>
-}
 
 /**
  * Linear Attachment data structure.
