@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { issues, attempts, events, issueAgents } from '@/db/schema'
+import { syncIssueFromLinear } from '@/lib/linear-sync'
 
 /**
  * Linear webhook payload type (simplified).
@@ -183,9 +184,8 @@ async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
 
   console.log(`Issue ${issue.identifier} labeled ${arenaLabel}`)
 
-  // TODO M2: Sync existing state (comments, attachments) when label is first added
-  // This ensures we capture PRs that were already submitted before webhook went live
-  // See docs/comment-webhook-implementation-plan.md for implementation details
+  // Sync existing state from Linear API (catches mid-flight activity)
+  await syncIssueFromLinear(issue.id)
 }
 
 /**

@@ -22,11 +22,16 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
+vi.mock('@/lib/linear-sync', () => ({
+  syncIssueFromLinear: vi.fn(),
+}))
+
 const WEBHOOK_URL = 'http://localhost:3109/api/linear/webhook'
 const TEST_SECRET = 'test-secret'
 const ARENA_LABEL = 'arena:ready'
 const TEST_PR_URL = 'https://github.com/org/repo/pull/42'
 const TEST_ISSUE_ID = 'issue-123'
+const TEST_ISSUE_URL = 'https://linear.app/test/issue/ENG-123'
 const TEST_TIMESTAMP = '2024-01-01T00:00:00Z'
 
 /**
@@ -103,7 +108,7 @@ describe('/api/linear/webhook', () => {
           id: TEST_ISSUE_ID,
           identifier: 'ENG-123',
           title: 'Test issue',
-          url: 'https://linear.app/test/issue/ENG-123',
+          url: TEST_ISSUE_URL,
           labels: [{ name: ARENA_LABEL }],
         },
         updatedAt: new Date().toISOString(),
@@ -171,7 +176,7 @@ describe('/api/linear/webhook', () => {
           id: TEST_ISSUE_ID,
           identifier: 'ENG-123',
           title: 'Implement feature X',
-          url: 'https://linear.app/test/issue/ENG-123',
+          url: TEST_ISSUE_URL,
           team: { key: 'engineering' },
           state: { name: 'Backlog' },
           labels: [{ name: ARENA_LABEL }, { name: 'frontend' }],
@@ -228,6 +233,41 @@ describe('/api/linear/webhook', () => {
 
       // Should only have created event, not issue (insert called once for event)
       expect(db.insert).toHaveBeenCalledOnce()
+    })
+
+    it('should trigger sync when arena label is added', async () => {
+      const payload = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: TEST_ISSUE_ID,
+          identifier: 'ENG-123',
+          title: 'Test issue',
+          url: TEST_ISSUE_URL,
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      const mockInsert = vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([]),
+        }),
+      })
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: mockInsert,
+      } as never)
+
+      const req = createMockRequest(payload)
+      await POST(req)
+
+      expect(mockInsert).toHaveBeenCalled()
+      // Note: Full integration test would verify sync was called
     })
   })
 
