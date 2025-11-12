@@ -634,6 +634,50 @@ describe('/api/linear/webhook', () => {
     })
   })
 
+  describe('Issue events - metadata handling', () => {
+    it('should handle issue with full metadata in webhook', async () => {
+      const payload = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: TEST_ISSUE_ID,
+          identifier: 'ENG-123',
+          title: 'Issue with metadata',
+          url: TEST_ISSUE_URL,
+          team: { key: 'engineering' },
+          state: { name: 'In Progress' },
+          labels: [
+            { name: ARENA_LABEL },
+            { name: 'bug' },
+            { name: 'urgent' },
+          ],
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      const mockInsert = vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([]),
+        }),
+      })
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: mockInsert,
+      } as never)
+
+      const req = createMockRequest(payload)
+      const response = await POST(req)
+
+      expect(response.status).toBe(200)
+      // Webhook should store basic fields, sync will enrich later
+      expect(mockInsert).toHaveBeenCalled()
+    })
+  })
+
   describe('error handling', () => {
     it('should return 500 on database error', async () => {
       const payload = {
