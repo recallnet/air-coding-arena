@@ -1,5 +1,5 @@
 {
-  "name": "coding-arena",
+  "name": "air-coding-arena",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -48,13 +48,15 @@
   "dependencies": {
     "@geist-ui/icons": "^1.0.2",
     "@linear/sdk": "^63.4.0",
+    "@xstate/graph": "^3.0.4",
     "drizzle-orm": "^0.44.7",
     "geist": "^1.5.1",
     "lucide-react": "^0.553.0",
     "next": "^15.0.3",
     "postgres": "^3.4.7",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "xstate": "^5.24.0"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.0.3",
@@ -90,6 +92,7 @@
     "eslint-plugin-testing-library": "^6.3.0",
     "eslint-plugin-unicorn": "^56.0.0",
     "eslint-plugin-vitest": "^0.5.4",
+    "eslint-plugin-xstate": "^3.2.1",
     "husky": "^9.1.6",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
