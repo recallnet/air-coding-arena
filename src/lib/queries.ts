@@ -80,6 +80,26 @@ export async function getIssues(): Promise<IssueWithAttemptData[]> {
     url: string
     repo: string | null
     status: string | null
+    description: string | null
+    description_markdown: string | null
+    estimate: number | null
+    priority: number | null
+    labels_json: unknown
+    assignee_id: string | null
+    assignee_name: string | null
+    assignee_email: string | null
+    creator_id: string | null
+    creator_name: string | null
+    creator_email: string | null
+    project_id: string | null
+    project_name: string | null
+    cycle_id: string | null
+    cycle_name: string | null
+    cycle_number: number | null
+    due_date: Date | null
+    linear_created_at: Date | null
+    linear_updated_at: Date | null
+    parent_id: string | null
     arena_ready_labeled_at: Date | null
     winner_attempt_id: string | null
     created_at: Date
@@ -87,22 +107,13 @@ export async function getIssues(): Promise<IssueWithAttemptData[]> {
     winner_agent_name: string | null
   }>(sql`
     SELECT
-      i.id,
-      i.linear_id,
-      i.linear_key,
-      i.title,
-      i.url,
-      i.repo,
-      i.status,
-      i.arena_ready_labeled_at,
-      i.winner_attempt_id,
-      i.created_at,
+      i.*,
       COUNT(a.id)::int AS attempt_count,
       wa.agent_name AS winner_agent_name
     FROM issues i
     LEFT JOIN attempts a ON a.issue_id = i.id
     LEFT JOIN attempts wa ON wa.id = i.winner_attempt_id
-    GROUP BY i.id, i.linear_id, i.linear_key, i.title, i.url, i.repo, i.status, i.arena_ready_labeled_at, i.winner_attempt_id, i.created_at, wa.agent_name
+    GROUP BY i.id, wa.agent_name
     ORDER BY i.arena_ready_labeled_at DESC
   `)
 
@@ -114,6 +125,26 @@ export async function getIssues(): Promise<IssueWithAttemptData[]> {
     url: row.url,
     repo: row.repo,
     status: row.status,
+    description: row.description,
+    descriptionMarkdown: row.description_markdown,
+    estimate: row.estimate,
+    priority: row.priority,
+    labelsJson: row.labels_json,
+    assigneeId: row.assignee_id,
+    assigneeName: row.assignee_name,
+    assigneeEmail: row.assignee_email,
+    creatorId: row.creator_id,
+    creatorName: row.creator_name,
+    creatorEmail: row.creator_email,
+    projectId: row.project_id,
+    projectName: row.project_name,
+    cycleId: row.cycle_id,
+    cycleName: row.cycle_name,
+    cycleNumber: row.cycle_number,
+    dueDate: row.due_date,
+    linearCreatedAt: row.linear_created_at,
+    linearUpdatedAt: row.linear_updated_at,
+    parentId: row.parent_id,
     arenaReadyLabeledAt: row.arena_ready_labeled_at,
     winnerAttemptId: row.winner_attempt_id,
     createdAt: row.created_at,
@@ -159,16 +190,7 @@ export async function getIssueById(
     .orderBy(desc(attempts.openedAt))
 
   return {
-    id: issue.id,
-    linearId: issue.linearId,
-    linearKey: issue.linearKey,
-    title: issue.title,
-    url: issue.url,
-    repo: issue.repo,
-    status: issue.status,
-    arenaReadyLabeledAt: issue.arenaReadyLabeledAt,
-    winnerAttemptId: issue.winnerAttemptId,
-    createdAt: issue.createdAt,
+    ...issue,
     attempts: issueAttempts,
   }
 }

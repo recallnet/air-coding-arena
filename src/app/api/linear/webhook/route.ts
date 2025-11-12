@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { issues, attempts, events } from '@/db/schema'
+import { guessAgentFromText } from '@/lib/agent-config'
 import { updateAgentStatusOnPR } from '@/lib/agent-status'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
 
@@ -285,14 +286,10 @@ async function handleAttachmentEvent(
  *
  * @param title - PR title
  * @param branch - Branch name
- * @returns Agent name (cursor, engine, cyrus, or unknown)
+ * @returns Agent name (cursor, engine, cyrus, factory, or unknown)
  */
 function guessAgent(title: string, branch?: string): string {
-  const source = (branch ?? title).toLowerCase()
-  if (source.includes('cursor')) return 'cursor'
-  if (source.includes('engine')) return 'engine'
-  if (source.includes('cyrus')) return 'cyrus'
-  return 'unknown'
+  return guessAgentFromText(branch ?? title)
 }
 
 /**

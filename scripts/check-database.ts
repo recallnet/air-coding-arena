@@ -10,7 +10,14 @@ async function main() {
   console.log('📊 Checking database state...\n')
 
   // Check issues
-  const issuesList = await db.select().from(issues)
+  const issuesList = await db
+    .select({
+      linearKey: issues.linearKey,
+      title: issues.title,
+      status: issues.status,
+      arenaReadyLabeledAt: issues.arenaReadyLabeledAt,
+    })
+    .from(issues)
   console.log(`📋 Issues: ${issuesList.length}`)
   for (const issue of issuesList) {
     console.log(`  - ${issue.linearKey}: ${issue.title}`)

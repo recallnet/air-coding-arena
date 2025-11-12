@@ -72,6 +72,12 @@ describe('/api/linear/webhook', () => {
     vi.clearAllMocks()
     process.env['LINEAR_WEBHOOK_SECRET'] = TEST_SECRET
     process.env['ARENA_LABEL'] = ARENA_LABEL
+    process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
+      { name: 'cursor', handle: '@Cursor' },
+      { name: 'engine', handle: '@Engine' },
+      { name: 'cyrus', handle: '@Cyrus' },
+      { name: 'factory', handle: '@Factory' },
+    ])
   })
 
   describe('signature verification', () => {

@@ -9,7 +9,7 @@ import { eq, and } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { issues, issueAgents, attempts } from '@/db/schema'
 
-const AGENT_HANDLES = ['@cursor', '@engine', '@cyrus', '@claude']
+import { getAgentHandles, guessAgentFromText } from './agent-config'
 
 /**
  * Syncs issue state from Linear API
@@ -52,20 +52,21 @@ export async function syncIssueFromLinear(
 }
 
 /**
- * Determines which agent submitted a PR based on comment context
- * @param mentionedAgents - Agents mentioned in the PR comment
+ * Determines which agent submitted a PR based on comment thread
+ * Walks up the parent chain to find the root @mention comment
+ * @param commentId - ID of the PR comment
+ * @param mentionedAgents - Agents mentioned in the PR comment itself
  * @param body - PR comment body
- * @param comments - All comments (reverse chronological)
- * @param index - Index of PR comment
- * @param commentAgents - Map of comment indices to agent names
+ * @param commentAgents - Map of comment IDs to agent mentions
+ * @param commentParents - Map of comment IDs to parent comment IDs
  * @returns Agent name or "unknown"
  */
-function determineAgentOwnership(
+function determineAgentOwnershipFromThread(
+  commentId: string,
   mentionedAgents: string[],
   body: string,
-  comments: Array<{ body?: string | null; createdAt: Date }>,
-  index: number,
-  commentAgents: Map<number, string[]>
+  commentAgents: Map<string, string[]>,
+  commentParents: Map<string, string | null>
 ): string {
   // First, check if agent is mentioned in this comment
   if (mentionedAgents.length > 0 && mentionedAgents[0]) {
@@ -78,41 +79,22 @@ function determineAgentOwnership(
     return guessedAgent
   }
 
-  // Comments are in reverse chronological order (newest first)
-  // Search forward in array = backward in time (older comments)
-  for (let i = index + 1; i < Math.min(comments.length, index + 6); i++) {
-    const olderComment = comments[i]
-    const olderBody = olderComment?.body ?? ''
+  // Walk up the parent chain to find @mentions
+  let currentId: string | null = commentId
+  const visited = new Set<string>()
 
-    // First try to guess from the comment body
-    const guessedFromOlder = guessAgent(olderBody, null)
-    if (guessedFromOlder !== 'unknown') {
-      return guessedFromOlder
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId)
+
+    // Check if this comment has an agent mention
+    const agents = commentAgents.get(currentId) ?? []
+    if (agents.length > 0 && agents[0]) {
+      return agents[0]
     }
 
-    // Then check for explicit mentions
-    const olderAgents = commentAgents.get(i) ?? []
-    if (olderAgents.length > 0 && olderAgents[0]) {
-      return olderAgents[0]
-    }
-  }
-
-  // If not found, search backward in array = forward in time (newer comments)
-  for (let i = index - 1; i >= Math.max(0, index - 3); i--) {
-    const newerComment = comments[i]
-    const newerBody = newerComment?.body ?? ''
-
-    // First try to guess from the comment body
-    const guessedFromNewer = guessAgent(newerBody, null)
-    if (guessedFromNewer !== 'unknown') {
-      return guessedFromNewer
-    }
-
-    // Then check for explicit mentions
-    const newerAgents = commentAgents.get(i) ?? []
-    if (newerAgents.length > 0 && newerAgents[0]) {
-      return newerAgents[0]
-    }
+    // Move to parent
+    const parentId = commentParents.get(currentId)
+    currentId = parentId ?? null
   }
 
   return 'unknown'
@@ -125,21 +107,33 @@ function determineAgentOwnership(
  */
 async function syncComments(
   issueId: string,
-  comments: Array<{ body?: string | null; createdAt: Date }>
+  comments: Array<{
+    id: string
+    body?: string | null
+    createdAt: Date
+  }>
 ): Promise<void> {
-  // Track which agents are mentioned in each comment
-  const commentAgents: Map<number, string[]> = new Map()
+  // Track which agents are mentioned in each comment (by comment ID)
+  const commentAgents: Map<string, string[]> = new Map()
+  // Track parent IDs
+  const commentParents: Map<string, string | null> = new Map()
 
-  // PHASE 1: Build agent mentions map for all comments
-  for (const [index, comment] of comments.entries()) {
+  // PHASE 1: Build agent mentions map and parent relationships for all comments
+  for (const comment of comments) {
     const body = comment.body ?? ''
     const createdAt = comment.createdAt
+    const commentId = comment.id
     const mentionedAgents: string[] = []
 
+    // Get parent ID if it exists (access as property on any type)
+    const commentAny = comment as any
+    const parentId = commentAny.parentId as string | undefined
+    commentParents.set(commentId, parentId ?? null)
+
     // Sync agent mentions
-    for (const handle of AGENT_HANDLES) {
+    for (const handle of getAgentHandles()) {
       if (body.toLowerCase().includes(handle.toLowerCase())) {
-        const agentName = handle.substring(1)
+        const agentName = handle.substring(1).toLowerCase() // Remove @ prefix and normalize to lowercase
         mentionedAgents.push(agentName)
 
         await db
@@ -157,14 +151,15 @@ async function syncComments(
       }
     }
 
-    commentAgents.set(index, mentionedAgents)
+    commentAgents.set(commentId, mentionedAgents)
   }
 
   // PHASE 2: Extract PR URLs now that we have the full agent map
-  for (const [index, comment] of comments.entries()) {
+  for (const comment of comments) {
     const body = comment.body ?? ''
     const createdAt = comment.createdAt
-    const mentionedAgents = commentAgents.get(index) ?? []
+    const commentId = comment.id
+    const mentionedAgents = commentAgents.get(commentId) ?? []
 
     // Extract GitHub PR URLs from comment body
     const prRegex = /github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/g
@@ -177,13 +172,17 @@ async function syncComments(
       const repo = `${org}/${repoName}`
       const prUrl = `https://github.com/${org}/${repoName}/pull/${prNumber}`
 
-      // Determine agent: check this comment, then search forward and backward
-      const agentName = determineAgentOwnership(
+      // Determine agent using parent relationship
+      const agentName = determineAgentOwnershipFromThread(
+        commentId,
         mentionedAgents,
         body,
-        comments,
-        index,
-        commentAgents
+        commentAgents,
+        commentParents
+      )
+
+      console.log(
+        `[DEBUG] PR ${prNumber} in comment ${commentId}: agent=${agentName}`
       )
 
       // Create attempt entry
@@ -292,10 +291,5 @@ async function syncAttachments(
  * @returns Agent name
  */
 function guessAgent(title: string, subtitle?: string | null): string {
-  const source = (subtitle ?? title).toLowerCase()
-  if (source.includes('cursor')) return 'cursor'
-  if (source.includes('engine')) return 'engine'
-  if (source.includes('cyrus')) return 'cyrus'
-  if (source.includes('claude')) return 'claude'
-  return 'unknown'
+  return guessAgentFromText(subtitle ?? title)
 }

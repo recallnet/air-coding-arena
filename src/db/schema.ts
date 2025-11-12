@@ -22,6 +22,30 @@ export const issues = pgTable('issues', {
   url: text('url').notNull(),
   repo: text('repo'),
   status: text('status'),
+
+  // Metadata fields
+  description: text('description'),
+  descriptionMarkdown: text('description_markdown'),
+  estimate: integer('estimate'),
+  priority: integer('priority'),
+  labelsJson: jsonb('labels_json'),
+  assigneeId: text('assignee_id'),
+  assigneeName: text('assignee_name'),
+  assigneeEmail: text('assignee_email'),
+  creatorId: text('creator_id'),
+  creatorName: text('creator_name'),
+  creatorEmail: text('creator_email'),
+  projectId: text('project_id'),
+  projectName: text('project_name'),
+  cycleId: text('cycle_id'),
+  cycleName: text('cycle_name'),
+  cycleNumber: integer('cycle_number'),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  linearCreatedAt: timestamp('linear_created_at', { withTimezone: true }),
+  linearUpdatedAt: timestamp('linear_updated_at', { withTimezone: true }),
+  parentId: text('parent_id'),
+
+  // Original fields
   arenaReadyLabeledAt: timestamp('arena_ready_labeled_at', {
     withTimezone: true,
   }),

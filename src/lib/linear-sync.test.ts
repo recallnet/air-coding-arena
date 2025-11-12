@@ -26,6 +26,12 @@ describe('syncIssueFromLinear', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env['LINEAR_API_KEY'] = 'test-key'
+    process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
+      { name: 'cursor', handle: '@Cursor' },
+      { name: 'engine', handle: '@Engine' },
+      { name: 'cyrus', handle: '@Cyrus' },
+      { name: 'factory', handle: '@Factory' },
+    ])
   })
 
   it('should sync comments and find agent mentions', async () => {

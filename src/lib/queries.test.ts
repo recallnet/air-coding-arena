@@ -7,6 +7,7 @@ import { mockDeep, mockReset } from 'vitest-mock-extended'
 
 import { db } from '@/db/client'
 import type { Attempt, Issue, IssueWithAttemptData } from '@/types/database'
+import { createMockIssue, createMockAttempt } from '@/test-utils/factories'
 
 import {
   getAgentStats,
@@ -136,6 +137,26 @@ describe('getIssues', () => {
           url: MOCK_LINEAR_URL,
           repo: MOCK_REPO,
           status: MOCK_STATUS_IN_PROGRESS,
+          description: null,
+          description_markdown: null,
+          estimate: null,
+          priority: null,
+          labels_json: null,
+          assignee_id: null,
+          assignee_name: null,
+          assignee_email: null,
+          creator_id: null,
+          creator_name: null,
+          creator_email: null,
+          project_id: null,
+          project_name: null,
+          cycle_id: null,
+          cycle_name: null,
+          cycle_number: null,
+          due_date: null,
+          linear_created_at: null,
+          linear_updated_at: null,
+          parent_id: null,
           arena_ready_labeled_at: MOCK_DATE_2,
           winner_attempt_id: null,
           created_at: MOCK_DATE_1,
@@ -150,6 +171,26 @@ describe('getIssues', () => {
           url: MOCK_LINEAR_URL_2,
           repo: 'repo2',
           status: 'Done',
+          description: null,
+          description_markdown: null,
+          estimate: null,
+          priority: null,
+          labels_json: null,
+          assignee_id: null,
+          assignee_name: null,
+          assignee_email: null,
+          creator_id: null,
+          creator_name: null,
+          creator_email: null,
+          project_id: null,
+          project_name: null,
+          cycle_id: null,
+          cycle_name: null,
+          cycle_number: null,
+          due_date: null,
+          linear_created_at: null,
+          linear_updated_at: null,
+          parent_id: null,
           arena_ready_labeled_at: MOCK_DATE_1,
           winner_attempt_id: 'attempt-1',
           created_at: MOCK_DATE_1,
@@ -163,30 +204,33 @@ describe('getIssues', () => {
 
       const expectedResult: IssueWithAttemptData[] = [
         {
-          id: EXPECTED_ISSUE_ID,
-          linearId: EXPECTED_LINEAR_ID,
-          linearKey: 'ISSUE-1',
-          title: 'Issue 1',
-          url: MOCK_LINEAR_URL,
-          repo: MOCK_REPO,
-          status: MOCK_STATUS_IN_PROGRESS,
-          arenaReadyLabeledAt: MOCK_DATE_2,
-          winnerAttemptId: null,
-          createdAt: MOCK_DATE_1,
+          ...createMockIssue({
+            id: EXPECTED_ISSUE_ID,
+            linearId: EXPECTED_LINEAR_ID,
+            linearKey: 'ISSUE-1',
+            title: 'Issue 1',
+            url: MOCK_LINEAR_URL,
+            repo: MOCK_REPO,
+            status: MOCK_STATUS_IN_PROGRESS,
+            arenaReadyLabeledAt: MOCK_DATE_2,
+            createdAt: MOCK_DATE_1,
+          }),
           attemptCount: 3,
           winnerAgentName: null,
         },
         {
-          id: '2',
-          linearId: 'linear-2',
-          linearKey: 'ISSUE-2',
-          title: 'Issue 2',
-          url: MOCK_LINEAR_URL_2,
-          repo: 'repo2',
-          status: 'Done',
-          arenaReadyLabeledAt: MOCK_DATE_1,
-          winnerAttemptId: 'attempt-1',
-          createdAt: MOCK_DATE_1,
+          ...createMockIssue({
+            id: '2',
+            linearId: 'linear-2',
+            linearKey: 'ISSUE-2',
+            title: 'Issue 2',
+            url: MOCK_LINEAR_URL_2,
+            repo: 'repo2',
+            status: 'Done',
+            arenaReadyLabeledAt: MOCK_DATE_1,
+            winnerAttemptId: 'attempt-1',
+            createdAt: MOCK_DATE_1,
+          }),
           attemptCount: 5,
           winnerAgentName: MOCK_AGENT_NAME,
         },
@@ -235,7 +279,7 @@ describe('getIssueById', () => {
 
   describe('when issue exists', () => {
     it('should fetch issue with attempts', async () => {
-      const mockIssue: Issue = {
+      const mockIssue: Issue = createMockIssue({
         id: '1',
         linearId: 'linear-1',
         linearKey: 'ISSUE-1',
@@ -244,12 +288,11 @@ describe('getIssueById', () => {
         repo: MOCK_REPO,
         status: 'In Progress',
         arenaReadyLabeledAt: MOCK_DATE_1,
-        winnerAttemptId: null,
         createdAt: MOCK_DATE_1,
-      }
+      })
 
       const mockAttempts: Attempt[] = [
-        {
+        createMockAttempt({
           id: 'attempt-1',
           issueId: '1',
           agentName: MOCK_AGENT_NAME,
@@ -258,14 +301,10 @@ describe('getIssueById', () => {
           prUrl: MOCK_PR_URL,
           branch: MOCK_BRANCH,
           openedAt: MOCK_DATE_2,
-          mergedAt: null,
-          closedAt: null,
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: 'abc123',
-          sourceAttachmentId: null,
-          sourceAttachmentUrl: null,
-        },
+        }),
       ]
 
       const mockIssueSelect = {
@@ -292,7 +331,7 @@ describe('getIssueById', () => {
     })
 
     it('should handle issue with no attempts', async () => {
-      const mockIssue: Issue = {
+      const mockIssue: Issue = createMockIssue({
         id: '1',
         linearId: 'linear-1',
         linearKey: 'ISSUE-1',
@@ -301,9 +340,8 @@ describe('getIssueById', () => {
         repo: MOCK_REPO,
         status: 'Backlog',
         arenaReadyLabeledAt: MOCK_DATE_1,
-        winnerAttemptId: null,
         createdAt: MOCK_DATE_1,
-      }
+      })
 
       const mockIssueSelect = {
         from: vi.fn().mockReturnThis(),

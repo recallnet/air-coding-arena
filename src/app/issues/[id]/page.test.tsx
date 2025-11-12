@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 import type { Issue, Attempt } from '@/types/database'
+import { createMockIssue } from '@/test-utils/factories'
 
 import IssuePage from './page'
 
@@ -78,16 +79,17 @@ describe('IssuePage', () => {
   describe('when issue exists', () => {
     it('should display page title and subtitle', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -105,16 +107,17 @@ describe('IssuePage', () => {
 
     it('should display issue linear key as link to Linear', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -130,16 +133,17 @@ describe('IssuePage', () => {
 
     it('should display issue title', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -152,16 +156,17 @@ describe('IssuePage', () => {
 
     it('should display issue status badge', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -174,16 +179,17 @@ describe('IssuePage', () => {
 
     it('should display repository name when available', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -197,16 +203,17 @@ describe('IssuePage', () => {
 
     it('should not display repository when null', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: null,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: null,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -219,16 +226,17 @@ describe('IssuePage', () => {
 
     it('should display formatted arena ready labeled date', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -244,16 +252,17 @@ describe('IssuePage', () => {
 
     it('should display "-" when arena ready labeled date is null', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: null,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: null,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -289,16 +298,18 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_DONE,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: MOCK_ATTEMPT_ID_1,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_DONE,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          winnerAttemptId: MOCK_ATTEMPT_ID_1,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt],
       }
 
@@ -315,16 +326,17 @@ describe('IssuePage', () => {
 
     it('should not display winner section when no winner', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -338,16 +350,17 @@ describe('IssuePage', () => {
     describe('status badges', () => {
       it('should display "Unknown" badge for null status', async () => {
         const mockIssue: Issue & { attempts: Attempt[] } = {
-          id: MOCK_ISSUE_ID,
-          linearId: MOCK_LINEAR_ID,
-          linearKey: MOCK_LINEAR_KEY,
-          title: MOCK_ISSUE_TITLE,
-          url: MOCK_LINEAR_URL,
-          repo: MOCK_REPO,
-          status: null,
-          arenaReadyLabeledAt: MOCK_READY_DATE,
-          winnerAttemptId: null,
-          createdAt: MOCK_CREATED_DATE,
+          ...createMockIssue({
+            id: MOCK_ISSUE_ID,
+            linearId: MOCK_LINEAR_ID,
+            linearKey: MOCK_LINEAR_KEY,
+            title: MOCK_ISSUE_TITLE,
+            url: MOCK_LINEAR_URL,
+            repo: MOCK_REPO,
+            status: null,
+            arenaReadyLabeledAt: MOCK_READY_DATE,
+            createdAt: MOCK_CREATED_DATE,
+          }),
           attempts: [],
         }
 
@@ -365,16 +378,17 @@ describe('IssuePage', () => {
 
         for (const status of statuses) {
           const mockIssue: Issue & { attempts: Attempt[] } = {
-            id: MOCK_ISSUE_ID,
-            linearId: MOCK_LINEAR_ID,
-            linearKey: MOCK_LINEAR_KEY,
-            title: MOCK_ISSUE_TITLE,
-            url: MOCK_LINEAR_URL,
-            repo: MOCK_REPO,
-            status,
-            arenaReadyLabeledAt: MOCK_READY_DATE,
-            winnerAttemptId: null,
-            createdAt: MOCK_CREATED_DATE,
+            ...createMockIssue({
+              id: MOCK_ISSUE_ID,
+              linearId: MOCK_LINEAR_ID,
+              linearKey: MOCK_LINEAR_KEY,
+              title: MOCK_ISSUE_TITLE,
+              url: MOCK_LINEAR_URL,
+              repo: MOCK_REPO,
+              status,
+              arenaReadyLabeledAt: MOCK_READY_DATE,
+              createdAt: MOCK_CREATED_DATE,
+            }),
             attempts: [],
           }
 
@@ -396,16 +410,17 @@ describe('IssuePage', () => {
   describe('attempts table', () => {
     it('should display attempts card header', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -421,16 +436,17 @@ describe('IssuePage', () => {
 
     it('should display empty state when no attempts', async () => {
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [],
       }
 
@@ -462,16 +478,17 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt],
       }
 
@@ -507,16 +524,17 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_DONE,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_DONE,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt],
       }
 
@@ -552,16 +570,17 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt],
       }
 
@@ -593,16 +612,17 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt],
       }
 
@@ -636,16 +656,17 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_IN_PROGRESS,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt],
       }
 
@@ -703,16 +724,17 @@ describe('IssuePage', () => {
       }
 
       const mockIssue: Issue & { attempts: Attempt[] } = {
-        id: MOCK_ISSUE_ID,
-        linearId: MOCK_LINEAR_ID,
-        linearKey: MOCK_LINEAR_KEY,
-        title: MOCK_ISSUE_TITLE,
-        url: MOCK_LINEAR_URL,
-        repo: MOCK_REPO,
-        status: MOCK_STATUS_DONE,
-        arenaReadyLabeledAt: MOCK_READY_DATE,
-        winnerAttemptId: null,
-        createdAt: MOCK_CREATED_DATE,
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_DONE,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
         attempts: [mockAttempt1, mockAttempt2],
       }
 
@@ -749,16 +771,17 @@ describe('IssuePage', () => {
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
-          id: MOCK_ISSUE_ID,
-          linearId: MOCK_LINEAR_ID,
-          linearKey: MOCK_LINEAR_KEY,
-          title: MOCK_ISSUE_TITLE,
-          url: MOCK_LINEAR_URL,
-          repo: MOCK_REPO,
-          status: MOCK_STATUS_DONE,
-          arenaReadyLabeledAt: MOCK_READY_DATE,
-          winnerAttemptId: null,
-          createdAt: MOCK_CREATED_DATE,
+          ...createMockIssue({
+            id: MOCK_ISSUE_ID,
+            linearId: MOCK_LINEAR_ID,
+            linearKey: MOCK_LINEAR_KEY,
+            title: MOCK_ISSUE_TITLE,
+            url: MOCK_LINEAR_URL,
+            repo: MOCK_REPO,
+            status: MOCK_STATUS_DONE,
+            arenaReadyLabeledAt: MOCK_READY_DATE,
+            createdAt: MOCK_CREATED_DATE,
+          }),
           attempts: [mockAttempt],
         }
 
@@ -789,16 +812,17 @@ describe('IssuePage', () => {
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
-          id: MOCK_ISSUE_ID,
-          linearId: MOCK_LINEAR_ID,
-          linearKey: MOCK_LINEAR_KEY,
-          title: MOCK_ISSUE_TITLE,
-          url: MOCK_LINEAR_URL,
-          repo: MOCK_REPO,
-          status: MOCK_STATUS_IN_PROGRESS,
-          arenaReadyLabeledAt: MOCK_READY_DATE,
-          winnerAttemptId: null,
-          createdAt: MOCK_CREATED_DATE,
+          ...createMockIssue({
+            id: MOCK_ISSUE_ID,
+            linearId: MOCK_LINEAR_ID,
+            linearKey: MOCK_LINEAR_KEY,
+            title: MOCK_ISSUE_TITLE,
+            url: MOCK_LINEAR_URL,
+            repo: MOCK_REPO,
+            status: MOCK_STATUS_IN_PROGRESS,
+            arenaReadyLabeledAt: MOCK_READY_DATE,
+            createdAt: MOCK_CREATED_DATE,
+          }),
           attempts: [mockAttempt],
         }
 
@@ -829,16 +853,17 @@ describe('IssuePage', () => {
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
-          id: MOCK_ISSUE_ID,
-          linearId: MOCK_LINEAR_ID,
-          linearKey: MOCK_LINEAR_KEY,
-          title: MOCK_ISSUE_TITLE,
-          url: MOCK_LINEAR_URL,
-          repo: MOCK_REPO,
-          status: MOCK_STATUS_IN_PROGRESS,
-          arenaReadyLabeledAt: MOCK_READY_DATE,
-          winnerAttemptId: null,
-          createdAt: MOCK_CREATED_DATE,
+          ...createMockIssue({
+            id: MOCK_ISSUE_ID,
+            linearId: MOCK_LINEAR_ID,
+            linearKey: MOCK_LINEAR_KEY,
+            title: MOCK_ISSUE_TITLE,
+            url: MOCK_LINEAR_URL,
+            repo: MOCK_REPO,
+            status: MOCK_STATUS_IN_PROGRESS,
+            arenaReadyLabeledAt: MOCK_READY_DATE,
+            createdAt: MOCK_CREATED_DATE,
+          }),
           attempts: [mockAttempt],
         }
 
@@ -869,16 +894,17 @@ describe('IssuePage', () => {
         }
 
         const mockIssue: Issue & { attempts: Attempt[] } = {
-          id: MOCK_ISSUE_ID,
-          linearId: MOCK_LINEAR_ID,
-          linearKey: MOCK_LINEAR_KEY,
-          title: MOCK_ISSUE_TITLE,
-          url: MOCK_LINEAR_URL,
-          repo: MOCK_REPO,
-          status: MOCK_STATUS_IN_PROGRESS,
-          arenaReadyLabeledAt: MOCK_READY_DATE,
-          winnerAttemptId: null,
-          createdAt: MOCK_CREATED_DATE,
+          ...createMockIssue({
+            id: MOCK_ISSUE_ID,
+            linearId: MOCK_LINEAR_ID,
+            linearKey: MOCK_LINEAR_KEY,
+            title: MOCK_ISSUE_TITLE,
+            url: MOCK_LINEAR_URL,
+            repo: MOCK_REPO,
+            status: MOCK_STATUS_IN_PROGRESS,
+            arenaReadyLabeledAt: MOCK_READY_DATE,
+            createdAt: MOCK_CREATED_DATE,
+          }),
           attempts: [mockAttempt],
         }
 
