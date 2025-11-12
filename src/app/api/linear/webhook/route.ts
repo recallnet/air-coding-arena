@@ -13,7 +13,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
-import { issues, attempts, events, issueAgents } from '@/db/schema'
+import { issues, attempts, events } from '@/db/schema'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
 
 /**
@@ -328,7 +328,7 @@ async function updateWinner(issueId: string): Promise<void> {
 
 /**
  * Handles Comment webhook events.
- * Extracts agent mentions and records in issue_agents table.
+ * Triggers full sync to ensure no mentions are missed.
  *
  * @param payload - Linear webhook payload
  */
@@ -338,21 +338,9 @@ async function handleCommentEvent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const comment = payload.data as any as LinearComment
 
-  // Extract agent mentions (@cursor, @engine, @cyrus, @claude)
-  const agentHandles = ['@cursor', '@engine', '@cyrus', '@claude']
-  const mentionedAgents: string[] = []
-
-  for (const handle of agentHandles) {
-    if (comment.body.toLowerCase().includes(handle.toLowerCase())) {
-      mentionedAgents.push(handle.substring(1)) // Remove @
-    }
-  }
-
-  if (mentionedAgents.length === 0) return
-
   // Get issue from database
   const issueResult = await db
-    .select({ id: issues.id })
+    .select({ id: issues.id, linearId: issues.linearId })
     .from(issues)
     .where(eq(issues.linearId, comment.issue.id))
     .limit(1)
@@ -362,26 +350,10 @@ async function handleCommentEvent(
     return
   }
 
-  const issueId = issueResult[0]?.id
-  if (!issueId) return
+  const issue = issueResult[0]
+  if (!issue) return
 
-  // Record agent mentions
-  for (const agentName of mentionedAgents) {
-    await db
-      .insert(issueAgents)
-      .values({
-        issueId,
-        agentName,
-        status: 'pending',
-        triggeredAt: new Date(comment.createdAt),
-      })
-      .onConflictDoUpdate({
-        target: [issueAgents.issueId, issueAgents.agentName],
-        set: {
-          triggeredAt: new Date(comment.createdAt),
-        },
-      })
-
-    console.log(`Agent ${agentName} mentioned on issue ${issueId}`)
-  }
+  // Re-sync all comments for this issue from API
+  // (Cheaper than parsing single comment + risk of missing context)
+  await syncIssueFromLinear(issue.linearId)
 }
