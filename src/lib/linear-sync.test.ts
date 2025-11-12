@@ -6,6 +6,7 @@ import { LinearClient } from '@linear/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
+import { issues } from '@/db/schema'
 
 import { syncIssueFromLinear } from './linear-sync'
 
@@ -577,9 +578,12 @@ describe('syncIssueFromLinear', () => {
     await syncIssueFromLinear('linear-issue-id')
 
     // Should create attempt with unknown agent
-    // mockUpdate will be called once for metadata update
     expect(mockInsert).toHaveBeenCalledTimes(1)
-    expect(mockUpdate).toHaveBeenCalled()
+
+    // db.update is called once for issue metadata, but NOT for agent status
+    // (agent status updates only happen for known agents)
+    expect(mockUpdate).toHaveBeenCalledTimes(1)
+    expect(mockUpdate).toHaveBeenCalledWith(issues)
   })
 
   it('should handle attachments with PR links', async () => {
