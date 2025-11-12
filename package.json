@@ -40,6 +40,8 @@
     "// === MIGRATION SCRIPTS ===": "",
     "migrate:real-data": "tsx scripts/migrate-to-real-data.ts",
     "fetch:eng320": "tsx scripts/fetch-eng320-details.ts",
+    "// === BACKFILL SCRIPTS ===": "",
+    "backfill:metadata": "tsx scripts/backfill-metadata.ts",
     "// === HUSKY SETUP ===": "",
     "prepare": "husky"
   },
