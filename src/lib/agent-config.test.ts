@@ -101,7 +101,9 @@ describe('agent-config', () => {
     })
 
     it('should throw if name is missing', () => {
-      process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([{ handle: '@Cursor' }])
+      process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
+        { handle: '@Cursor' },
+      ])
 
       expect(() => getAgentConfigs()).toThrow('missing required field: name')
     })

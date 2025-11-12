@@ -6,8 +6,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { mockDeep, mockReset } from 'vitest-mock-extended'
 
 import { db } from '@/db/client'
-import type { Attempt, Issue, IssueWithAttemptData } from '@/types/database'
 import { createMockIssue, createMockAttempt } from '@/test-utils/factories'
+import type { Attempt, Issue, IssueWithAttemptData } from '@/types/database'
 
 import {
   getAgentStats,
@@ -1039,6 +1039,28 @@ describe('getRecentActivity', () => {
 
       expect(result).toHaveLength(1)
       expect(mockDb.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle opened_at as string (not instanceof Date)', async () => {
+      const mockDbResult = [
+        {
+          id: 'attempt-1',
+          agent_name: MOCK_AGENT_NAME,
+          issue_id: MOCK_ISSUE_ID,
+          issue_title: 'Fix bug',
+          issue_linear_key: 'ISSUE-1',
+          pr_url: MOCK_PR_URL,
+          pr_number: 1,
+          status: 'merged',
+          opened_at: '2024-01-02T00:00:00Z',
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getRecentActivity()
+
+      expect(result[0]?.openedAt).toBe('2024-01-02T00:00:00Z')
     })
   })
 

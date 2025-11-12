@@ -22,6 +22,15 @@ const DEFAULT_AGENTS: AgentConfig[] = [
 ]
 
 /**
+ * Type guard to check if a value is a record object
+ * @param value - Value to check
+ * @returns True if value is a record object, false otherwise
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+/**
  * Parses agent list from AGENTS_CONFIG_JSON env var
  * Format: [{"name":"cursor","handle":"@Cursor"},{"name":"engine","handle":"@Engine"}]
  * @returns Array of agent configs
@@ -35,14 +44,16 @@ export function getAgentConfigs(): AgentConfig[] {
   }
 
   try {
-    const parsed = JSON.parse(configJson) as unknown
+    const parsed: unknown = JSON.parse(configJson)
 
     // Validate structure
     if (!Array.isArray(parsed)) {
       throw new Error('AGENTS_CONFIG_JSON must be an array')
     }
 
-    if (parsed.length === 0) {
+    const parsedArray: unknown[] = parsed
+
+    if (parsedArray.length === 0) {
       throw new Error(
         'AGENTS_CONFIG_JSON is empty, must specify at least one agent'
       )
@@ -50,14 +61,17 @@ export function getAgentConfigs(): AgentConfig[] {
 
     // Validate each agent config
     const configs: AgentConfig[] = []
-    for (const item of parsed) {
-      if (typeof item !== 'object' || item === null) {
+    for (const item of parsedArray) {
+      if (!isRecord(item)) {
         throw new Error('Each agent config must be an object')
       }
 
-      const config = item as Record<string, unknown>
+      const config: Record<string, unknown> = item
 
-      if (typeof config['name'] !== 'string' || config['name'].trim().length === 0) {
+      if (
+        typeof config['name'] !== 'string' ||
+        config['name'].trim().length === 0
+      ) {
         throw new Error('Agent config missing required field: name (string)')
       }
 

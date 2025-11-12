@@ -8,6 +8,8 @@ import type { Issue, Attempt } from '@/types/database'
 /**
  * Creates a mock Issue with all required fields and sensible defaults.
  * Override any field by passing it in the partial parameter.
+ * @param partial - Partial Issue object to override defaults
+ * @returns A complete Issue object with default values merged with partial overrides
  */
 export function createMockIssue(partial: Partial<Issue> = {}): Issue {
   return {
@@ -48,6 +50,8 @@ export function createMockIssue(partial: Partial<Issue> = {}): Issue {
 /**
  * Creates a mock Attempt with all required fields and sensible defaults.
  * Override any field by passing it in the partial parameter.
+ * @param partial - Partial Attempt object to override defaults
+ * @returns A complete Attempt object with default values merged with partial overrides
  */
 export function createMockAttempt(partial: Partial<Attempt> = {}): Attempt {
   return {

@@ -100,6 +100,13 @@ function determineAgentOwnershipFromThread(
   return 'unknown'
 }
 
+type CommentWithParent = {
+  id: string
+  body?: string | null
+  createdAt: Date
+  parentId?: string | undefined | null
+}
+
 /**
  * Syncs comments to find agent mentions and PR links
  * @param issueId - Database issue ID
@@ -107,11 +114,7 @@ function determineAgentOwnershipFromThread(
  */
 async function syncComments(
   issueId: string,
-  comments: Array<{
-    id: string
-    body?: string | null
-    createdAt: Date
-  }>
+  comments: CommentWithParent[]
 ): Promise<void> {
   // Track which agents are mentioned in each comment (by comment ID)
   const commentAgents: Map<string, string[]> = new Map()
@@ -125,9 +128,8 @@ async function syncComments(
     const commentId = comment.id
     const mentionedAgents: string[] = []
 
-    // Get parent ID if it exists (access as property on any type)
-    const commentAny = comment as any
-    const parentId = commentAny.parentId as string | undefined
+    // Get parent ID if it exists
+    const parentId: string | undefined | null = comment.parentId
     commentParents.set(commentId, parentId ?? null)
 
     // Sync agent mentions
@@ -179,10 +181,6 @@ async function syncComments(
         body,
         commentAgents,
         commentParents
-      )
-
-      console.log(
-        `[DEBUG] PR ${prNumber} in comment ${commentId}: agent=${agentName}`
       )
 
       // Create attempt entry

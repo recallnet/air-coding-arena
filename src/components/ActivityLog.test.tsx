@@ -293,4 +293,199 @@ describe('ActivityLog', () => {
       ).toBeInTheDocument()
     })
   })
+
+  describe('time formatting', () => {
+    it('should display "Just now" for times less than 1 minute ago', () => {
+      const now = new Date()
+      const lessThanMinuteAgo = new Date(now.getTime() - 30000) // 30 seconds ago
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: lessThanMinuteAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('Just now')).toBeInTheDocument()
+    })
+
+    it('should display minutes for times between 1 and 60 minutes ago', () => {
+      const now = new Date()
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: fiveMinutesAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('5 minutes ago')).toBeInTheDocument()
+    })
+
+    it('should display singular "minute" for 1 minute ago', () => {
+      const now = new Date()
+      const oneMinuteAgo = new Date(now.getTime() - 60000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: oneMinuteAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('1 minute ago')).toBeInTheDocument()
+    })
+
+    it('should display hours for times between 1 and 24 hours ago', () => {
+      const now = new Date()
+      const threeHoursAgo = new Date(now.getTime() - 3 * 3600000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: threeHoursAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('3 hours ago')).toBeInTheDocument()
+    })
+
+    it('should display singular "hour" for 1 hour ago', () => {
+      const now = new Date()
+      const oneHourAgo = new Date(now.getTime() - 3600000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: oneHourAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('1 hour ago')).toBeInTheDocument()
+    })
+
+    it('should display days for times between 1 and 7 days ago', () => {
+      const now = new Date()
+      const threeDaysAgo = new Date(now.getTime() - 3 * 86400000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: threeDaysAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('3 days ago')).toBeInTheDocument()
+    })
+
+    it('should display singular "day" for 1 day ago', () => {
+      const now = new Date()
+      const oneDayAgo = new Date(now.getTime() - 86400000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: oneDayAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      expect(screen.getByText('1 day ago')).toBeInTheDocument()
+    })
+
+    it('should display formatted date for times more than 7 days ago', () => {
+      const now = new Date()
+      const tenDaysAgo = new Date(now.getTime() - 10 * 86400000)
+
+      const mockActivities: RecentActivity[] = [
+        {
+          id: MOCK_ACTIVITY_ID_1,
+          agentName: MOCK_AGENT_CURSOR,
+          issueId: MOCK_ISSUE_ID_1,
+          issueTitle: MOCK_ISSUE_TITLE_FIX_BUG,
+          issueLinearKey: MOCK_ISSUE_LINEAR_KEY_1,
+          prUrl: MOCK_PR_URL_1,
+          prNumber: 1,
+          status: 'open',
+          openedAt: tenDaysAgo.toISOString(),
+        },
+      ]
+
+      render(<ActivityLog activities={mockActivities} />)
+
+      const formattedDate = tenDaysAgo.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year:
+          tenDaysAgo.getFullYear() !== now.getFullYear()
+            ? 'numeric'
+            : undefined,
+      })
+
+      expect(screen.getByText(formattedDate)).toBeInTheDocument()
+    })
+  })
 })

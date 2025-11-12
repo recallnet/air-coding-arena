@@ -5,8 +5,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-import type { Issue, Attempt } from '@/types/database'
 import { createMockIssue } from '@/test-utils/factories'
+import type { Issue, Attempt } from '@/types/database'
 
 import IssuePage from './page'
 
