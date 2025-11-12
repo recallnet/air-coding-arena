@@ -29,7 +29,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>): React.JSX.Element {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html
+      lang="en"
+      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
+    >
       <body className="antialiased">
         <div className="flex min-h-screen flex-col">
           <Navigation />

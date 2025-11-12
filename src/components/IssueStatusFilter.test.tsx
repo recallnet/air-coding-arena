@@ -16,9 +16,9 @@ const TEXT_OPEN = 'Open'
 const TEXT_IN_PROGRESS = 'In Progress'
 const TEXT_COMPLETED = 'Completed'
 const TEXT_CANCELLED = 'Cancelled'
-const CLASS_BG_BLUE = 'bg-blue-600'
+const CLASS_BG_BLUE = 'bg-blue-700'
 const CLASS_TEXT_WHITE = 'text-white'
-const CLASS_BG_SECONDARY = 'bg-background-secondary'
+const CLASS_BG_SECONDARY = 'bg-gray-200'
 
 describe('IssueStatusFilter', () => {
   describe('rendering', () => {
@@ -256,8 +256,8 @@ describe('IssueStatusFilter', () => {
 
       const openButton = screen.getByText(TEXT_OPEN)
       expect(openButton).toHaveClass(CLASS_BG_SECONDARY)
-      expect(openButton).toHaveClass('text-foreground-secondary')
-      expect(openButton).toHaveClass('hover:bg-background-tertiary')
+      expect(openButton).toHaveClass('text-gray-900')
+      expect(openButton).toHaveClass('hover:bg-gray-300')
     })
 
     it('should have button semantic', () => {

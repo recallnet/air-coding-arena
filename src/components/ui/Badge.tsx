@@ -37,12 +37,12 @@ function Badge({
     'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors'
 
   const variantClasses = {
-    default: 'bg-gray-100 text-gray-900 border border-gray-400',
-    secondary: 'bg-gray-200 text-gray-1000 border border-gray-400',
-    success: 'bg-green-100 text-green-1000 border border-green-300',
-    error: 'bg-red-100 text-red-1000 border border-red-300',
-    warning: 'bg-amber-100 text-amber-1000 border border-amber-300',
-    outline: 'bg-transparent text-foreground border border-border',
+    default: 'bg-gray-300 text-gray-1000 border border-gray-500',
+    secondary: 'bg-blue-300 text-blue-1000 border border-blue-500',
+    success: 'bg-green-300 text-green-1000 border border-green-500',
+    error: 'bg-red-300 text-red-1000 border border-red-500',
+    warning: 'bg-amber-300 text-amber-1000 border border-amber-500',
+    outline: 'bg-gray-200 text-gray-900 border border-gray-500',
   }
 
   return (
