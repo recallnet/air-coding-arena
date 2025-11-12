@@ -24,7 +24,8 @@
     "// === VALIDATION GATE - ALL CHECKS ===": "",
     "validate": "npm run type-check && npm run lint && npm run test && npm run format:check",
     "// === BUILD - RUNS VALIDATION FIRST ===": "",
-    "build": "npm run validate && next build",
+    "generate-diagrams": "tsx scripts/generate-state-diagrams.ts",
+    "build": "npm run generate-diagrams && npm run validate && next build",
     "// === DOCS GENERATION ===": "",
     "docs": "typedoc",
     "docs:serve": "npm run docs && npx serve docs/api",
@@ -60,6 +61,7 @@
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.0.3",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",

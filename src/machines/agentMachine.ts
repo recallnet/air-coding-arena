@@ -1,0 +1,73 @@
+import { setup } from 'xstate';
+
+/**
+ * Agent lifecycle state machine for arena competitions.
+ *
+ * States:
+ * - pending: Agent mentioned in Linear comment, waiting for PR
+ * - submitted: PR created and linked
+ * - accepted: Agent's PR was merged (winner)
+ * - rejected: Another agent won OR PR closed without merge
+ * - ignored: Issue closed before agent submitted PR
+ */
+
+type AgentContext = {
+  agentName: string;
+  issueId: string;
+  prUrl?: string;
+};
+
+type AgentEvents =
+  | { type: 'PR_SUBMITTED'; prUrl: string }
+  | { type: 'PR_MERGED' }
+  | { type: 'OTHER_AGENT_WON' }
+  | { type: 'PR_CLOSED' }
+  | { type: 'ISSUE_CLOSED' };
+
+export const agentMachine = setup({
+  types: {
+    context: {} as AgentContext,
+    events: {} as AgentEvents,
+  },
+}).createMachine({
+  id: 'agent',
+  initial: 'pending',
+  context: {
+    agentName: '',
+    issueId: '',
+  },
+  states: {
+    pending: {
+      on: {
+        PR_SUBMITTED: {
+          target: 'submitted',
+        },
+        ISSUE_CLOSED: {
+          target: 'ignored',
+        },
+      },
+    },
+    submitted: {
+      on: {
+        PR_MERGED: {
+          target: 'accepted',
+        },
+        OTHER_AGENT_WON: {
+          target: 'rejected',
+        },
+        PR_CLOSED: {
+          target: 'rejected',
+        },
+      },
+    },
+    accepted: {
+      type: 'final',
+    },
+    rejected: {
+      type: 'final',
+    },
+    ignored: {
+      type: 'final',
+    },
+  },
+});
