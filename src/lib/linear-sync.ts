@@ -10,10 +10,12 @@ import { db } from '@/db/client'
 import { issues, issueAgents, attempts } from '@/db/schema'
 
 import { getAgentHandles, guessAgentFromText } from './agent-config'
+import { extractIssueMetadata } from './linear-metadata'
 
 /**
  * Syncs issue state from Linear API
  * Fetches comments and attachments to capture mid-flight activity
+ * Extracts and stores full issue metadata
  *
  * @param linearIssueId - Linear issue UUID
  */
@@ -44,10 +46,17 @@ export async function syncIssueFromLinear(
   const comments = await issue.comments()
   const attachments = await issue.attachments()
 
-  // 3. Sync comments → agent mentions
+  // 3. Extract and update issue metadata
+  const metadata = extractIssueMetadata(issue)
+  await db
+    .update(issues)
+    .set(metadata)
+    .where(eq(issues.id, issueId))
+
+  // 4. Sync comments → agent mentions
   await syncComments(issueId, comments.nodes)
 
-  // 4. Sync attachments → attempts
+  // 5. Sync attachments → attempts
   await syncAttachments(issueId, attachments.nodes)
 }
 
