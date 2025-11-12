@@ -37,6 +37,9 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/reset-db.ts",
     "export:linear": "tsx scripts/export-linear.ts",
+    "// === MIGRATION SCRIPTS ===": "",
+    "migrate:real-data": "tsx scripts/migrate-to-real-data.ts",
+    "fetch:eng320": "tsx scripts/fetch-eng320-details.ts",
     "// === HUSKY SETUP ===": "",
     "prepare": "husky"
   },

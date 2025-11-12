@@ -5,6 +5,7 @@ coverage
 dist
 build
 docs/
+scripts/
 package-lock.json
 pnpm-lock.yaml
 yarn.lock

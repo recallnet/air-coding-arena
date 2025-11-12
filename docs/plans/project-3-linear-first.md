@@ -1,6 +1,6 @@
 # ARENA — Linear-First Implementation Plan
 
-**Last updated:** Nov 12, 2025  
+**Last updated:** Nov 12, 2025
 **Status:** M1 Complete, ready for M2
 
 ---
@@ -222,13 +222,13 @@ export async function POST(req: NextRequest) {
   // 1. Verify signature
   const signature = req.headers.get('linear-signature');
   const body = await req.text();
-  
+
   if (!verifyLinearSignature(body, signature)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
-  
+
   const payload = JSON.parse(body);
-  
+
   // 2. Check idempotency
   const eventKey = `linear:${payload.type}:${payload.data.id}:${payload.updatedAt}`;
   const existing = await db.query(
@@ -238,18 +238,18 @@ export async function POST(req: NextRequest) {
      RETURNING id`,
     [eventKey, payload]
   );
-  
+
   if (!existing.rows.length) {
     return NextResponse.json({ status: 'duplicate' });
   }
-  
+
   // 3. Route by type
   if (payload.type === 'Issue') {
     await handleIssueEvent(payload);
   } else if (payload.type === 'Attachment') {
     await handleAttachmentEvent(payload);
   }
-  
+
   return NextResponse.json({ success: true });
 }
 
@@ -266,25 +266,25 @@ function verifyLinearSignature(payload: string, signature: string | null): boole
 ```typescript
 async function handleIssueEvent(payload: any) {
   const issue = payload.data;
-  
+
   // Check for arena:ready label
   const hasArenaLabel = issue.labels?.some(
     (label: any) => label.name === process.env.ARENA_LABEL
   );
-  
+
   if (!hasArenaLabel) return;
-  
+
   // Upsert issue
   await db.query(
     `INSERT INTO issues (linear_id, linear_key, title, url, repo, status, arena_ready_labeled_at)
      VALUES ($1, $2, $3, $4, $5, $6, NOW())
-     ON CONFLICT (linear_id) 
-     DO UPDATE SET 
+     ON CONFLICT (linear_id)
+     DO UPDATE SET
        status = EXCLUDED.status,
        arena_ready_labeled_at = COALESCE(issues.arena_ready_labeled_at, NOW())`,
     [issue.id, issue.identifier, issue.title, issue.url, issue.team?.key, issue.state?.name]
   );
-  
+
   console.log(`Issue ${issue.identifier} labeled arena:ready`);
 }
 ```
@@ -294,41 +294,41 @@ async function handleIssueEvent(payload: any) {
 ```typescript
 async function handleAttachmentEvent(payload: any) {
   const attachment = payload.data;
-  
+
   // Only process GitHub PR attachments
   const prMatch = attachment.url?.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
   if (!prMatch) return;
-  
+
   const [_, org, repoName, prNumber] = prMatch;
   const repo = `${org}/${repoName}`;
-  
+
   // Get the issue this attachment belongs to
   const issueResult = await db.query(
     `SELECT id FROM issues WHERE linear_id = $1`,
     [attachment.issue.id]
   );
-  
+
   if (!issueResult.rows.length) {
     console.warn(`Attachment for unknown issue: ${attachment.issue.id}`);
     return;
   }
-  
+
   const issueId = issueResult.rows[0].id;
-  
+
   // Parse status from subtitle (e.g., "org/repo #123 • merged")
   let status = 'open';
   let mergedAt = null;
-  
+
   if (attachment.subtitle?.includes('merged')) {
     status = 'merged';
     mergedAt = new Date();
   } else if (attachment.subtitle?.includes('closed')) {
     status = 'closed';
   }
-  
+
   // Guess agent from branch or title
   const agentName = guessAgent(attachment.title, attachment.metadata?.branch);
-  
+
   // Upsert attempt
   await db.query(
     `INSERT INTO attempts (
@@ -341,15 +341,15 @@ async function handleAttachmentEvent(payload: any) {
     DO UPDATE SET
       status = EXCLUDED.status,
       merged_at = COALESCE(EXCLUDED.merged_at, attempts.merged_at)`,
-    [issueId, agentName, repo, parseInt(prNumber), attachment.url, 
+    [issueId, agentName, repo, parseInt(prNumber), attachment.url,
      attachment.metadata?.branch, mergedAt, status, attachment.id, attachment.url]
   );
-  
+
   // If merged, check for winner
   if (status === 'merged') {
     await updateWinner(issueId);
   }
-  
+
   console.log(`Attempt created/updated: ${repo}#${prNumber} (${status})`);
 }
 
@@ -370,24 +370,24 @@ async function updateWinner(issueId: string) {
      LIMIT 1`,
     [issueId]
   );
-  
+
   if (result.rows.length) {
     const winnerId = result.rows[0].id;
-    
+
     // Set winner
     await db.query(
       `UPDATE issues SET winner_attempt_id = $1 WHERE id = $2`,
       [winnerId, issueId]
     );
-    
+
     // Close other attempts
     await db.query(
-      `UPDATE attempts 
+      `UPDATE attempts
        SET status = 'closed', closed_at = NOW()
        WHERE issue_id = $1 AND id != $2 AND status = 'open'`,
       [issueId, winnerId]
     );
-    
+
     console.log(`Winner set for issue ${issueId}`);
   }
 }
@@ -463,7 +463,7 @@ This makes Linear automatically update issue status based on PR state. ([Linear 
 
 1. Create a Linear issue: `TEST-001: Test arena integration`
 2. Add label `arena:ready`
-3. **Expected:** 
+3. **Expected:**
    - Webhook fires
    - `issues` table has new row with `linear_key='TEST-001'`
    - `arena_ready_labeled_at` is set
@@ -553,30 +553,30 @@ Extend `handleIssueEvent` from M2:
 ```typescript
 async function handleIssueEvent(payload: any) {
   const issue = payload.data;
-  
+
   // Check for arena:ready label
   const hasArenaLabel = issue.labels?.some(
     (label: any) => label.name === process.env.ARENA_LABEL
   );
-  
+
   if (!hasArenaLabel) return;
-  
+
   // Upsert issue
   const result = await db.query(
     `INSERT INTO issues (linear_id, linear_key, title, url, repo, status, arena_ready_labeled_at)
      VALUES ($1, $2, $3, $4, $5, $6, NOW())
-     ON CONFLICT (linear_id) 
-     DO UPDATE SET 
+     ON CONFLICT (linear_id)
+     DO UPDATE SET
        status = EXCLUDED.status,
        arena_ready_labeled_at = COALESCE(issues.arena_ready_labeled_at, NOW())
      RETURNING id, arena_ready_labeled_at`,
     [issue.id, issue.identifier, issue.title, issue.url, issue.team?.key, issue.state?.name]
   );
-  
+
   const issueId = result.rows[0].id;
-  const isFirstTime = payload.action === 'create' || 
+  const isFirstTime = payload.action === 'create' ||
                        !result.rows[0].arena_ready_labeled_at;
-  
+
   // Dispatch agents if first time
   if (isFirstTime) {
     await dispatchAgents(issue, issueId);
@@ -592,14 +592,14 @@ import { LinearClient } from '@linear/sdk';
 async function dispatchAgents(issue: any, issueId: string) {
   const agents = JSON.parse(process.env.AGENTS_CONFIG_JSON!);
   const linear = new LinearClient({ apiKey: process.env.LINEAR_API_KEY });
-  
+
   // Generate branch slug
   const slug = issue.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .substring(0, 30)
     .replace(/^-|-$/g, '');
-  
+
   for (const agent of agents) {
     // Create issue_agents row
     await db.query(
@@ -608,7 +608,7 @@ async function dispatchAgents(issue: any, issueId: string) {
        ON CONFLICT (issue_id, agent_name) DO NOTHING`,
       [issueId, agent.name]
     );
-    
+
     // Generate templates
     const branchName = `${issue.identifier.toLowerCase()}--${slug}--agent-${agent.name}`;
     const commentBody = `
@@ -626,22 +626,22 @@ Refs ${issue.url}
 
 > If you want the issue to auto-complete on merge, use \`Fixes ${issue.url}\` instead.
 `.trim();
-    
+
     // Post comment
     try {
       await linear.createComment({
         issueId: issue.id,
         body: commentBody
       });
-      
+
       // Mark triggered
       await db.query(
-        `UPDATE issue_agents 
+        `UPDATE issue_agents
          SET status = 'triggered', triggered_at = NOW()
          WHERE issue_id = $1 AND agent_name = $2`,
         [issueId, agent.name]
       );
-      
+
       console.log(`Dispatched ${agent.name} for ${issue.identifier}`);
     } catch (error) {
       console.error(`Failed to dispatch ${agent.name}:`, error);
@@ -820,9 +820,9 @@ export async function GET(req: NextRequest) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-  
+
   // Get attempts that need enrichment
   const attempts = await db.query(
     `SELECT id, repo, pr_number, status
@@ -832,10 +832,10 @@ export async function GET(req: NextRequest) {
      ORDER BY opened_at DESC
      LIMIT 50`
   );
-  
+
   let enriched = 0;
   let errors = 0;
-  
+
   for (const attempt of attempts.rows) {
     try {
       await enrichAttempt(octokit, attempt);
@@ -845,31 +845,31 @@ export async function GET(req: NextRequest) {
       errors++;
     }
   }
-  
+
   return NextResponse.json({ enriched, errors });
 }
 
 async function enrichAttempt(octokit: Octokit, attempt: any) {
   const [owner, repo] = attempt.repo.split('/');
-  
+
   // Fetch PR details
   const { data: pr } = await octokit.rest.pulls.get({
     owner,
     repo,
     pull_number: attempt.pr_number
   });
-  
+
   // Fetch commits
   const { data: commits } = await octokit.rest.pulls.listCommits({
     owner,
     repo,
     pull_number: attempt.pr_number
   });
-  
+
   // Update attempt
   await db.query(
     `UPDATE attempts
-     SET 
+     SET
        gh_state = $1,
        gh_merged = $2,
        gh_merged_at = $3,
@@ -888,14 +888,14 @@ async function enrichAttempt(octokit: Octokit, attempt: any) {
       attempt.id
     ]
   );
-  
+
   // If merged but not yet marked, update status and check winner
   if (pr.merged && attempt.status !== 'merged') {
     await db.query(
       `UPDATE attempts SET status = 'merged', merged_at = $1 WHERE id = $2`,
       [pr.merged_at, attempt.id]
     );
-    
+
     // Check if this should be the winner
     const issue = await db.query(
       `SELECT issue_id FROM attempts WHERE id = $1`,
@@ -903,7 +903,7 @@ async function enrichAttempt(octokit: Octokit, attempt: any) {
     );
     await updateWinner(issue.rows[0].issue_id);
   }
-  
+
   console.log(`Enriched ${attempt.repo}#${attempt.pr_number}: ${commits.length} commits`);
 }
 ```
@@ -1128,13 +1128,13 @@ SELECT
   ROUND(100.0 * COUNT(*) FILTER (WHERE status='merged') / NULLIF(COUNT(*),0), 1) AS acceptance_pct,
   AVG(EXTRACT(EPOCH FROM (opened_at - i.arena_ready_labeled_at))) AS avg_time_to_pr_seconds,
   AVG(EXTRACT(EPOCH FROM (merged_at - opened_at))) FILTER (WHERE merged_at IS NOT NULL) AS avg_time_to_merge_seconds,
-  
+
   -- Last 30 days
   COUNT(*) FILTER (WHERE opened_at > now() - interval '30 days') AS recent_attempts,
   COUNT(*) FILTER (WHERE status='merged' AND opened_at > now() - interval '30 days') AS recent_wins,
-  
+
   -- Trend
-  ROUND(100.0 * COUNT(*) FILTER (WHERE status='merged' AND opened_at > now() - interval '30 days') 
+  ROUND(100.0 * COUNT(*) FILTER (WHERE status='merged' AND opened_at > now() - interval '30 days')
         / NULLIF(COUNT(*) FILTER (WHERE opened_at > now() - interval '30 days'), 0), 1) AS recent_acceptance_pct
 FROM attempts a
 JOIN issues i ON i.id = a.issue_id

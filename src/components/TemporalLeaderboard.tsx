@@ -170,9 +170,7 @@ export function TemporalLeaderboard({
   const agents = Array.from(new Set(stats.map((s) => s.agentName))).sort()
 
   // Get unique dates in chronological order (oldest to newest)
-  const dates = Array.from(new Set(stats.map((s) => s.date)))
-    .sort()
-    .reverse()
+  const dates = Array.from(new Set(stats.map((s) => s.date))).sort()
 
   // Group stats for easier lookup
   const groupedStats = groupStatsByDate(stats)

@@ -30,6 +30,7 @@ export default [
       'build/**',
       'docs/api/**',
       'next.config.js',
+      'scripts/**',
     ],
   },
   {
