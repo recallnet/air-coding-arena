@@ -1,6 +1,6 @@
+import { getShortestPaths } from '@xstate/graph'
 import { describe, it, expect } from 'vitest'
 import { createActor } from 'xstate'
-import { getShortestPaths } from '@xstate/graph'
 
 import { agentMachine } from './agentMachine'
 
@@ -82,12 +82,12 @@ describe('agentMachine - comprehensive path coverage', () => {
 
     // Log paths for documentation
     console.log('\nAgent State Machine Paths:')
-    paths.forEach((path, i) => {
+    for (const [i, path] of paths.entries()) {
       console.log(`\nPath ${i} -> ${path.state.value}:`)
-      path.steps.forEach((step, j) => {
+      for (const [j, step] of path.steps.entries()) {
         console.log(`  ${j + 1}. ${step.event?.type || 'initial'} → ${step.state.value}`)
-      })
-    })
+      }
+    }
   })
 
   it('path: pending → submitted → accepted', () => {
