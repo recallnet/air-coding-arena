@@ -62,11 +62,11 @@ export function IssueActivityTable({
       {filteredIssues.length === 0 ? (
         <div className="py-8 text-center text-gray-600">No active issues</div>
       ) : (
-        <div className="divide-y divide-gray-400 rounded-md border border-gray-400 bg-background">
+        <div className="divide-y divide-gray-300 rounded-geist border border-gray-300 bg-background">
           {filteredIssues.map((issue) => (
             <div
               key={issue.id}
-              className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-gray-200"
+              className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-gray-100"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export function IssueActivityTable({
                   </Link>
                   <span className="text-gray-900">{issue.title}</span>
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
+                <div className="mt-1.5 flex items-center gap-3 text-sm text-gray-600">
                   <span>{formatRelativeTime(issue.lastActivityAt)}</span>
                   {issue.openPRCount > 0 && (
                     <span>

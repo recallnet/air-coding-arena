@@ -75,10 +75,10 @@ export function IssueStatusFilter({
             key={filterOption.value}
             onClick={() => onFilterChange(filterOption.value as IssueFilter)}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              'rounded-geist-sm border px-3 py-1.5 text-sm font-medium transition-colors',
               isActive
-                ? 'bg-blue-700 text-white hover:bg-blue-800'
-                : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                ? 'border-gray-500 bg-gray-200 text-gray-1000 hover:bg-gray-300'
+                : 'border-gray-300 bg-transparent text-gray-700 hover:border-gray-400 hover:bg-gray-100'
             )}
           >
             {filterOption.label}

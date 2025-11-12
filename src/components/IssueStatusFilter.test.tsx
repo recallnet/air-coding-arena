@@ -16,9 +16,9 @@ const TEXT_OPEN = 'Open'
 const TEXT_IN_PROGRESS = 'In Progress'
 const TEXT_COMPLETED = 'Completed'
 const TEXT_CANCELLED = 'Cancelled'
-const CLASS_BG_BLUE = 'bg-blue-700'
-const CLASS_TEXT_WHITE = 'text-white'
-const CLASS_BG_SECONDARY = 'bg-gray-200'
+const CLASS_BG_ACTIVE = 'bg-gray-200'
+const CLASS_TEXT_ACTIVE = 'text-gray-1000'
+const CLASS_BG_INACTIVE = 'bg-transparent'
 
 describe('IssueStatusFilter', () => {
   describe('rendering', () => {
@@ -145,12 +145,12 @@ describe('IssueStatusFilter', () => {
       )
 
       const allButton = screen.getByText(TEXT_ALL)
-      expect(allButton).toHaveClass(CLASS_BG_BLUE)
-      expect(allButton).toHaveClass(CLASS_TEXT_WHITE)
+      expect(allButton).toHaveClass(CLASS_BG_ACTIVE)
+      expect(allButton).toHaveClass(CLASS_TEXT_ACTIVE)
 
       const openButton = screen.getByText(TEXT_OPEN)
-      expect(openButton).not.toHaveClass(CLASS_BG_BLUE)
-      expect(openButton).toHaveClass(CLASS_BG_SECONDARY)
+      expect(openButton).not.toHaveClass(CLASS_BG_ACTIVE)
+      expect(openButton).toHaveClass(CLASS_BG_INACTIVE)
     })
 
     it('should highlight Open filter when currentFilter is "open"', () => {
@@ -163,12 +163,12 @@ describe('IssueStatusFilter', () => {
       )
 
       const openButton = screen.getByText(TEXT_OPEN)
-      expect(openButton).toHaveClass(CLASS_BG_BLUE)
-      expect(openButton).toHaveClass(CLASS_TEXT_WHITE)
+      expect(openButton).toHaveClass(CLASS_BG_ACTIVE)
+      expect(openButton).toHaveClass(CLASS_TEXT_ACTIVE)
 
       const allButton = screen.getByText(TEXT_ALL)
-      expect(allButton).not.toHaveClass(CLASS_BG_BLUE)
-      expect(allButton).toHaveClass(CLASS_BG_SECONDARY)
+      expect(allButton).not.toHaveClass(CLASS_BG_ACTIVE)
+      expect(allButton).toHaveClass(CLASS_BG_INACTIVE)
     })
 
     it('should highlight In Progress filter when currentFilter is "in_progress"', () => {
@@ -181,11 +181,11 @@ describe('IssueStatusFilter', () => {
       )
 
       const inProgressButton = screen.getByText(TEXT_IN_PROGRESS)
-      expect(inProgressButton).toHaveClass(CLASS_BG_BLUE)
-      expect(inProgressButton).toHaveClass(CLASS_TEXT_WHITE)
+      expect(inProgressButton).toHaveClass(CLASS_BG_ACTIVE)
+      expect(inProgressButton).toHaveClass(CLASS_TEXT_ACTIVE)
 
       const allButton = screen.getByText(TEXT_ALL)
-      expect(allButton).not.toHaveClass(CLASS_BG_BLUE)
+      expect(allButton).not.toHaveClass(CLASS_BG_ACTIVE)
     })
 
     it('should highlight Completed filter when currentFilter is "completed"', () => {
@@ -198,11 +198,11 @@ describe('IssueStatusFilter', () => {
       )
 
       const completedButton = screen.getByText(TEXT_COMPLETED)
-      expect(completedButton).toHaveClass(CLASS_BG_BLUE)
-      expect(completedButton).toHaveClass(CLASS_TEXT_WHITE)
+      expect(completedButton).toHaveClass(CLASS_BG_ACTIVE)
+      expect(completedButton).toHaveClass(CLASS_TEXT_ACTIVE)
 
       const allButton = screen.getByText(TEXT_ALL)
-      expect(allButton).not.toHaveClass(CLASS_BG_BLUE)
+      expect(allButton).not.toHaveClass(CLASS_BG_ACTIVE)
     })
 
     it('should highlight Cancelled filter when currentFilter is "cancelled"', () => {
@@ -215,11 +215,11 @@ describe('IssueStatusFilter', () => {
       )
 
       const cancelledButton = screen.getByText(TEXT_CANCELLED)
-      expect(cancelledButton).toHaveClass(CLASS_BG_BLUE)
-      expect(cancelledButton).toHaveClass(CLASS_TEXT_WHITE)
+      expect(cancelledButton).toHaveClass(CLASS_BG_ACTIVE)
+      expect(cancelledButton).toHaveClass(CLASS_TEXT_ACTIVE)
 
       const allButton = screen.getByText(TEXT_ALL)
-      expect(allButton).not.toHaveClass(CLASS_BG_BLUE)
+      expect(allButton).not.toHaveClass(CLASS_BG_ACTIVE)
     })
   })
 
@@ -236,7 +236,8 @@ describe('IssueStatusFilter', () => {
       const buttons = container.querySelectorAll('button')
       for (const button of buttons) {
         const htmlButton = button as HTMLElement
-        expect(htmlButton).toHaveClass('rounded-md')
+        expect(htmlButton).toHaveClass('rounded-geist-sm')
+        expect(htmlButton).toHaveClass('border')
         expect(htmlButton).toHaveClass('px-3')
         expect(htmlButton).toHaveClass('py-1.5')
         expect(htmlButton).toHaveClass('text-sm')
@@ -255,9 +256,9 @@ describe('IssueStatusFilter', () => {
       )
 
       const openButton = screen.getByText(TEXT_OPEN)
-      expect(openButton).toHaveClass(CLASS_BG_SECONDARY)
-      expect(openButton).toHaveClass('text-gray-900')
-      expect(openButton).toHaveClass('hover:bg-gray-300')
+      expect(openButton).toHaveClass(CLASS_BG_INACTIVE)
+      expect(openButton).toHaveClass('text-gray-700')
+      expect(openButton).toHaveClass('hover:bg-gray-100')
     })
 
     it('should have button semantic', () => {

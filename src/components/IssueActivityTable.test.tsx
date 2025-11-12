@@ -53,7 +53,7 @@ describe('IssueActivityTable', () => {
     it('should render status badge', () => {
       const { container } = render(<IssueActivityTable issues={[mockIssue]} />)
       // Check that the badge (not the filter button) contains "In Progress"
-      const badge = container.querySelector('.bg-amber-300')
+      const badge = container.querySelector('.bg-amber-200')
       expect(badge).toHaveTextContent(IN_PROGRESS_STATUS)
     })
 
@@ -314,7 +314,7 @@ describe('IssueActivityTable', () => {
       const openButton = screen.getByRole('button', { name: 'Open' })
       await user.click(openButton)
 
-      expect(openButton).toHaveClass('bg-blue-700')
+      expect(openButton).toHaveClass('bg-gray-200')
     })
   })
 
@@ -325,14 +325,14 @@ describe('IssueActivityTable', () => {
       // Should have divs with borders, not table elements
       expect(container.querySelector('table')).not.toBeInTheDocument()
       expect(
-        container.querySelector('.divide-y.divide-gray-400')
+        container.querySelector('.divide-y.divide-gray-300')
       ).toBeInTheDocument()
     })
 
     it('should have hover state class', () => {
       const { container } = render(<IssueActivityTable issues={[mockIssue]} />)
 
-      const issueRow = container.querySelector('.hover\\:bg-gray-200')
+      const issueRow = container.querySelector('.hover\\:bg-gray-100')
       expect(issueRow).toBeInTheDocument()
     })
 
