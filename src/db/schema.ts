@@ -71,7 +71,7 @@ export const issueAgents = pgTable(
       .notNull()
       .references(() => issues.id, { onDelete: 'cascade' }),
     agentName: text('agent_name').notNull(),
-    status: text('status').notNull(),
+    status: text('status').notNull().default('pending'),
     externalJobId: text('external_job_id'),
     triggeredAt: timestamp('triggered_at', { withTimezone: true }),
   },

@@ -1,0 +1,1 @@
+ALTER TABLE "issue_agents" ALTER COLUMN "status" SET DEFAULT 'pending';
