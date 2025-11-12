@@ -17,6 +17,7 @@ import { issues, attempts, events } from '@/db/schema'
 import { guessAgentFromText } from '@/lib/agent-config'
 import { updateAgentStatusOnPR } from '@/lib/agent-status'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
+import type { LinearWebhookIssue } from '@/types/linear'
 
 /**
  * Linear webhook payload type (simplified).
@@ -29,7 +30,6 @@ type LinearWebhookPayload = {
   url?: string
   createdAt: string
 }
-
 
 /**
  * Linear Attachment data structure.
@@ -139,21 +139,23 @@ function verifyLinearSignature(
 /**
  * Handles Issue webhook events.
  * Upserts issue when arena:ready label is present and syncs existing state.
+ * Webhook stores basic fields only - sync enriches with full metadata.
  *
  * @param payload - Linear webhook payload
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const issue = payload.data as any
+  const issue = payload.data as any as LinearWebhookIssue
 
   // Check for arena:ready label
   const arenaLabel = process.env['ARENA_LABEL'] ?? 'arena:ready'
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const hasArenaLabel = issue.labels?.some((label: any) => label.name === arenaLabel)
+  const hasArenaLabel = issue.labels?.some((label) => label.name === arenaLabel)
 
   if (!hasArenaLabel) return
 
-  // Upsert issue
+  // Upsert issue with basic fields from webhook
+  // Full metadata will be added by syncIssueFromLinear
   await db
     .insert(issues)
     .values({
@@ -164,18 +166,21 @@ async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
       repo: issue.team?.key,
       status: issue.state?.name,
       arenaReadyLabeledAt: new Date(),
+      // Note: metadata fields will be filled by sync
     })
     .onConflictDoUpdate({
       target: issues.linearId,
       set: {
         status: issue.state?.name,
+        // Don't overwrite metadata fields on webhook updates
+        // Only sync updates those to avoid race conditions
       },
     })
     .returning({ id: issues.id })
 
   console.log(`Issue ${issue.identifier} labeled ${arenaLabel}`)
 
-  // Sync existing state from Linear API (catches mid-flight activity)
+  // Sync existing state from Linear API (fills metadata)
   await syncIssueFromLinear(issue.id)
 }
 

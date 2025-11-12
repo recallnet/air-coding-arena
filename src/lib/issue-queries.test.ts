@@ -1,5 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
+
 import { db } from '@/db/client'
+
 import {
   getIssuesByLabel,
   getIssuesByPriority,
