@@ -8,6 +8,8 @@ import {
   AgentStatus,
   isValidIssueTransition,
   isValidAgentTransition,
+  type IssueStatusType,
+  type AgentStatusType,
 } from './state-machine'
 
 describe('State Machine Types', () => {
@@ -51,6 +53,18 @@ describe('State Machine Types', () => {
       expect(isValidIssueTransition('completed', 'open')).toBe(false)
       expect(isValidIssueTransition('cancelled', 'in_progress')).toBe(false)
     })
+
+    it('should throw error for invalid from state', () => {
+      expect(() =>
+        isValidIssueTransition('invalid_state' as IssueStatusType, 'open')
+      ).toThrow('Invalid issue state: invalid_state')
+    })
+
+    it('should include valid states in error message', () => {
+      expect(() =>
+        isValidIssueTransition('bad_state' as IssueStatusType, 'open')
+      ).toThrow('Expected one of: open, in_progress, completed, cancelled')
+    })
   })
 
   describe('isValidAgentTransition', () => {
@@ -73,6 +87,20 @@ describe('State Machine Types', () => {
     it('should reject invalid transitions', () => {
       expect(isValidAgentTransition('accepted', 'rejected')).toBe(false)
       expect(isValidAgentTransition('ignored', 'submitted')).toBe(false)
+    })
+
+    it('should throw error for invalid from state', () => {
+      expect(() =>
+        isValidAgentTransition('invalid_state' as AgentStatusType, 'pending')
+      ).toThrow('Invalid agent state: invalid_state')
+    })
+
+    it('should include valid states in error message', () => {
+      expect(() =>
+        isValidAgentTransition('bad_state' as AgentStatusType, 'pending')
+      ).toThrow(
+        'Expected one of: pending, submitted, accepted, rejected, ignored'
+      )
     })
   })
 })

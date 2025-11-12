@@ -60,12 +60,19 @@ const VALID_AGENT_TRANSITIONS: Record<AgentStatusType, AgentStatusType[]> = {
  * @param from - Current state
  * @param to - Target state
  * @returns True if transition is allowed
+ * @throws Error if from state is invalid
  */
 export function isValidIssueTransition(
   from: IssueStatusType,
   to: IssueStatusType
 ): boolean {
-  return VALID_ISSUE_TRANSITIONS[from]?.includes(to) ?? false
+  const validTransitions = VALID_ISSUE_TRANSITIONS[from]
+  if (!validTransitions) {
+    throw new Error(
+      `Invalid issue state: ${from}. Expected one of: ${Object.keys(VALID_ISSUE_TRANSITIONS).join(', ')}`
+    )
+  }
+  return validTransitions.includes(to)
 }
 
 /**
@@ -73,10 +80,17 @@ export function isValidIssueTransition(
  * @param from - Current state
  * @param to - Target state
  * @returns True if transition is allowed
+ * @throws Error if from state is invalid
  */
 export function isValidAgentTransition(
   from: AgentStatusType,
   to: AgentStatusType
 ): boolean {
-  return VALID_AGENT_TRANSITIONS[from]?.includes(to) ?? false
+  const validTransitions = VALID_AGENT_TRANSITIONS[from]
+  if (!validTransitions) {
+    throw new Error(
+      `Invalid agent state: ${from}. Expected one of: ${Object.keys(VALID_AGENT_TRANSITIONS).join(', ')}`
+    )
+  }
+  return validTransitions.includes(to)
 }
