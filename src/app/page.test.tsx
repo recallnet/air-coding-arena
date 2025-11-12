@@ -13,7 +13,7 @@ import Home from './page'
 vi.mock('@/lib/queries', () => ({
   getAgentStats: vi.fn(),
   getAgentTemporalStats: vi.fn(),
-  getRecentActivity: vi.fn(),
+  getIssuesWithAgents: vi.fn(),
 }))
 
 // Import after mocking to get the mocked version
@@ -21,12 +21,12 @@ vi.mock('@/lib/queries', () => ({
 import {
   getAgentStats,
   getAgentTemporalStats,
-  getRecentActivity,
+  getIssuesWithAgents,
 } from '@/lib/queries'
 
 const mockGetAgentStats = vi.mocked(getAgentStats)
 const mockGetAgentTemporalStats = vi.mocked(getAgentTemporalStats)
-const mockGetRecentActivity = vi.mocked(getRecentActivity)
+const mockGetIssuesWithAgents = vi.mocked(getIssuesWithAgents)
 
 // Test constants to avoid duplication
 const TOP_PERFORMER_TEXT = 'Top Performer'
@@ -39,7 +39,7 @@ describe('Home', () => {
     vi.clearAllMocks()
     // Default mock for all queries
     mockGetAgentTemporalStats.mockResolvedValue([])
-    mockGetRecentActivity.mockResolvedValue([])
+    mockGetIssuesWithAgents.mockResolvedValue([])
   })
 
   describe('when agent stats are available', () => {

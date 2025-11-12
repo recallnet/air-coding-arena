@@ -710,8 +710,16 @@ export async function getIssuesWithAgents(
       title: row.title,
       status: row.status,
       url: row.url,
-      arenaReadyLabeledAt: row.arena_ready_labeled_at,
-      lastActivityAt: row.last_activity_at,
+      arenaReadyLabeledAt:
+        row.arena_ready_labeled_at instanceof Date
+          ? row.arena_ready_labeled_at
+          : row.arena_ready_labeled_at
+            ? new Date(row.arena_ready_labeled_at)
+            : null,
+      lastActivityAt:
+        row.last_activity_at instanceof Date
+          ? row.last_activity_at
+          : new Date(row.last_activity_at),
       openPRCount: Number(row.open_pr_count),
       mergedPRCount: Number(row.merged_pr_count),
       agents,

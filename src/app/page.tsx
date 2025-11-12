@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 
-import { ActivityLog } from '@/components/ActivityLog'
+import { IssueActivityTable } from '@/components/IssueActivityTable'
 import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
 import { Badge } from '@/components/ui/Badge'
 import {
@@ -26,7 +26,7 @@ import {
 import {
   getAgentStats,
   getAgentTemporalStats,
-  getRecentActivity,
+  getIssuesWithAgents,
 } from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
 
@@ -39,7 +39,7 @@ import type { AgentStats } from '@/types/database'
 export default async function Home(): Promise<React.JSX.Element> {
   const agentStats = await getAgentStats()
   const agentTemporalStats = await getAgentTemporalStats()
-  const recentActivity = await getRecentActivity()
+  const recentIssues = await getIssuesWithAgents()
 
   // Find the top performer (highest acceptance rate)
   const topPerformer =
@@ -118,7 +118,17 @@ export default async function Home(): Promise<React.JSX.Element> {
       </div>
 
       <div className="mb-8">
-        <ActivityLog activities={recentActivity} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Issues</CardTitle>
+            <CardDescription>
+              Issues currently in the arena with agent activity
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <IssueActivityTable issues={recentIssues} />
+          </CardContent>
+        </Card>
       </div>
     </main>
   )
