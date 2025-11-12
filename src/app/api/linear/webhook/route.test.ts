@@ -10,6 +10,7 @@ import type { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
+import { updateAgentStatusOnPR } from '@/lib/agent-status'
 
 import { POST } from './route'
 
@@ -26,6 +27,11 @@ vi.mock('@/lib/linear-sync', () => ({
   syncIssueFromLinear: vi.fn(),
 }))
 
+vi.mock('@/lib/agent-status', () => ({
+  updateAgentStatusOnPR: vi.fn(),
+  markIgnoredOnIssueClosed: vi.fn(),
+}))
+
 const WEBHOOK_URL = 'http://localhost:3109/api/linear/webhook'
 const TEST_SECRET = 'test-secret'
 const ARENA_LABEL = 'arena:ready'
@@ -34,6 +40,7 @@ const TEST_ISSUE_ID = 'issue-123'
 const TEST_ISSUE_URL = 'https://linear.app/test/issue/ENG-123'
 const TEST_TIMESTAMP = '2024-01-01T00:00:00Z'
 const TEST_DB_ISSUE_ID = 'db-issue-id'
+const TEST_ATTACHMENT_ID = 'attach-123'
 
 /**
  * Creates a mock Next.js request with Linear webhook signature.
@@ -402,12 +409,57 @@ describe('/api/linear/webhook', () => {
   })
 
   describe('Attachment events', () => {
+    it('should update agent status to submitted on PR attachment', async () => {
+      const payload = {
+        type: 'Attachment',
+        action: 'create',
+        data: {
+          id: TEST_ATTACHMENT_ID,
+          url: TEST_PR_URL,
+          title: 'cursor: Fix issue',
+          subtitle: 'org/repo #42',
+          issue: { id: TEST_ISSUE_ID },
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([{ id: TEST_DB_ISSUE_ID }]),
+          }),
+        }),
+      })
+
+      const mockInsert = vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+      })
+
+      vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+      vi.mocked(db.insert).mockReturnValue({
+        values: mockInsert,
+      } as never)
+
+      const req = createMockRequest(payload)
+      const response = await POST(req)
+
+      expect(response.status).toBe(200)
+      expect(updateAgentStatusOnPR).toHaveBeenCalledWith(
+        TEST_DB_ISSUE_ID,
+        'cursor'
+      )
+    })
+
     it('should create attempt for GitHub PR attachment', async () => {
       const payload = {
         type: 'Attachment',
         action: 'create',
         data: {
-          id: 'attach-123',
+          id: TEST_ATTACHMENT_ID,
           url: TEST_PR_URL,
           title: 'Add feature X (agent-cursor)',
           subtitle: 'org/repo #42 • open',
@@ -503,7 +555,7 @@ describe('/api/linear/webhook', () => {
         type: 'Attachment',
         action: 'update',
         data: {
-          id: 'attach-123',
+          id: TEST_ATTACHMENT_ID,
           url: TEST_PR_URL,
           title: 'Add feature X',
           subtitle: 'org/repo #42 • merged',

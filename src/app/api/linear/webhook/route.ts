@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { issues, attempts, events } from '@/db/schema'
+import { updateAgentStatusOnPR } from '@/lib/agent-status'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
 
 /**
@@ -267,6 +268,9 @@ async function handleAttachmentEvent(
         sourceAttachmentUrl: attachment.url,
       },
     })
+
+  // Update agent status to submitted
+  await updateAgentStatusOnPR(issueId, agentName)
 
   // If merged, check for winner
   if (status === 'merged') {
