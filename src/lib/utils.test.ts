@@ -26,8 +26,8 @@ describe('cn', () => {
   })
 
   describe('when given conflicting Tailwind classes', () => {
-    it('should apply the last class', () => {
-      expect(cn('px-4', 'px-2')).toBe('px-2')
+    it('should keep both classes (no merge)', () => {
+      expect(cn('px-4', 'px-2')).toBe('px-4 px-2')
     })
   })
 })

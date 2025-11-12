@@ -55,18 +55,18 @@ function isAttemptStatus(status: string): status is AttemptStatus {
  */
 function getAttemptStatusBadgeVariant(
   status: string
-): 'default' | 'secondary' | 'destructive' {
+): 'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline' {
   if (!isAttemptStatus(status)) {
     return 'secondary'
   }
 
   switch (status) {
     case 'merged':
-      return 'default'
+      return 'success'
     case 'open':
-      return 'secondary'
+      return 'warning'
     case 'closed':
-      return 'destructive'
+      return 'error'
   }
 }
 
@@ -121,8 +121,10 @@ export default async function AgentPage({
   return (
     <main className="container mx-auto p-6 md:p-8 lg:p-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight">Agent Details</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          Agent Details
+        </h1>
+        <p className="mt-2 text-lg text-foreground-secondary">
           Performance metrics and attempt history for {params.agentName}
         </p>
       </div>
@@ -134,7 +136,7 @@ export default async function AgentPage({
             <div className="flex items-center gap-3">
               <span className="text-3xl">{params.agentName}</span>
               {isTopPerformer === true ? (
-                <Badge variant="default">Top Performer</Badge>
+                <Badge variant="success">Top Performer</Badge>
               ) : (
                 <Badge variant="secondary">Active</Badge>
               )}
@@ -145,24 +147,24 @@ export default async function AgentPage({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-foreground-secondary">
                 Total Attempts
               </span>
-              <div className="mt-1 text-2xl font-bold">{totalAttempts}</div>
+              <div className="mt-1 text-2xl font-semibold">{totalAttempts}</div>
             </div>
 
             <div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-foreground-secondary">
                 Wins (Merged PRs)
               </span>
-              <div className="mt-1 text-2xl font-bold">{wins}</div>
+              <div className="mt-1 text-2xl font-semibold">{wins}</div>
             </div>
 
             <div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-foreground-secondary">
                 Acceptance Rate
               </span>
-              <div className="mt-1 text-2xl font-bold">
+              <div className="mt-1 text-2xl font-semibold">
                 {acceptanceRate.toFixed(1)}%
               </div>
             </div>
@@ -196,7 +198,7 @@ export default async function AgentPage({
                   <TableCell className="font-medium">
                     <Link
                       href={`/issues/${attempt.issueId}`}
-                      className="text-primary hover:underline"
+                      className="text-blue-900 transition-colors hover:underline"
                     >
                       {attempt.issueLinearKey}
                     </Link>
@@ -206,7 +208,7 @@ export default async function AgentPage({
                       href={attempt.prUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="text-blue-900 transition-colors hover:underline"
                     >
                       #{attempt.prNumber}
                     </a>

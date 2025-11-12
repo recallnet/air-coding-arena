@@ -68,7 +68,7 @@ describe('Navigation', () => {
     const DASHBOARD_LINK_REGEX = /^dashboard$/i
     const ISSUES_LINK_REGEX = /^issues$/i
     const ACTIVE_CLASS = 'text-foreground'
-    const INACTIVE_CLASS = 'text-muted-foreground'
+    const INACTIVE_CLASS = 'text-foreground-secondary'
 
     it('highlights Dashboard link when on home page', () => {
       vi.mocked(usePathname).mockReturnValue('/')

@@ -1,6 +1,6 @@
 /**
- * Card component from shadcn/ui.
- * Displays content in a contained, elevated surface.
+ * Card component with Geist design system styling.
+ * Displays content in a contained, minimal surface with subtle borders.
  * @packageDocumentation
  */
 
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * Card container component.
+ * Uses Geist's minimal aesthetic with subtle borders and no shadows.
  *
  * @param props - Standard div props
  */
@@ -20,7 +21,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'rounded-lg border bg-card text-card-foreground shadow-sm',
+      'rounded-geist border border-border bg-background p-6 transition-colors hover:border-border-hover',
       className
     )}
     {...props}
@@ -39,7 +40,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    className={cn('flex flex-col space-y-2 pb-4', className)}
     {...props}
   />
 ))
@@ -57,7 +58,7 @@ const CardTitle = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'text-2xl font-semibold leading-none tracking-tight',
+      'text-xl font-semibold leading-tight tracking-tight text-foreground',
       className
     )}
     {...props}
@@ -76,7 +77,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-sm text-muted-foreground', className)}
+    className={cn('text-sm text-foreground-secondary', className)}
     {...props}
   />
 ))
@@ -91,7 +92,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+  <div ref={ref} className={cn('', className)} {...props} />
 ))
 CardContent.displayName = 'CardContent'
 
@@ -106,7 +107,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex items-center p-6 pt-0', className)}
+    className={cn('flex items-center pt-4', className)}
     {...props}
   />
 ))

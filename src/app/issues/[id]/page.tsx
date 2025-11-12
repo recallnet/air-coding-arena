@@ -67,22 +67,23 @@ function isIssueStatus(status: string | null): status is IssueStatus {
  */
 function getIssueStatusBadgeVariant(
   status: string | null
-): 'default' | 'secondary' | 'outline' | 'destructive' {
+): 'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline' {
   if (!isIssueStatus(status)) {
     return 'outline'
   }
 
   switch (status) {
     case 'Done':
-      return 'default'
+      return 'success'
     case 'In Progress':
+      return 'warning'
     case 'In Review':
       return 'secondary'
     case 'Todo':
     case 'Backlog':
       return 'outline'
     case 'Canceled':
-      return 'destructive'
+      return 'error'
   }
 }
 
@@ -105,18 +106,18 @@ function isAttemptStatus(status: string): status is AttemptStatus {
  */
 function getAttemptStatusBadgeVariant(
   status: string
-): 'default' | 'secondary' | 'destructive' {
+): 'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline' {
   if (!isAttemptStatus(status)) {
     return 'secondary'
   }
 
   switch (status) {
     case 'merged':
-      return 'default'
+      return 'success'
     case 'open':
-      return 'secondary'
+      return 'warning'
     case 'closed':
-      return 'destructive'
+      return 'error'
   }
 }
 
@@ -162,8 +163,10 @@ export default async function IssuePage({
   return (
     <main className="container mx-auto p-6 md:p-8 lg:p-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight">Issue Details</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          Issue Details
+        </h1>
+        <p className="mt-2 text-lg text-foreground-secondary">
           View issue information and attempt history
         </p>
       </div>
@@ -176,7 +179,7 @@ export default async function IssuePage({
               href={issue.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline"
+              className="text-blue-900 transition-colors hover:underline"
             >
               {issue.linearKey}
             </a>
@@ -186,7 +189,7 @@ export default async function IssuePage({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-foreground-secondary">
                 Status
               </span>
               <div className="mt-1">
@@ -198,7 +201,7 @@ export default async function IssuePage({
 
             {issue.repo ? (
               <div>
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="text-sm font-medium text-foreground-secondary">
                   Repository
                 </span>
                 <div className="mt-1 text-sm">{issue.repo}</div>
@@ -206,7 +209,7 @@ export default async function IssuePage({
             ) : null}
 
             <div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-foreground-secondary">
                 Arena Ready Labeled Date
               </span>
               <div className="mt-1 text-sm">
@@ -216,13 +219,13 @@ export default async function IssuePage({
 
             {winnerAttempt ? (
               <div>
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="text-sm font-medium text-foreground-secondary">
                   Winner
                 </span>
                 <div className="mt-1 text-sm">
                   <Link
                     href={`/agents/${winnerAttempt.agentName}`}
-                    className="text-primary hover:underline"
+                    className="text-blue-900 transition-colors hover:underline"
                   >
                     {winnerAttempt.agentName}
                   </Link>
@@ -243,7 +246,7 @@ export default async function IssuePage({
         </CardHeader>
         <CardContent>
           {issue.attempts.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-8 text-center text-foreground-secondary">
               No attempts yet
             </div>
           ) : (
@@ -264,7 +267,7 @@ export default async function IssuePage({
                     <TableCell className="font-medium">
                       <Link
                         href={`/agents/${attempt.agentName}`}
-                        className="text-primary hover:underline"
+                        className="text-blue-900 transition-colors hover:underline"
                       >
                         {attempt.agentName}
                       </Link>
@@ -274,7 +277,7 @@ export default async function IssuePage({
                         href={attempt.prUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline"
+                        className="text-blue-900 transition-colors hover:underline"
                       >
                         #{attempt.prNumber}
                       </a>

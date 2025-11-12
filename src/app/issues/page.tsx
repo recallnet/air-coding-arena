@@ -57,22 +57,23 @@ function isIssueStatus(status: string | null): status is IssueStatus {
  */
 function getStatusBadgeVariant(
   status: string | null
-): 'default' | 'secondary' | 'outline' | 'destructive' {
+): 'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline' {
   if (!isIssueStatus(status)) {
     return 'outline'
   }
 
   switch (status) {
     case 'Done':
-      return 'default'
+      return 'success'
     case 'In Progress':
+      return 'warning'
     case 'In Review':
       return 'secondary'
     case 'Todo':
     case 'Backlog':
       return 'outline'
     case 'Canceled':
-      return 'destructive'
+      return 'error'
   }
 }
 
@@ -106,8 +107,10 @@ export default async function IssuesPage(): Promise<React.JSX.Element> {
   return (
     <main className="container mx-auto p-6 md:p-8 lg:p-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight">Arena Issues</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          Arena Issues
+        </h1>
+        <p className="mt-2 text-lg text-foreground-secondary">
           All issues labeled as arena-ready for agent challenges
         </p>
       </div>
@@ -121,7 +124,7 @@ export default async function IssuesPage(): Promise<React.JSX.Element> {
         </CardHeader>
         <CardContent>
           {issues.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-8 text-center text-foreground-secondary">
               No arena-ready issues found
             </div>
           ) : (
@@ -142,7 +145,7 @@ export default async function IssuesPage(): Promise<React.JSX.Element> {
                     <TableCell className="font-medium">
                       <Link
                         href={`/issues/${issue.id}`}
-                        className="text-primary hover:underline"
+                        className="text-blue-900 transition-colors hover:underline"
                       >
                         {issue.linearKey}
                       </Link>

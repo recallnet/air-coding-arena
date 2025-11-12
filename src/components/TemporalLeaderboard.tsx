@@ -66,7 +66,7 @@ export function TemporalLeaderboard({
       </CardHeader>
       <CardContent>
         {stats.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
+          <div className="py-8 text-center text-foreground-secondary">
             No activity data available yet
           </div>
         ) : (
@@ -74,15 +74,15 @@ export function TemporalLeaderboard({
             {/* Legend */}
             <div className="flex flex-wrap justify-center gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded bg-blue-500" />
+                <div className="h-3 w-3 rounded bg-blue-700" />
                 <span>Attempts</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded bg-green-500" />
+                <div className="h-3 w-3 rounded bg-green-700" />
                 <span>Wins</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded bg-red-500" />
+                <div className="h-3 w-3 rounded bg-red-700" />
                 <span>Failures</span>
               </div>
             </div>
@@ -104,25 +104,25 @@ export function TemporalLeaderboard({
                       <div className="relative flex h-48 w-full items-end justify-center gap-0.5">
                         {/* Attempts bar */}
                         <div
-                          className="w-1/3 rounded-t bg-blue-500 transition-all hover:opacity-80"
+                          className="w-1/3 rounded-t bg-blue-700 transition-all hover:bg-blue-800"
                           style={{ height: `${attemptHeight}%` }}
                           title={`Attempts: ${stat.attempts}`}
                         />
                         {/* Wins bar */}
                         <div
-                          className="w-1/3 rounded-t bg-green-500 transition-all hover:opacity-80"
+                          className="w-1/3 rounded-t bg-green-700 transition-all hover:bg-green-800"
                           style={{ height: `${winHeight}%` }}
                           title={`Wins: ${stat.wins}`}
                         />
                         {/* Failures bar */}
                         <div
-                          className="w-1/3 rounded-t bg-red-500 transition-all hover:opacity-80"
+                          className="w-1/3 rounded-t bg-red-700 transition-all hover:bg-red-800"
                           style={{ height: `${failureHeight}%` }}
                           title={`Failures: ${stat.failures}`}
                         />
                       </div>
                       {/* Date label */}
-                      <div className="mt-4 origin-top-left -rotate-45 transform whitespace-nowrap text-center text-xs text-muted-foreground">
+                      <div className="mt-4 origin-top-left -rotate-45 transform whitespace-nowrap text-center text-xs text-foreground-secondary">
                         {formatDate(stat.date)}
                       </div>
                     </div>
@@ -132,26 +132,28 @@ export function TemporalLeaderboard({
             </div>
 
             {/* Summary stats */}
-            <div className="grid grid-cols-3 gap-4 border-t pt-4">
+            <div className="grid grid-cols-3 gap-4 border-t border-border pt-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-500">
+                <div className="text-2xl font-semibold text-blue-900">
                   {stats.reduce((sum, stat) => sum + stat.attempts, 0)}
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-foreground-secondary">
                   Total Attempts
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-500">
+                <div className="text-2xl font-semibold text-green-900">
                   {stats.reduce((sum, stat) => sum + stat.wins, 0)}
                 </div>
-                <div className="text-sm text-muted-foreground">Total Wins</div>
+                <div className="text-sm text-foreground-secondary">
+                  Total Wins
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-500">
+                <div className="text-2xl font-semibold text-red-900">
                   {stats.reduce((sum, stat) => sum + stat.failures, 0)}
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-foreground-secondary">
                   Total Failures
                 </div>
               </div>

@@ -46,8 +46,10 @@ export default async function Home(): Promise<React.JSX.Element> {
   return (
     <main className="container mx-auto p-6 md:p-8 lg:p-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight">Arena Dashboard</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          Arena Dashboard
+        </h1>
+        <p className="mt-2 text-lg text-foreground-secondary">
           Track and compare AI coding agent performance across challenges
         </p>
       </div>
@@ -65,7 +67,7 @@ export default async function Home(): Promise<React.JSX.Element> {
         </CardHeader>
         <CardContent>
           {agentStats.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-8 text-center text-foreground-secondary">
               No agent statistics available yet
             </div>
           ) : (
@@ -86,7 +88,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                         {stat.agentName}
                         {topPerformer !== null &&
                           stat.agentName === topPerformer.agentName && (
-                            <Badge variant="default">Top Performer</Badge>
+                            <Badge variant="success">Top Performer</Badge>
                           )}
                       </div>
                     </TableCell>

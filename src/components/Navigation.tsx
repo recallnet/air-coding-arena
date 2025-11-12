@@ -54,12 +54,12 @@ export function Navigation(): React.JSX.Element {
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center px-4">
+    <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b border-border backdrop-blur">
+      <div className="container mx-auto flex h-14 max-w-7xl items-center px-4">
         <div className="mr-8 flex items-center">
           <Link
             href="/"
-            className="text-xl font-bold tracking-tight hover:text-primary"
+            className="text-lg font-semibold tracking-tight text-foreground transition-colors hover:text-blue-900"
           >
             Arena Dashboard
           </Link>
@@ -71,10 +71,10 @@ export function Navigation(): React.JSX.Element {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  'text-sm font-medium transition-colors hover:text-primary',
+                  'text-sm font-medium transition-colors hover:text-foreground',
                   isActive(link.href)
                     ? 'text-foreground'
-                    : 'text-muted-foreground'
+                    : 'text-foreground-secondary'
                 )}
               >
                 {link.label}

@@ -1,57 +1,56 @@
 /**
- * Badge component from shadcn/ui.
- * Displays a small status indicator or label.
+ * Badge component with Geist design system styling.
+ * Displays a small status indicator or label with minimal, clean styling.
  * @packageDocumentation
  */
 
-import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
 /**
- * Badge style variants using class-variance-authority.
- */
-const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-  {
-    variants: {
-      variant: {
-        default:
-          'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        outline: 'text-foreground',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-    },
-  }
-)
-
-/**
  * Badge component props.
  */
-export type BadgeProps = React.HTMLAttributes<HTMLDivElement> &
-  VariantProps<typeof badgeVariants>
+export type BadgeProps = React.HTMLAttributes<HTMLDivElement> & {
+  variant?:
+    | 'default'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'outline'
+}
 
 /**
  * Badge component for status indicators.
+ * Uses Geist's color system and minimal design aesthetic.
  *
  * @param props - Badge props with variant option
  * @returns Badge component
  */
 function Badge({
   className,
-  variant,
+  variant = 'default',
   ...props
 }: BadgeProps): React.ReactElement {
+  const baseClasses =
+    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors'
+
+  const variantClasses = {
+    default: 'bg-gray-100 text-gray-900 border border-gray-400',
+    secondary: 'bg-gray-200 text-gray-1000 border border-gray-400',
+    success: 'bg-green-100 text-green-1000 border border-green-300',
+    error: 'bg-red-100 text-red-1000 border border-red-300',
+    warning: 'bg-amber-100 text-amber-1000 border border-amber-300',
+    outline: 'bg-transparent text-foreground border border-border',
+  }
+
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div
+      className={cn(baseClasses, variantClasses[variant], className)}
+      {...props}
+    />
   )
 }
 
-export { Badge, badgeVariants }
+export { Badge }

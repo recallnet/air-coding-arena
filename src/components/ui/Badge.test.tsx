@@ -18,16 +18,28 @@ describe('Badge', () => {
   describe('when rendered with secondary variant', () => {
     it('should render with secondary styling', () => {
       const { container } = render(<Badge variant="secondary">Secondary</Badge>)
-      expect(container.firstChild).toHaveClass('bg-secondary')
+      expect(container.firstChild).toHaveClass('bg-gray-200')
     })
   })
 
-  describe('when rendered with destructive variant', () => {
-    it('should render with destructive styling', () => {
-      const { container } = render(
-        <Badge variant="destructive">Destructive</Badge>
-      )
-      expect(container.firstChild).toHaveClass('bg-destructive')
+  describe('when rendered with success variant', () => {
+    it('should render with success styling', () => {
+      const { container } = render(<Badge variant="success">Success</Badge>)
+      expect(container.firstChild).toHaveClass('bg-green-100')
+    })
+  })
+
+  describe('when rendered with error variant', () => {
+    it('should render with error styling', () => {
+      const { container } = render(<Badge variant="error">Error</Badge>)
+      expect(container.firstChild).toHaveClass('bg-red-100')
+    })
+  })
+
+  describe('when rendered with warning variant', () => {
+    it('should render with warning styling', () => {
+      const { container } = render(<Badge variant="warning">Warning</Badge>)
+      expect(container.firstChild).toHaveClass('bg-amber-100')
     })
   })
 

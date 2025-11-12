@@ -3,12 +3,18 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
 /**
- * Mock Next.js Google Fonts.
+ * Mock Geist fonts.
  */
-vi.mock('next/font/google', () => ({
-  Inter: () => ({
-    className: 'inter-font',
-  }),
+vi.mock('geist/font/sans', () => ({
+  GeistSans: {
+    variable: '--font-geist-sans',
+  },
+}))
+
+vi.mock('geist/font/mono', () => ({
+  GeistMono: {
+    variable: '--font-geist-mono',
+  },
 }))
 
 /**
