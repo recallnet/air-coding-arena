@@ -143,10 +143,8 @@ function verifyLinearSignature(
  *
  * @param payload - Linear webhook payload
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const issue = payload.data as any as LinearWebhookIssue
+  const issue = payload.data as unknown as LinearWebhookIssue
 
   // Check for arena:ready label
   const arenaLabel = process.env['ARENA_LABEL'] ?? 'arena:ready'

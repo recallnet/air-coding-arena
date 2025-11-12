@@ -45,13 +45,79 @@ export async function syncIssueFromLinear(
   const issue = await client.issue(linearIssueId)
   const comments = await issue.comments()
   const attachments = await issue.attachments()
+  const labels = await issue.labels()
+  const assignee = await issue.assignee
+  const creator = await issue.creator
+  const project = await issue.project
+  const cycle = await issue.cycle
+  const parent = await issue.parent
+  const team = await issue.team
+  const state = await issue.state
 
   // 3. Extract and update issue metadata
-  const metadata = extractIssueMetadata(issue)
-  await db
-    .update(issues)
-    .set(metadata)
-    .where(eq(issues.id, issueId))
+  const metadata = extractIssueMetadata({
+    id: issue.id,
+    identifier: issue.identifier,
+    title: issue.title,
+    description: issue.description ?? null,
+    descriptionData: null,
+    url: issue.url,
+    estimate: issue.estimate ?? null,
+    priority: issue.priority ?? null,
+    labels: labels.nodes,
+    assignee: assignee
+      ? {
+          id: assignee.id,
+          name: assignee.name,
+          email: assignee.email,
+        }
+      : null,
+    creator: creator
+      ? {
+          id: creator.id,
+          name: creator.name,
+          email: creator.email,
+        }
+      : null,
+    project: project
+      ? {
+          id: project.id,
+          name: project.name,
+        }
+      : null,
+    cycle: cycle?.name
+      ? {
+          id: cycle.id,
+          name: cycle.name,
+          number: cycle.number,
+        }
+      : null,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    dueDate: issue.dueDate,
+    createdAt: issue.createdAt.toISOString(),
+    updatedAt: issue.updatedAt.toISOString(),
+    parent: parent
+      ? {
+          id: parent.id,
+          identifier: parent.identifier,
+        }
+      : null,
+    team: team
+      ? {
+          id: team.id,
+          key: team.key,
+          name: team.name,
+        }
+      : null,
+    state: state
+      ? {
+          id: state.id,
+          name: state.name,
+          type: state.type,
+        }
+      : null,
+  })
+  await db.update(issues).set(metadata).where(eq(issues.id, issueId))
 
   // 4. Sync comments → agent mentions
   await syncComments(issueId, comments.nodes)

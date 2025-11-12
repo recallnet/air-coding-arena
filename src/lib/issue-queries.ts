@@ -4,6 +4,7 @@
  */
 
 import { eq, gte, lte, and, sql } from 'drizzle-orm'
+
 import { db } from '@/db/client'
 import { issues } from '@/db/schema'
 
@@ -11,8 +12,8 @@ import { issues } from '@/db/schema'
  * Get issues with a specific label
  * Uses JSONB containment query
  *
- * param labelName - Label name to search for
- * returns Issues with the label
+ * @param labelName - Label name to search for
+ * @returns Issues with the label
  */
 export async function getIssuesByLabel(labelName: string) {
   return db
@@ -27,8 +28,8 @@ export async function getIssuesByLabel(labelName: string) {
  * Get issues with a specific priority
  * Priority levels: 0=None, 1=Urgent, 2=High, 3=Medium, 4=Low
  *
- * param priority - Priority number (0-4)
- * returns Issues with the priority
+ * @param priority - Priority number (0-4)
+ * @returns Issues with the priority
  */
 export async function getIssuesByPriority(priority: number) {
   return db
@@ -40,9 +41,9 @@ export async function getIssuesByPriority(priority: number) {
 /**
  * Get issues within an estimate range
  *
- * param minEstimate - Minimum estimate points
- * param maxEstimate - Maximum estimate points
- * returns Issues within the estimate range
+ * @param minEstimate - Minimum estimate points
+ * @param maxEstimate - Maximum estimate points
+ * @returns Issues within the estimate range
  */
 export async function getIssuesByEstimate(
   minEstimate: number,
@@ -62,8 +63,8 @@ export async function getIssuesByEstimate(
 /**
  * Get issues assigned to a specific user
  *
- * param assigneeId - Linear user ID
- * returns Issues assigned to the user
+ * @param assigneeId - Linear user ID
+ * @returns Issues assigned to the user
  */
 export async function getIssuesByAssignee(assigneeId: string) {
   return db
@@ -75,8 +76,8 @@ export async function getIssuesByAssignee(assigneeId: string) {
 /**
  * Get issues in a specific cycle
  *
- * param cycleId - Linear cycle ID
- * returns Issues in the cycle
+ * @param cycleId - Linear cycle ID
+ * @returns Issues in the cycle
  */
 export async function getIssuesInCycle(cycleId: string) {
   return db
@@ -88,8 +89,8 @@ export async function getIssuesInCycle(cycleId: string) {
 /**
  * Get issues in a specific project
  *
- * param projectId - Linear project ID
- * returns Issues in the project
+ * @param projectId - Linear project ID
+ * @returns Issues in the project
  */
 export async function getIssuesInProject(projectId: string) {
   return db
@@ -101,7 +102,7 @@ export async function getIssuesInProject(projectId: string) {
 /**
  * Get overdue issues
  *
- * returns Issues past their due date
+ * @returns Issues past their due date
  */
 export async function getOverdueIssues() {
   return db

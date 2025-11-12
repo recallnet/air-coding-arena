@@ -22,6 +22,37 @@ vi.mock('@linear/sdk', () => ({
   LinearClient: vi.fn(),
 }))
 
+/**
+ * Create a mock Linear SDK Issue with all required properties
+ * @param overrides - Optional property overrides for the mock issue
+ * @returns Mock issue object compatible with Linear SDK Issue type
+ */
+function createMockIssue(overrides?: Record<string, unknown>) {
+  return {
+    id: 'linear-issue-id',
+    identifier: 'ENG-123',
+    title: 'Test Issue',
+    description: 'Test description',
+    url: 'https://linear.app/test/issue/ENG-123',
+    estimate: 3,
+    priority: 2,
+    dueDate: null,
+    createdAt: new Date('2024-01-01T00:00:00Z'),
+    updatedAt: new Date('2024-01-02T00:00:00Z'),
+    labels: vi.fn().mockResolvedValue({ nodes: [] }),
+    assignee: Promise.resolve(null),
+    creator: Promise.resolve(null),
+    project: Promise.resolve(null),
+    cycle: Promise.resolve(null),
+    parent: Promise.resolve(null),
+    team: Promise.resolve(null),
+    state: Promise.resolve(null),
+    comments: vi.fn().mockResolvedValue({ nodes: [] }),
+    attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    ...overrides,
+  }
+}
+
 describe('syncIssueFromLinear', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -50,10 +81,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -72,8 +103,13 @@ describe('syncIssueFromLinear', () => {
       .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
 
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
     vi.mocked(db.select).mockImplementation(mockSelect as never)
     vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
 
     await syncIssueFromLinear('linear-issue-id')
 
@@ -83,10 +119,10 @@ describe('syncIssueFromLinear', () => {
   })
 
   it('should return early if issue not in database', async () => {
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn(),
       attachments: vi.fn(),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -123,10 +159,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -172,10 +208,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -231,10 +267,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -295,10 +331,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -349,10 +385,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -408,10 +444,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -457,10 +493,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -506,10 +542,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue(mockComments),
       attachments: vi.fn().mockResolvedValue({ nodes: [] }),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -540,9 +576,10 @@ describe('syncIssueFromLinear', () => {
 
     await syncIssueFromLinear('linear-issue-id')
 
-    // Should create attempt with unknown agent (no agent status update)
+    // Should create attempt with unknown agent
+    // mockUpdate will be called once for metadata update
     expect(mockInsert).toHaveBeenCalledTimes(1)
-    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockUpdate).toHaveBeenCalled()
   })
 
   it('should handle attachments with PR links', async () => {
@@ -558,10 +595,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue({ nodes: [] }),
       attachments: vi.fn().mockResolvedValue(mockAttachments),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -580,8 +617,13 @@ describe('syncIssueFromLinear', () => {
       .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
 
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
     vi.mocked(db.select).mockImplementation(mockSelect as never)
     vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
 
     await syncIssueFromLinear('linear-issue-id')
 
@@ -602,10 +644,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue({ nodes: [] }),
       attachments: vi.fn().mockResolvedValue(mockAttachments),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -624,8 +666,13 @@ describe('syncIssueFromLinear', () => {
       .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
 
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
     vi.mocked(db.select).mockImplementation(mockSelect as never)
     vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
 
     await syncIssueFromLinear('linear-issue-id')
 
@@ -646,10 +693,10 @@ describe('syncIssueFromLinear', () => {
       ],
     }
 
-    const mockIssue = {
+    const mockIssue = createMockIssue({
       comments: vi.fn().mockResolvedValue({ nodes: [] }),
       attachments: vi.fn().mockResolvedValue(mockAttachments),
-    }
+    })
 
     const mockClient = {
       issue: vi.fn().mockResolvedValue(mockIssue),
@@ -668,12 +715,103 @@ describe('syncIssueFromLinear', () => {
       .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
 
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
     vi.mocked(db.select).mockImplementation(mockSelect as never)
     vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
 
     await syncIssueFromLinear('linear-issue-id')
 
     // Should detect closed status
     expect(mockInsert).toHaveBeenCalled()
+  })
+
+  it('should extract full issue metadata with all fields populated', async () => {
+    const mockIssue = createMockIssue({
+      assignee: Promise.resolve({
+        id: 'user-1',
+        name: 'John Doe',
+        email: 'john@example.com',
+      }),
+      creator: Promise.resolve({
+        id: 'user-2',
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+      }),
+      project: Promise.resolve({
+        id: 'project-1',
+        name: 'Main Project',
+      }),
+      cycle: Promise.resolve({
+        id: 'cycle-1',
+        name: 'Sprint 1',
+        number: 1,
+      }),
+      parent: Promise.resolve({
+        id: 'parent-1',
+        identifier: 'ENG-100',
+      }),
+      team: Promise.resolve({
+        id: 'team-1',
+        key: 'ENG',
+        name: 'Engineering',
+      }),
+      state: Promise.resolve({
+        id: 'state-1',
+        name: 'In Progress',
+        type: 'started',
+      }),
+      labels: vi.fn().mockResolvedValue({
+        nodes: [
+          {
+            id: 'label-1',
+            name: 'bug',
+            color: '#ff0000',
+            description: 'Bug label',
+          },
+        ],
+      }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-id')
+
+    // Verify metadata was extracted with all fields
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assigneeId: 'user-1',
+        assigneeName: 'John Doe',
+        assigneeEmail: 'john@example.com',
+        creatorId: 'user-2',
+        creatorName: 'Jane Smith',
+        creatorEmail: 'jane@example.com',
+        projectId: 'project-1',
+        projectName: 'Main Project',
+        cycleId: 'cycle-1',
+        cycleName: 'Sprint 1',
+        cycleNumber: 1,
+        parentId: 'parent-1',
+      })
+    )
   })
 })
