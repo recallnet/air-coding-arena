@@ -114,12 +114,14 @@ describe('AgentAvatar', () => {
 
     it('should capitalize status in tooltip', async () => {
       const user = userEvent.setup()
-      render(<AgentAvatar name="engine" status="accepted" />)
+      const agentName = 'engine'
+      const expectedTooltip = `${agentName} - Accepted`
+      render(<AgentAvatar name={agentName} status="accepted" />)
 
       const avatar = screen.getByText('E')
       await user.hover(avatar)
 
-      expect(avatar).toHaveAttribute('title', 'engine - Accepted')
+      expect(avatar).toHaveAttribute('title', expectedTooltip)
     })
 
     it('should format pending status in tooltip', () => {
@@ -138,6 +140,31 @@ describe('AgentAvatar', () => {
       render(<AgentAvatar name="claude" status="ignored" />)
       const avatar = screen.getByText('C')
       expect(avatar).toHaveAttribute('title', 'claude - Ignored')
+    })
+  })
+
+  describe('accessibility', () => {
+    it('should have role="img"', () => {
+      const { container } = render(
+        <AgentAvatar name="cursor" status="submitted" />
+      )
+      const avatar = container.firstChild as HTMLElement
+      expect(avatar).toHaveAttribute('role', 'img')
+    })
+
+    it('should have aria-label with agent name and status', () => {
+      render(<AgentAvatar name="cursor" status="submitted" />)
+      const avatar = screen.getByText('C')
+      expect(avatar).toHaveAttribute('aria-label', 'cursor - Submitted')
+    })
+
+    it('should have both aria-label and title for accessibility', () => {
+      const agentName = 'engine'
+      const expectedLabel = `${agentName} - Accepted`
+      render(<AgentAvatar name={agentName} status="accepted" />)
+      const avatar = screen.getByText('E')
+      expect(avatar).toHaveAttribute('aria-label', expectedLabel)
+      expect(avatar).toHaveAttribute('title', expectedLabel)
     })
   })
 

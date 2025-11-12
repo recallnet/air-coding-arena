@@ -112,6 +112,8 @@ export function AgentAvatar({
         colorClass,
         sizeClass
       )}
+      role="img"
+      aria-label={`${name} - ${formatStatus(status)}`}
       title={`${name} - ${formatStatus(status)}`}
     >
       {initial}
