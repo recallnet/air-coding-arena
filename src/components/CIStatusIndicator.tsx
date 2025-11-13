@@ -16,6 +16,8 @@ type CIStatusIndicatorProps = {
 
 /**
  * Maps CI status to display text.
+ * @param status - The CI status
+ * @returns Display text for the status
  */
 function getStatusText(status: CIStatus): string {
   switch (status) {
@@ -32,6 +34,8 @@ function getStatusText(status: CIStatus): string {
 
 /**
  * Maps CI status to dot color class.
+ * @param status - The CI status
+ * @returns Tailwind CSS class for dot color
  */
 function getStatusColor(status: CIStatus): string {
   switch (status) {

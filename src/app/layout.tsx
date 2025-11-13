@@ -40,8 +40,7 @@ export default function RootLayout({
           <footer className="border-t border-border bg-gray-100 py-6">
             <div className="container mx-auto px-4 text-center">
               <p className="text-sm text-foreground-secondary">
-                Demo Mode (Milestone 1): Currently displaying sample data.
-                Real-time webhook integration coming in Milestone 2.
+                Air Coding Arena - Real-time AI agent performance tracking
               </p>
             </div>
           </footer>

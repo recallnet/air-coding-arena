@@ -85,10 +85,7 @@ export function MockDiffViewer({
           }
 
           return (
-            <div
-              key={index}
-              className={`${bgColor} ${textColor} px-4 py-0.5`}
-            >
+            <div key={index} className={`${bgColor} ${textColor} px-4 py-0.5`}>
               {line || ' '}
             </div>
           )
