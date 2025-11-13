@@ -23,6 +23,8 @@ vi.mock('@/db/client', () => ({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock typing
 type MockFunction = any
 
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument -- Test mocks require any types */
+
 describe('isAgent', () => {
   it('returns true for OAuth app email pattern', () => {
     const user = {
@@ -151,22 +153,17 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(() => mockLinearClient as MockFunction)
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
 
     // Import db after mocking
     const { db } = await import('@/db/client')
 
-    // Setup db.select() mock for checking existing agents
+    // Setup db.select() mock (no longer used for agent checks, but still used elsewhere)
     const mockFrom = vi.fn().mockReturnThis()
     const mockWhere = vi.fn().mockReturnThis()
-    const mockLimit = vi.fn()
-
-    // Return empty for first two agent checks (they don't exist)
-    // Return empty for config check (it doesn't exist)
-    mockLimit
-      .mockResolvedValueOnce([]) // cursor doesn't exist
-      .mockResolvedValueOnce([]) // engine doesn't exist
-      .mockResolvedValueOnce([]) // config doesn't exist
+    const mockLimit = vi.fn().mockResolvedValue([])
 
     vi.mocked(db.select).mockReturnValue({
       from: mockFrom,
@@ -178,16 +175,29 @@ describe('discoverAgents', () => {
       limit: mockLimit,
     } as MockFunction)
 
-    // Setup db.insert() mock
-    const mockInsertValues = vi.fn().mockResolvedValue([{ id: 'new-id' }])
+    // Setup db.insert() mock with upsert support
+    // Return new agents with recent createdAt
+    const now = new Date()
+    const mockOnConflictDoUpdate = vi.fn().mockReturnThis()
+    const mockReturning = vi.fn().mockResolvedValue([
+      { id: 'new-id-1', createdAt: now },
+      { id: 'new-id-2', createdAt: now },
+    ])
+
     vi.mocked(db.insert).mockReturnValue({
-      values: mockInsertValues,
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: mockOnConflictDoUpdate,
+      }),
     } as MockFunction)
 
-    // Setup db.update() mock
+    mockOnConflictDoUpdate.mockReturnValue({
+      returning: mockReturning,
+    } as MockFunction)
+
+    // Setup db.update() mock for deactivation
     const mockSet = vi.fn().mockReturnThis()
     const mockUpdateWhere = vi.fn().mockReturnThis()
-    const mockReturning = vi.fn().mockResolvedValue([{ id: 'old-agent' }])
+    const mockUpdateReturning = vi.fn().mockResolvedValue([{ id: 'old-agent' }])
 
     vi.mocked(db.update).mockReturnValue({
       set: mockSet,
@@ -196,7 +206,7 @@ describe('discoverAgents', () => {
       where: mockUpdateWhere,
     } as MockFunction)
     mockUpdateWhere.mockReturnValue({
-      returning: mockReturning,
+      returning: mockUpdateReturning,
     } as MockFunction)
 
     // Call discoverAgents
@@ -228,7 +238,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(() => mockLinearClient as MockFunction)
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
 
     const { db } = await import('@/db/client')
 
@@ -241,24 +253,42 @@ describe('discoverAgents', () => {
     mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
     mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
 
-    const mockInsertValues = vi.fn().mockResolvedValue([{ id: 'new-id' }])
-    vi.mocked(db.insert).mockReturnValue({ values: mockInsertValues } as MockFunction)
+    const now = new Date()
+    const mockInsertValues = vi.fn()
+    const mockOnConflictDoUpdate = vi.fn().mockReturnThis()
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'new-id', createdAt: now }])
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsertValues,
+    } as MockFunction)
+    mockInsertValues.mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    } as MockFunction)
+    mockOnConflictDoUpdate.mockReturnValue({
+      returning: mockReturning,
+    } as MockFunction)
 
     const mockSet = vi.fn().mockReturnThis()
     const mockUpdateWhere = vi.fn().mockReturnThis()
-    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateReturning = vi.fn().mockResolvedValue([])
     vi.mocked(db.update).mockReturnValue({ set: mockSet } as MockFunction)
     mockSet.mockReturnValue({ where: mockUpdateWhere } as MockFunction)
-    mockUpdateWhere.mockReturnValue({ returning: mockReturning } as MockFunction)
+    mockUpdateWhere.mockReturnValue({
+      returning: mockUpdateReturning,
+    } as MockFunction)
 
     await discoverAgents()
 
     // Verify cursor (known agent) was inserted with isEnabled=true
     expect(mockInsertValues).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'cursor',
-        isEnabled: true,
-      })
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'cursor',
+          isEnabled: true,
+        }),
+      ])
     )
   })
 
@@ -279,7 +309,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(() => mockLinearClient as MockFunction)
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
 
     const { db } = await import('@/db/client')
 
@@ -292,24 +324,42 @@ describe('discoverAgents', () => {
     mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
     mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
 
-    const mockInsertValues = vi.fn().mockResolvedValue([{ id: 'new-id' }])
-    vi.mocked(db.insert).mockReturnValue({ values: mockInsertValues } as MockFunction)
+    const now = new Date()
+    const mockInsertValues = vi.fn()
+    const mockOnConflictDoUpdate = vi.fn().mockReturnThis()
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'new-id', createdAt: now }])
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsertValues,
+    } as MockFunction)
+    mockInsertValues.mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    } as MockFunction)
+    mockOnConflictDoUpdate.mockReturnValue({
+      returning: mockReturning,
+    } as MockFunction)
 
     const mockSet = vi.fn().mockReturnThis()
     const mockUpdateWhere = vi.fn().mockReturnThis()
-    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateReturning = vi.fn().mockResolvedValue([])
     vi.mocked(db.update).mockReturnValue({ set: mockSet } as MockFunction)
     mockSet.mockReturnValue({ where: mockUpdateWhere } as MockFunction)
-    mockUpdateWhere.mockReturnValue({ returning: mockReturning } as MockFunction)
+    mockUpdateWhere.mockReturnValue({
+      returning: mockUpdateReturning,
+    } as MockFunction)
 
     await discoverAgents()
 
     // Verify notionai (unknown agent) was inserted with isEnabled=false
     expect(mockInsertValues).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'notionai',
-        isEnabled: false,
-      })
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'notionai',
+          isEnabled: false,
+        }),
+      ])
     )
   })
 
@@ -332,7 +382,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(() => mockLinearClient as MockFunction)
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
 
     const { db } = await import('@/db/client')
 
@@ -345,24 +397,42 @@ describe('discoverAgents', () => {
     mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
     mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
 
-    const mockInsertValues = vi.fn().mockResolvedValue([{ id: 'new-id' }])
-    vi.mocked(db.insert).mockReturnValue({ values: mockInsertValues } as MockFunction)
+    const now = new Date()
+    const mockInsertValues = vi.fn()
+    const mockOnConflictDoUpdate = vi.fn().mockReturnThis()
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'new-id', createdAt: now }])
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsertValues,
+    } as MockFunction)
+    mockInsertValues.mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    } as MockFunction)
+    mockOnConflictDoUpdate.mockReturnValue({
+      returning: mockReturning,
+    } as MockFunction)
 
     const mockSet = vi.fn().mockReturnThis()
     const mockUpdateWhere = vi.fn().mockReturnThis()
-    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateReturning = vi.fn().mockResolvedValue([])
     vi.mocked(db.update).mockReturnValue({ set: mockSet } as MockFunction)
     mockSet.mockReturnValue({ where: mockUpdateWhere } as MockFunction)
-    mockUpdateWhere.mockReturnValue({ returning: mockReturning } as MockFunction)
+    mockUpdateWhere.mockReturnValue({
+      returning: mockUpdateReturning,
+    } as MockFunction)
 
     await discoverAgents()
 
     // Verify cursor (known in default list) was inserted with isEnabled=true
     expect(mockInsertValues).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'cursor',
-        isEnabled: true,
-      })
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'cursor',
+          isEnabled: true,
+        }),
+      ])
     )
   })
 
@@ -383,7 +453,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(() => mockLinearClient as MockFunction)
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
 
     const { db } = await import('@/db/client')
 
@@ -396,18 +468,34 @@ describe('discoverAgents', () => {
     mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
     mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
 
-    const mockInsertValues = vi.fn().mockResolvedValue([{ id: 'new-id' }])
-    vi.mocked(db.insert).mockReturnValue({ values: mockInsertValues } as MockFunction)
+    const now = new Date()
+    const mockInsertValues = vi.fn()
+    const mockOnConflictDoUpdate = vi.fn().mockReturnThis()
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'new-id', createdAt: now }])
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsertValues,
+    } as MockFunction)
+    mockInsertValues.mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    } as MockFunction)
+    mockOnConflictDoUpdate.mockReturnValue({
+      returning: mockReturning,
+    } as MockFunction)
 
     const mockSet = vi.fn().mockReturnThis()
     const mockUpdateWhere = vi.fn().mockReturnThis()
     // Two old agents marked inactive
-    const mockReturning = vi
+    const mockUpdateReturning = vi
       .fn()
       .mockResolvedValue([{ id: 'agent-old-1' }, { id: 'agent-old-2' }])
     vi.mocked(db.update).mockReturnValue({ set: mockSet } as MockFunction)
     mockSet.mockReturnValue({ where: mockUpdateWhere } as MockFunction)
-    mockUpdateWhere.mockReturnValue({ returning: mockReturning } as MockFunction)
+    mockUpdateWhere.mockReturnValue({
+      returning: mockUpdateReturning,
+    } as MockFunction)
 
     const result = await discoverAgents()
 
@@ -423,7 +511,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(() => mockLinearClient as MockFunction)
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
 
     const { db } = await import('@/db/client')
 
@@ -436,8 +526,13 @@ describe('discoverAgents', () => {
     mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
     mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
 
-    const mockInsertValues = vi.fn().mockResolvedValue([{ id: 'config-id' }])
-    vi.mocked(db.insert).mockReturnValue({ values: mockInsertValues } as MockFunction)
+    const mockOnConflictDoUpdate = vi.fn()
+    const mockInsertValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsertValues,
+    } as MockFunction)
 
     // For update, when seenLinearUserIds is empty, .set() is followed by .returning() directly
     const mockReturning = vi.fn().mockResolvedValue([])
@@ -459,6 +554,149 @@ describe('discoverAgents', () => {
   it('throws error if LINEAR_API_KEY not configured', async () => {
     delete process.env['LINEAR_API_KEY']
 
-    await expect(discoverAgents()).rejects.toThrow('LINEAR_API_KEY not configured')
+    await expect(discoverAgents()).rejects.toThrow(
+      'LINEAR_API_KEY not configured'
+    )
+  })
+
+  it('updates existing agent metadata when re-discovered', async () => {
+    const mockUsers = {
+      nodes: [
+        {
+          id: TEST_LINEAR_ID_1,
+          name: 'Cursor',
+          email: TEST_EMAIL_1,
+          displayName: 'Cursor Updated',
+          avatarUrl: 'https://new-avatar.com',
+          guest: false,
+        },
+      ],
+    }
+
+    const mockLinearClient = {
+      users: vi.fn().mockResolvedValue(mockUsers),
+    }
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
+
+    const { db } = await import('@/db/client')
+
+    // Setup mocks
+    const mockFrom = vi.fn().mockReturnThis()
+    const mockWhere = vi.fn().mockReturnThis()
+    const mockLimit = vi.fn().mockResolvedValue([])
+
+    vi.mocked(db.select).mockReturnValue({ from: mockFrom } as MockFunction)
+    mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
+    mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
+
+    // Mock the upsert returning an existing agent (old createdAt)
+    const oldDate = new Date('2024-01-01')
+    const mockOnConflictDoUpdate = vi.fn().mockReturnThis()
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'existing-id', createdAt: oldDate }])
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: mockOnConflictDoUpdate,
+      }),
+    } as MockFunction)
+
+    mockOnConflictDoUpdate.mockReturnValue({
+      returning: mockReturning,
+    } as MockFunction)
+
+    const mockSet = vi.fn().mockReturnThis()
+    const mockUpdateWhere = vi.fn().mockReturnThis()
+    const mockUpdateReturning = vi.fn().mockResolvedValue([])
+    vi.mocked(db.update).mockReturnValue({ set: mockSet } as MockFunction)
+    mockSet.mockReturnValue({ where: mockUpdateWhere } as MockFunction)
+    mockUpdateWhere.mockReturnValue({
+      returning: mockUpdateReturning,
+    } as MockFunction)
+
+    const result = await discoverAgents()
+
+    // Verify agent was updated (not discovered)
+    expect(result.discovered).toBe(0)
+    expect(result.updated).toBe(1)
+
+    // Verify onConflictDoUpdate was called with correct settings
+    expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.any(Object),
+        set: expect.objectContaining({
+          displayName: expect.anything(),
+          email: expect.anything(),
+          avatarUrl: expect.anything(),
+          isActive: expect.anything(),
+          lastSeenAt: expect.anything(),
+          updatedAt: expect.any(Date),
+        }),
+      })
+    )
+  })
+
+  it('updates lastDiscoveryAt when config already exists', async () => {
+    const mockUsers = {
+      nodes: [],
+    }
+
+    const mockLinearClient = {
+      users: vi.fn().mockResolvedValue(mockUsers),
+    }
+    vi.mocked(LinearClient).mockImplementation(
+      () => mockLinearClient as MockFunction
+    )
+
+    const { db } = await import('@/db/client')
+
+    // Setup mocks
+    const mockFrom = vi.fn().mockReturnThis()
+    const mockWhere = vi.fn().mockReturnThis()
+    const mockLimit = vi.fn().mockResolvedValue([])
+
+    vi.mocked(db.select).mockReturnValue({ from: mockFrom } as MockFunction)
+    mockFrom.mockReturnValue({ where: mockWhere } as MockFunction)
+    mockWhere.mockReturnValue({ limit: mockLimit } as MockFunction)
+
+    // Mock the config upsert (this tests the update path)
+    const mockOnConflictDoUpdate = vi.fn()
+    const mockInsertValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsertValues,
+    } as MockFunction)
+
+    // For update, when seenLinearUserIds is empty, .set() is followed by .returning() directly
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    vi.mocked(db.update).mockReturnValue({ set: mockSet } as MockFunction)
+
+    await discoverAgents()
+
+    // Verify config upsert was called
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'singleton',
+        lastDiscoveryAt: expect.any(Date),
+      })
+    )
+
+    // Verify onConflictDoUpdate was called with lastDiscoveryAt update
+    expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.any(Object),
+        set: expect.objectContaining({
+          lastDiscoveryAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        }),
+      })
+    )
   })
 })

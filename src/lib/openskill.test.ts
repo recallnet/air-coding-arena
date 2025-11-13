@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rating } from 'openskill'
+import { rating, ordinal } from 'openskill'
 import { updateRatingsForCompletedIssue, initializeAgentRating, calculateOrdinal } from './openskill'
 
 describe('openskill rating service', () => {
@@ -12,12 +12,21 @@ describe('openskill rating service', () => {
   })
 
   describe('calculateOrdinal', () => {
-    it('should calculate ordinal score with alpha=24 and target=1500', () => {
+    it('should use OpenSkill ordinal function with z=3 and target=1500', () => {
       const testRating = rating({ mu: 25, sigma: 8.333 })
       const result = calculateOrdinal(testRating)
-      // Default rating: ordinal ≈ 1500 - 24 * 8.333 ≈ 1300
-      expect(result).toBeGreaterThan(1200)
-      expect(result).toBeLessThan(1600)
+
+      // Should match OpenSkill's ordinal(rating, z=3) + 1500 target
+      const expected = 1500 + ordinal(testRating, { z: 3 })
+      expect(result).toBeCloseTo(expected, 5)
+    })
+
+    it('should calculate correct ordinal for default rating', () => {
+      const testRating = rating({ mu: 25, sigma: 8.333 })
+      const result = calculateOrdinal(testRating)
+
+      // Default rating: ordinal = 1500 + (25 - 3 * 8.333) = 1500 + 0 = 1500
+      expect(result).toBeCloseTo(1500, 0)
     })
 
     it('should return higher ordinal for better ratings', () => {
@@ -28,6 +37,21 @@ describe('openskill rating service', () => {
       const strongOrdinal = calculateOrdinal(strongRating)
 
       expect(strongOrdinal).toBeGreaterThan(weakOrdinal)
+
+      // Verify both use OpenSkill ordinal function
+      expect(weakOrdinal).toBeCloseTo(1500 + ordinal(weakRating, { z: 3 }), 5)
+      expect(strongOrdinal).toBeCloseTo(1500 + ordinal(strongRating, { z: 3 }), 5)
+    })
+
+    it('should handle high uncertainty ratings with lower ordinal', () => {
+      const uncertainRating = rating({ mu: 30, sigma: 10 })
+      const certainRating = rating({ mu: 30, sigma: 5 })
+
+      const uncertainOrdinal = calculateOrdinal(uncertainRating)
+      const certainOrdinal = calculateOrdinal(certainRating)
+
+      // Higher uncertainty (sigma) means lower conservative estimate
+      expect(certainOrdinal).toBeGreaterThan(uncertainOrdinal)
     })
   })
 
@@ -81,6 +105,33 @@ describe('openskill rating service', () => {
       expect(result.cyrus).toBeUndefined()
       expect(result.cursor).toBeDefined()
       expect(result.engine).toBeDefined()
+    })
+
+    it('should throw error when agent in ranking not found in currentRatings', () => {
+      const beforeRatings = {
+        cursor: rating({ mu: 25, sigma: 8.333 }),
+      }
+
+      // 'engine' is in ranking but not in beforeRatings
+      const ranking = ['cursor', 'engine']
+
+      expect(() => {
+        updateRatingsForCompletedIssue(beforeRatings, ranking)
+      }).toThrow('Agent engine not found in currentRatings')
+    })
+
+    it('should throw error for missing agent with descriptive message', () => {
+      const beforeRatings = {
+        cursor: rating({ mu: 25, sigma: 8.333 }),
+        engine: rating({ mu: 25, sigma: 8.333 }),
+      }
+
+      // 'cyrus' is in ranking but not in beforeRatings
+      const ranking = ['cursor', 'engine', 'cyrus']
+
+      expect(() => {
+        updateRatingsForCompletedIssue(beforeRatings, ranking)
+      }).toThrow('Agent cyrus not found in currentRatings')
     })
   })
 })

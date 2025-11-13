@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 
-import { rating, rate } from 'openskill'
+import { rating, rate, ordinal } from 'openskill'
 import type { Rating } from 'openskill/dist/types'
 
 /**
@@ -17,10 +17,10 @@ const DEFAULT_SIGMA = 8.333
 
 /**
  * Ordinal score calculation parameters.
- * alpha = 24 (conservative estimate, ~3 sigma)
+ * z = 3 (conservative estimate, 3-sigma, 99.7% confidence)
  * target = 1500 (baseline score for display, similar to ELO)
  */
-const ORDINAL_ALPHA = 24
+const ORDINAL_Z = 3
 const ORDINAL_TARGET = 1500
 
 /**
@@ -33,17 +33,18 @@ export function initializeAgentRating(): Rating {
 }
 
 /**
- * Calculates ordinal score from OpenSkill Rating.
- * Ordinal = target + (mu - alpha * sigma)
+ * Calculates ordinal score from OpenSkill Rating using OpenSkill's ordinal function.
+ * Uses z=3 (3-sigma, 99.7% confidence) to give a conservative estimate
+ * where we're 99.7% confident the agent's true skill is at least this value.
  *
- * This gives a conservative estimate where we're ~99.7% confident
- * the agent's true skill is at least this value.
+ * Ordinal = target + ordinal(rating, z=3)
+ * where ordinal(rating, z=3) = mu - 3 * sigma
  *
  * @param agentRating - OpenSkill Rating object
  * @returns Ordinal score (display score, similar to ELO)
  */
 export function calculateOrdinal(agentRating: Rating): number {
-  return ORDINAL_TARGET + (agentRating.mu - ORDINAL_ALPHA * agentRating.sigma)
+  return ORDINAL_TARGET + ordinal(agentRating, { z: ORDINAL_Z })
 }
 
 /**

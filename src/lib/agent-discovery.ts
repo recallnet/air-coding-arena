@@ -4,7 +4,7 @@
  */
 
 import { LinearClient } from '@linear/sdk'
-import { eq, notInArray } from 'drizzle-orm'
+import { eq, notInArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import { agents, agentConfig } from '@/db/schema'
@@ -103,59 +103,58 @@ export async function discoverAgents(): Promise<{
   // Get known agents list
   const knownAgents = getKnownAgents()
 
-  // Track stats
-  let discovered = 0
-  let updated = 0
-
   // Collect Linear user IDs for agents we've seen
   const seenLinearUserIds: string[] = []
 
-  // Upsert agents to database
-  for (const agentUser of agentUsers) {
+  // Prepare values for bulk upsert
+  const agentValues = agentUsers.map((agentUser) => {
     seenLinearUserIds.push(agentUser.id)
 
-    // Determine if this is a known agent
     const agentName = agentUser.name.toLowerCase()
     const isKnownAgent = knownAgents.includes(agentName)
 
-    // Check if agent already exists in database
-    const existingAgent = await db
-      .select()
-      .from(agents)
-      .where(eq(agents.linearUserId, agentUser.id))
-      .limit(1)
-
-    if (existingAgent.length === 0) {
-      // New agent - insert
-      await db.insert(agents).values({
-        name: agentName,
-        displayName: agentUser.displayName ?? agentUser.name,
-        linearUserId: agentUser.id,
-        email: agentUser.email ?? null,
-        avatarUrl: agentUser.avatarUrl ?? null,
-        isActive: true,
-        isEnabled: isKnownAgent, // Only enable known agents by default
-        lastSeenAt: new Date(),
-      })
-      discovered++
-    } else {
-      // Existing agent - update
-      // Don't change isEnabled - that's user-controlled
-      // Only update metadata and active status
-      await db
-        .update(agents)
-        .set({
-          displayName: agentUser.displayName ?? agentUser.name,
-          email: agentUser.email ?? null,
-          avatarUrl: agentUser.avatarUrl ?? null,
-          isActive: true,
-          lastSeenAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(agents.linearUserId, agentUser.id))
-      updated++
+    return {
+      name: agentName,
+      displayName: agentUser.displayName ?? agentUser.name,
+      linearUserId: agentUser.id,
+      email: agentUser.email ?? null,
+      avatarUrl: agentUser.avatarUrl ?? null,
+      isActive: true,
+      isEnabled: isKnownAgent, // Only enable known agents by default
+      lastSeenAt: new Date(),
     }
+  })
+
+  // Bulk upsert with ON CONFLICT DO UPDATE
+  // This is a single query instead of N SELECT + N INSERT/UPDATE
+  let upsertResult: Array<{ id: string; createdAt: Date }> = []
+  if (agentValues.length > 0) {
+    upsertResult = await db
+      .insert(agents)
+      .values(agentValues)
+      .onConflictDoUpdate({
+        target: agents.linearUserId,
+        set: {
+          displayName: sql`excluded.display_name`,
+          email: sql`excluded.email`,
+          avatarUrl: sql`excluded.avatar_url`,
+          isActive: sql`excluded.is_active`,
+          lastSeenAt: sql`excluded.last_seen_at`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({ id: agents.id, createdAt: agents.createdAt })
   }
+
+  // Calculate stats from the upsert result
+  // New agents will have createdAt matching the current time (within a second)
+  // Existing agents will have older createdAt timestamps
+  const now = new Date()
+  const oneSecondAgo = new Date(now.getTime() - 1000)
+  const discovered = upsertResult.filter(
+    (row) => row.createdAt >= oneSecondAgo
+  ).length
+  const updated = upsertResult.length - discovered
 
   // Mark agents not seen as inactive
   let deactivated = 0
@@ -175,29 +174,23 @@ export async function discoverAgents(): Promise<{
     deactivated = deactivatedAgents.length
   }
 
-  // Update lastDiscoveryAt in agent_config
-  // Get or create singleton config
-  const configRows = await db
-    .select()
-    .from(agentConfig)
-    .where(eq(agentConfig.id, 'singleton'))
-    .limit(1)
-
-  if (configRows.length === 0) {
-    // Create default config
-    await db.insert(agentConfig).values({
+  // Update lastDiscoveryAt in agent_config using upsert
+  // Single query instead of SELECT + INSERT/UPDATE
+  await db
+    .insert(agentConfig)
+    .values({
       id: 'singleton',
       mode: 'all',
       maxAgents: null,
       lastDiscoveryAt: new Date(),
     })
-  } else {
-    // Update existing config
-    await db
-      .update(agentConfig)
-      .set({ lastDiscoveryAt: new Date(), updatedAt: new Date() })
-      .where(eq(agentConfig.id, 'singleton'))
-  }
+    .onConflictDoUpdate({
+      target: agentConfig.id,
+      set: {
+        lastDiscoveryAt: new Date(),
+        updatedAt: new Date(),
+      },
+    })
 
   return { discovered, updated, deactivated }
 }
