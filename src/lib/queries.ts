@@ -32,9 +32,12 @@ import type {
  * ```
  */
 export async function getAgentBySlugOrName(slugOrName: string) {
-  // Try to find by slug first, then by name (in case input is actually a name with spaces)
+  // Convert slug (with dashes) to name (with spaces) and search by name
+  // e.g., "github-copilot" -> "github copilot"
+  const nameWithSpaces = slugOrName.replace(/-/g, ' ')
+
   const agent = await db.query.agents.findFirst({
-    where: or(eq(agents.slug, slugOrName), eq(agents.name, slugOrName)),
+    where: or(eq(agents.name, slugOrName), eq(agents.name, nameWithSpaces)),
   })
 
   return agent ?? null

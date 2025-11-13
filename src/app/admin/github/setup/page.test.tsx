@@ -55,4 +55,17 @@ describe('GitHub Setup Page', () => {
       screen.getByText(/Error: API connection failed/i)
     ).toBeInTheDocument()
   })
+
+  test('should display suspended message from URL param', async () => {
+    const { useSearchParams } = await import('next/navigation')
+    vi.mocked(useSearchParams).mockReturnValue({
+      get: (key: string) => (key === 'suspended' ? 'true' : null),
+    } as any)
+
+    render(<GitHubSetupPage />)
+
+    expect(
+      screen.getByText(/GitHub App installation suspended/i)
+    ).toBeInTheDocument()
+  })
 })

@@ -9,7 +9,6 @@ export default function GitHubSetupPage() {
   const error = searchParams?.get('error')
   const suspended = searchParams?.get('suspended')
 
-  const appId = process.env['NEXT_PUBLIC_GITHUB_APP_ID'] || '2287430'
   const installUrl = `https://github.com/apps/air-coding-arena/installations/new`
 
   return (

@@ -237,6 +237,7 @@ export const agents = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull().unique(),
+    slug: text('slug').notNull().unique(),
     displayName: text('display_name').notNull(),
     linearUserId: text('linear_user_id').notNull().unique(),
     email: text('email'),
