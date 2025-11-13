@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   pgTable,
   text,
@@ -9,6 +9,9 @@ import {
   jsonb,
   bigserial,
   unique,
+  boolean,
+  check,
+  index,
 } from 'drizzle-orm/pg-core'
 
 /**
@@ -146,6 +149,71 @@ export const events = pgTable(
 )
 
 /**
+ * Agents table - Discovered coding agents from Linear workspace.
+ */
+export const agents = pgTable(
+  'agents',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull().unique(),
+    displayName: text('display_name').notNull(),
+    linearUserId: text('linear_user_id').notNull().unique(),
+    email: text('email'),
+    avatarUrl: text('avatar_url'),
+    isActive: boolean('is_active').notNull().default(true),
+    isEnabled: boolean('is_enabled').notNull().default(true),
+    discoveredAt: timestamp('discovered_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    isEnabledIdx: index('idx_agents_enabled').on(table.isEnabled),
+    isActiveIdx: index('idx_agents_active').on(table.isActive),
+  })
+)
+
+/**
+ * Agent config table - Singleton table for agent configuration.
+ */
+export const agentConfig = pgTable(
+  'agent_config',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`'singleton'`),
+    mode: text('mode').notNull().default('all'),
+    maxAgents: integer('max_agents'),
+    lastDiscoveryAt: timestamp('last_discovery_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    singletonCheck: check('single_row', sql`${table.id} = 'singleton'`),
+    validModeCheck: check(
+      'valid_mode',
+      sql`${table.mode} IN ('all', 'max_n', 'manual')`
+    ),
+    validMaxAgentsCheck: check(
+      'valid_max_agents',
+      sql`${table.maxAgents} IS NULL OR ${table.maxAgents} >= 2`
+    ),
+  })
+)
+
+/**
  * Relations for type-safe joins.
  */
 export const issuesRelations = relations(issues, ({ one, many }) => ({
@@ -178,3 +246,27 @@ export const ciMetricsRelations = relations(ciMetrics, ({ one }) => ({
     references: [attempts.id],
   }),
 }))
+
+/**
+ * TypeScript types for database tables
+ */
+
+/**
+ * Agent type - represents a discovered coding agent from Linear
+ */
+export type Agent = typeof agents.$inferSelect
+
+/**
+ * NewAgent type - represents data needed to create a new agent
+ */
+export type NewAgent = typeof agents.$inferInsert
+
+/**
+ * AgentConfig type - represents agent configuration singleton
+ */
+export type AgentConfig = typeof agentConfig.$inferSelect
+
+/**
+ * NewAgentConfig type - represents data needed to create/update agent config
+ */
+export type NewAgentConfig = typeof agentConfig.$inferInsert
