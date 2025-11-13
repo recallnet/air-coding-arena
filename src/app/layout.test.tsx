@@ -84,7 +84,7 @@ describe('RootLayout', () => {
   })
 
   describe('footer', () => {
-    it('should render footer with demo mode warning', () => {
+    it('should render footer with tagline', () => {
       vi.mocked(usePathname).mockReturnValue('/')
 
       const { container } = render(
@@ -93,31 +93,9 @@ describe('RootLayout', () => {
         </RootLayout>
       )
 
-      expect(container.textContent).toContain('Demo Mode (Milestone 1)')
-    })
-
-    it('should mention sample data in footer', () => {
-      vi.mocked(usePathname).mockReturnValue('/')
-
-      const { container } = render(
-        <RootLayout>
-          <div>Test</div>
-        </RootLayout>
+      expect(container.textContent).toContain(
+        'Air Coding Arena - Real-time AI agent performance tracking'
       )
-
-      expect(container.textContent).toContain('sample data')
-    })
-
-    it('should mention webhook integration coming in Milestone 2', () => {
-      vi.mocked(usePathname).mockReturnValue('/')
-
-      const { container } = render(
-        <RootLayout>
-          <div>Test</div>
-        </RootLayout>
-      )
-
-      expect(container.textContent).toContain('Milestone 2')
     })
 
     it('should have footer element', () => {
