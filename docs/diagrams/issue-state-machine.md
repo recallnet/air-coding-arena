@@ -1,7 +1,7 @@
 # Issue Lifecycle State Machine
 
 **Generated from:** `src/machines/issueMachine.ts`
-**Last Updated:** 2025-11-13T01:06:45.469Z
+**Last Updated:** 2025-11-13T01:08:53.149Z
 
 ```mermaid
 stateDiagram-v2
