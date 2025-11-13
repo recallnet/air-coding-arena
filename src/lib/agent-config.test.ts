@@ -56,7 +56,7 @@ describe('agent-config', () => {
         },
         {
           name: DISABLED_AGENT_NAME,
-          slug: DISABLED_AGENT_NAME.toLowerCase().replace(/ /g, "-"),
+          slug: DISABLED_AGENT_NAME.toLowerCase().replace(/ /g, '-'),
           displayName: DISABLED_AGENT_DISPLAY_NAME,
           linearUserId: 'user-3',
           isEnabled: false,
@@ -95,7 +95,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: DISABLED_AGENT_NAME,
-          slug: DISABLED_AGENT_NAME.toLowerCase().replace(/ /g, "-"),
+          slug: DISABLED_AGENT_NAME.toLowerCase().replace(/ /g, '-'),
           displayName: DISABLED_AGENT_DISPLAY_NAME,
           linearUserId: 'user-1',
           isEnabled: false,

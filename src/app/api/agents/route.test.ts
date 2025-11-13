@@ -111,7 +111,7 @@ describe('GET /api/agents', () => {
     expect(agent1).toBeDefined()
     expect(agent1).toMatchObject({
       name: 'cursor',
-          slug: 'cursor',
+      slug: 'cursor',
       displayName: 'Cursor',
       linearUserId: TEST_LINEAR_USER_1,
       email: TEST_EMAIL_CURSOR,
@@ -125,7 +125,7 @@ describe('GET /api/agents', () => {
     expect(agent2).toBeDefined()
     expect(agent2).toMatchObject({
       name: 'engine',
-          slug: 'engine',
+      slug: 'engine',
       displayName: 'Engine',
       linearUserId: TEST_LINEAR_USER_2,
       email: TEST_EMAIL_ENGINE,
@@ -158,7 +158,7 @@ describe.skipIf(
     await db.insert(agents).values([
       {
         name: 'cursor',
-          slug: 'cursor',
+        slug: 'cursor',
         displayName: 'Cursor',
         linearUserId: TEST_LINEAR_USER_1,
         email: TEST_EMAIL_CURSOR,
@@ -170,7 +170,7 @@ describe.skipIf(
       },
       {
         name: 'engine',
-          slug: 'engine',
+        slug: 'engine',
         displayName: 'Engine',
         linearUserId: TEST_LINEAR_USER_2,
         email: TEST_EMAIL_ENGINE,
@@ -206,7 +206,7 @@ describe.skipIf(
     expect(agent1).toBeDefined()
     expect(agent1).toMatchObject({
       name: 'cursor',
-          slug: 'cursor',
+      slug: 'cursor',
       displayName: 'Cursor',
       linearUserId: TEST_LINEAR_USER_1,
       email: TEST_EMAIL_CURSOR,
@@ -223,7 +223,7 @@ describe.skipIf(
     expect(agent2).toBeDefined()
     expect(agent2).toMatchObject({
       name: 'engine',
-          slug: 'engine',
+      slug: 'engine',
       displayName: 'Engine',
       linearUserId: TEST_LINEAR_USER_2,
       email: TEST_EMAIL_ENGINE,
@@ -238,7 +238,7 @@ describe.skipIf(
     await db.insert(agents).values([
       {
         name: 'zebra',
-          slug: 'zebra',
+        slug: 'zebra',
         displayName: 'Zebra',
         linearUserId: 'linear-user-z',
         email: null,
@@ -248,7 +248,7 @@ describe.skipIf(
       },
       {
         name: 'alpha',
-          slug: 'alpha',
+        slug: 'alpha',
         displayName: 'Alpha',
         linearUserId: 'linear-user-a',
         email: null,
@@ -258,7 +258,7 @@ describe.skipIf(
       },
       {
         name: 'middle',
-          slug: 'middle',
+        slug: 'middle',
         displayName: 'Middle',
         linearUserId: 'linear-user-m',
         email: null,

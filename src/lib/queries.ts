@@ -8,7 +8,13 @@
 import { desc, eq, sql, and, or } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { attempts, issues, agentScores, agentScoreHistory, agents } from '@/db/schema'
+import {
+  attempts,
+  issues,
+  agentScores,
+  agentScoreHistory,
+  agents,
+} from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
