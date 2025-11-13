@@ -228,7 +228,7 @@ export default async function IssuePage({
                 </span>
                 <div className="mt-1 text-sm">
                   <Link
-                    href={`/agents/${winnerAttempt.agentName}`}
+                    href={`/agents/${winnerAttempt.agentName.toLowerCase().replace(/ /g, '-')}`}
                     className="text-blue-900 transition-colors hover:underline"
                   >
                     {winnerAttempt.agentName}
@@ -268,7 +268,7 @@ export default async function IssuePage({
                     displayName={agent.displayName}
                   />
                   <Link
-                    href={`/agents/${agent.agentName}`}
+                    href={`/agents/${agent.slug ?? agent.agentName.toLowerCase().replace(/ /g, '-')}`}
                     className="font-medium text-blue-900 transition-colors hover:underline"
                   >
                     {agent.displayName ?? agent.agentName}
@@ -323,7 +323,7 @@ export default async function IssuePage({
                   <TableRow key={attempt.id}>
                     <TableCell className="font-medium">
                       <Link
-                        href={`/agents/${attempt.agentName}`}
+                        href={`/agents/${attempt.agentName.toLowerCase().replace(/ /g, '-')}`}
                         className="text-blue-900 transition-colors hover:underline"
                       >
                         {attempt.agentName}

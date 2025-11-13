@@ -12,7 +12,8 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
-import { attempts, events } from '@/db/schema'
+import { attempts, events, githubAppInstallations } from '@/db/schema'
+import { getInstallationToken } from '@/lib/github-app-auth'
 import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
 
 type GitHubWebhookPayload = {
@@ -72,16 +73,40 @@ function verifyGitHubSignature(
  * @returns Number of commits in the PR
  */
 async function getCommitCount(repo: string, prNumber: number): Promise<number> {
-  const token = process.env['GITHUB_TOKEN']
-  if (!token) {
-    console.error('GITHUB_TOKEN not configured')
-    return 1 // Fallback to current count
-  }
-
   const [owner, repoName] = repo.split('/')
   if (!owner || !repoName) {
     console.error(`Invalid repo format: ${repo}`)
     return 1
+  }
+
+  // Look up installation for this org
+  let token: string | undefined
+  try {
+    const installation = await db
+      .select()
+      .from(githubAppInstallations)
+      .where(eq(githubAppInstallations.accountLogin, owner))
+      .limit(1)
+
+    if (installation[0]) {
+      // Use installation token
+      token = await getInstallationToken(installation[0].installationId)
+      console.log(`[GitHub] Using installation token for ${owner}`)
+    } else {
+      // Fallback to PAT if no installation found
+      console.log(
+        `[GitHub] No installation found for ${owner}, falling back to PAT`
+      )
+      token = process.env['GITHUB_TOKEN']
+    }
+  } catch (error) {
+    console.error(`[GitHub] Error looking up installation for ${owner}:`, error)
+    token = process.env['GITHUB_TOKEN']
+  }
+
+  if (!token) {
+    console.error('No GitHub authentication available (no installation or PAT)')
+    return 1 // Fallback to current count
   }
 
   const url = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/commits`
@@ -90,7 +115,8 @@ async function getCommitCount(repo: string, prNumber: number): Promise<number> {
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
       },
     })
 

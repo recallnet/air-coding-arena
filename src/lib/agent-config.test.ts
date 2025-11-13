@@ -40,6 +40,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: 'cursor',
+          slug: 'cursor',
           displayName: 'Cursor',
           linearUserId: 'user-1',
           isEnabled: true,
@@ -47,6 +48,7 @@ describe('agent-config', () => {
         },
         {
           name: 'engine',
+          slug: 'engine',
           displayName: 'Engine',
           linearUserId: 'user-2',
           isEnabled: true,
@@ -54,6 +56,7 @@ describe('agent-config', () => {
         },
         {
           name: DISABLED_AGENT_NAME,
+          slug: DISABLED_AGENT_NAME.toLowerCase().replace(/ /g, "-"),
           displayName: DISABLED_AGENT_DISPLAY_NAME,
           linearUserId: 'user-3',
           isEnabled: false,
@@ -67,12 +70,14 @@ describe('agent-config', () => {
       expect(configs).toEqual([
         {
           name: 'cursor',
+          slug: 'cursor',
           handle: '@Cursor',
           displayName: 'Cursor',
           linearUserId: 'user-1',
         },
         {
           name: 'engine',
+          slug: 'engine',
           handle: '@Engine',
           displayName: 'Engine',
           linearUserId: 'user-2',
@@ -90,6 +95,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: DISABLED_AGENT_NAME,
+          slug: DISABLED_AGENT_NAME.toLowerCase().replace(/ /g, "-"),
           displayName: DISABLED_AGENT_DISPLAY_NAME,
           linearUserId: 'user-1',
           isEnabled: false,
@@ -110,6 +116,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: 'zzz',
+          slug: 'zzz',
           displayName: 'ZZZ',
           linearUserId: 'user-1',
           isEnabled: true,
@@ -117,6 +124,7 @@ describe('agent-config', () => {
         },
         {
           name: 'aaa',
+          slug: 'aaa',
           displayName: 'AAA',
           linearUserId: 'user-2',
           isEnabled: true,
@@ -124,6 +132,7 @@ describe('agent-config', () => {
         },
         {
           name: 'mmm',
+          slug: 'mmm',
           displayName: 'MMM',
           linearUserId: 'user-3',
           isEnabled: true,
@@ -144,6 +153,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: 'cursor-agent',
+          slug: 'cursor-agent',
           displayName: 'Cursor AI',
           linearUserId: 'user-1',
           isEnabled: true,
@@ -168,6 +178,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: 'cursor',
+          slug: 'cursor',
           displayName: 'Cursor',
           linearUserId: 'user-1',
           isEnabled: true,
@@ -175,6 +186,7 @@ describe('agent-config', () => {
         },
         {
           name: 'engine',
+          slug: 'engine',
           displayName: 'Engine',
           linearUserId: 'user-2',
           isEnabled: true,
@@ -207,6 +219,7 @@ describe('agent-config', () => {
       await db.insert(agents).values([
         {
           name: 'cursor',
+          slug: 'cursor',
           displayName: 'Cursor',
           linearUserId: 'user-1',
           isEnabled: true,
@@ -214,6 +227,7 @@ describe('agent-config', () => {
         },
         {
           name: 'engine',
+          slug: 'engine',
           displayName: 'Engine',
           linearUserId: 'user-2',
           isEnabled: true,

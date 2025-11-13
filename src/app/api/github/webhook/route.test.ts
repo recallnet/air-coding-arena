@@ -6,6 +6,7 @@ import { beforeEach, describe, it, expect, vi } from 'vitest'
 
 import { db } from '@/db/client'
 import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
+import { getInstallationToken } from '@/lib/github-app-auth'
 import { updateRatingsForIssue } from '@/lib/update-ratings'
 
 import { POST } from './route'
@@ -37,6 +38,11 @@ vi.mock('@/lib/agent-status', () => ({
 // Mock rating updates
 vi.mock('@/lib/update-ratings', () => ({
   updateRatingsForIssue: vi.fn(),
+}))
+
+// Mock GitHub App auth
+vi.mock('@/lib/github-app-auth', () => ({
+  getInstallationToken: vi.fn(),
 }))
 
 // Mock Next.js cache revalidation
@@ -224,23 +230,32 @@ describe('/api/github/webhook', () => {
         }),
       } as never)
 
-      // Mock attempt lookup (PR is tracked)
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: TEST_ATTEMPT_ID,
-                issueId: TEST_ISSUE_ID,
-                agentName: 'cursor',
-                repo: TEST_REPO,
-                prNumber: TEST_PR_NUMBER,
-                commitCount: 1,
-              },
-            ]),
+      // Mock db.select for both installation lookup (returns empty) and attempt lookup
+      vi.mocked(db.select)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([]), // No installation found
+            }),
           }),
-        }),
-      } as never)
+        } as never)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([
+                // Attempt lookup (PR is tracked)
+                {
+                  id: TEST_ATTEMPT_ID,
+                  issueId: TEST_ISSUE_ID,
+                  agentName: 'cursor',
+                  repo: TEST_REPO,
+                  prNumber: TEST_PR_NUMBER,
+                  commitCount: 1,
+                },
+              ]),
+            }),
+          }),
+        } as never)
 
       // Mock GitHub API response for commit count
       global.fetch = vi.fn().mockResolvedValue({
@@ -807,6 +822,94 @@ describe('/api/github/webhook', () => {
         expect.objectContaining({
           ciStatus: 'pending',
           ciLastCheckedAt: expect.any(Date),
+        })
+      )
+    })
+
+    it('should use GitHub App installation tokens when available', async () => {
+      // Note: This test verifies that installation tokens are used.
+      // The existing tests already verify PAT fallback behavior implicitly.
+      const payload = {
+        action: 'synchronize',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+        repository: { full_name: 'recallnet/js-recall' },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock db.select: first for installation lookup, second for attempt lookup
+      vi.mocked(db.select)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([
+                {
+                  installation_id: '12345', // Use snake_case as returned by database
+                  account_login: 'recallnet',
+                },
+              ]),
+            }),
+          }),
+        } as never)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([
+                {
+                  id: TEST_ATTEMPT_ID,
+                  issueId: TEST_ISSUE_ID,
+                  agentName: 'cursor',
+                  repo: 'recallnet/js-recall',
+                  prNumber: TEST_PR_NUMBER,
+                  commitCount: 1,
+                },
+              ]),
+            }),
+          }),
+        } as never)
+
+      // Mock getInstallationToken
+      vi.mocked(getInstallationToken).mockResolvedValue('ghs_installation_token')
+
+      // Mock GitHub API response
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ sha: 'commit1' }, { sha: 'commit2' }, { sha: 'commit3' }],
+      })
+      global.fetch = mockFetch
+
+      // Mock update operation
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }]),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Verify installation token was requested
+      expect(getInstallationToken).toHaveBeenCalledWith('12345')
+
+      // Verify fetch used installation token with correct headers
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.github.com/repos/recallnet/js-recall/pulls/1559/commits',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer ghs_installation_token',
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          }),
         })
       )
     })

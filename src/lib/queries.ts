@@ -32,12 +32,9 @@ import type {
  * ```
  */
 export async function getAgentBySlugOrName(slugOrName: string) {
-  // Convert slug (with dashes) to name (with spaces) and search by name
-  // e.g., "github-copilot" -> "github copilot"
-  const nameWithSpaces = slugOrName.replace(/-/g, ' ')
-
+  // Try to find by slug first, then by name (in case input is actually a name with spaces)
   const agent = await db.query.agents.findFirst({
-    where: or(eq(agents.name, slugOrName), eq(agents.name, nameWithSpaces)),
+    where: or(eq(agents.slug, slugOrName), eq(agents.name, slugOrName)),
   })
 
   return agent ?? null
@@ -235,12 +232,14 @@ export async function getIssueById(
     status: string
     avatar_url: string | null
     display_name: string | null
+    slug: string | null
   }>(sql`
     SELECT
       ia.agent_name,
       ia.status,
       ag.avatar_url,
-      ag.display_name
+      ag.display_name,
+      ag.slug
     FROM issue_agents ia
     LEFT JOIN agents ag ON ia.agent_name = ag.name
     WHERE ia.issue_id = ${id}
@@ -270,6 +269,7 @@ export async function getIssueById(
         status,
         avatarUrl: agent.avatar_url,
         displayName: agent.display_name,
+        slug: agent.slug,
       }
     }),
   }
@@ -620,6 +620,7 @@ export type IssueAgent = {
   status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
   avatarUrl?: string | null
   displayName?: string | null
+  slug?: string | null
 }
 
 /**
@@ -741,6 +742,7 @@ export async function getIssuesWithAgents(
       status: string
       avatar_url: string | null
       display_name: string | null
+      slug: string | null
     }>
   }>(sql`
     WITH issue_pr_counts AS (
@@ -779,7 +781,8 @@ export async function getIssuesWithAgents(
           ELSE 'pending'
         END AS status,
         ag.avatar_url,
-        ag.display_name
+        ag.display_name,
+        ag.slug
       FROM issue_agents ia
       INNER JOIN issues i ON i.id = ia.issue_id
       LEFT JOIN attempts wa ON wa.id = i.winner_attempt_id
@@ -793,7 +796,8 @@ export async function getIssuesWithAgents(
             'agent_name', agent_name,
             'status', status,
             'avatar_url', avatar_url,
-            'display_name', display_name
+            'display_name', display_name,
+            'slug', slug
           )
           ORDER BY
             CASE status
@@ -835,6 +839,7 @@ export async function getIssuesWithAgents(
             status: string
             avatar_url: string | null
             display_name: string | null
+            slug: string | null
           }): IssueAgent => {
             const agentStatus = agent.status
             if (
@@ -851,6 +856,7 @@ export async function getIssuesWithAgents(
               status: agentStatus,
               avatarUrl: agent.avatar_url,
               displayName: agent.display_name,
+              slug: agent.slug,
             }
           }
         )
