@@ -364,23 +364,14 @@ export default async function IssuePage({
         <div className="mt-6">
           <PRComparisonContainer
             agents={(() => {
-              // Generate mock PR data for agents with attempts
-              const agentsWithAttempts = issue.agents.filter((agent) =>
-                issue.attempts.some(
-                  (attempt) => attempt.agentName === agent.agentName
-                )
-              )
-
-              if (agentsWithAttempts.length < 2) {
-                return []
-              }
-
+              // Milestone 1: Generate mock PR data for all agents (not just those with attempts)
+              // This allows users to preview the UI even when some agents haven't submitted PRs yet
               const mockComparison = generateMockPRComparison(
-                agentsWithAttempts.map((a) => a.agentName)
+                issue.agents.map((a) => a.agentName)
               )
 
               return mockComparison.agents.map((agentData, index) => {
-                const agent = agentsWithAttempts[index]
+                const agent = issue.agents[index]
                 if (!agent) {
                   return {
                     ...agentData,
