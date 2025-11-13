@@ -133,7 +133,7 @@ export function ActivityLog({
                   </TableCell>
                   <TableCell>
                     <Link
-                      href={`/agents/${activity.agentName}`}
+                      href={`/agents/${activity.agentName.replace(/ /g, '-').toLowerCase()}`}
                       className="font-medium text-blue-600 hover:underline"
                     >
                       {activity.agentName}

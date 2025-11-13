@@ -103,7 +103,10 @@ function formatDate(date: Date | null): string {
 export default async function AgentPage({
   params,
 }: PageProps): Promise<React.JSX.Element> {
-  const { agentName } = await params
+  const { agentName: slugOrName } = await params
+
+  // Convert slug back to agent name (slug uses hyphens, name uses spaces)
+  const agentName = slugOrName.replace(/-/g, ' ')
 
   // Fetch all attempts for this agent
   const attempts = await getAttemptsByAgent(agentName)
