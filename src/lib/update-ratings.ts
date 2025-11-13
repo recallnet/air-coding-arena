@@ -31,14 +31,24 @@ function determineRanking(
     mergedAt: Date | null
     closedAt: Date | null
     openedAt: Date
+    commitCount: number
   }>
 ): string[] {
   // Filter to only agents who finished (merged or closed with effort)
-  // Exclude DNF: status='closed' with no mergedAt and closedAt very close to openedAt
+  // Exclude DNF: closed PRs with minimal effort (< 2 commits) or very short lifespan (< 5 minutes)
   const finishers = issueAttempts.filter((attempt) => {
     if (attempt.status === 'merged') return true
     if (attempt.status === 'closed' && attempt.closedAt) {
-      // Consider closed PRs as "finished" (they competed but lost)
+      // Check for DNF indicators: minimal commits or very short lifespan
+      const lifespanMs = attempt.closedAt.getTime() - attempt.openedAt.getTime()
+      const lifespanMinutes = lifespanMs / (1000 * 60)
+
+      // DNF if: low commit count (< 2 = minimal effort) OR closed within 5 minutes
+      if (attempt.commitCount < 2 || lifespanMinutes < 5) {
+        return false // Exclude from finishers
+      }
+
+      // Otherwise, closed PRs with effort are considered "finished" (competed but lost)
       return true
     }
     return false
