@@ -13,8 +13,8 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { attempts, events, githubAppInstallations } from '@/db/schema'
-import { getInstallationToken } from '@/lib/github-app-auth'
 import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
+import { getInstallationToken } from '@/lib/github-app-auth'
 
 type GitHubWebhookPayload = {
   action: string

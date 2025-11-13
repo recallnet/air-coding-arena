@@ -230,32 +230,39 @@ describe('/api/github/webhook', () => {
         }),
       } as never)
 
-      // Mock db.select for both installation lookup (returns empty) and attempt lookup
+      // Create separate mock chains for each select call
+      const installationLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]), // No installation found
+          }),
+        }),
+      }
+
+      const attemptLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              // Attempt lookup (PR is tracked)
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+                commitCount: 1,
+              },
+            ]),
+          }),
+        }),
+      }
+
+      // Mock db.select for both attempt lookup and installation lookup
+      // eslint-disable-next-line no-secrets/no-secrets
+      // (execution order: handlePullRequestSynchronize checks attempt first, then calls getCommitCount which checks installation)
       vi.mocked(db.select)
-        .mockReturnValueOnce({
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([]), // No installation found
-            }),
-          }),
-        } as never)
-        .mockReturnValueOnce({
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([
-                // Attempt lookup (PR is tracked)
-                {
-                  id: TEST_ATTEMPT_ID,
-                  issueId: TEST_ISSUE_ID,
-                  agentName: 'cursor',
-                  repo: TEST_REPO,
-                  prNumber: TEST_PR_NUMBER,
-                  commitCount: 1,
-                },
-              ]),
-            }),
-          }),
-        } as never)
+        .mockReturnValueOnce(attemptLookupChain as never)
+        .mockReturnValueOnce(installationLookupChain as never)
 
       // Mock GitHub API response for commit count
       global.fetch = vi.fn().mockResolvedValue({
@@ -656,8 +663,16 @@ describe('/api/github/webhook', () => {
         }),
       } as never)
 
-      // Mock attempt lookup - PR with previous success status
-      vi.mocked(db.select).mockReturnValue({
+      // Create separate mock chains for each select call
+      const installationLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]), // No installation found
+          }),
+        }),
+      }
+
+      const attemptLookupChain = {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             limit: vi.fn().mockResolvedValue([
@@ -673,7 +688,14 @@ describe('/api/github/webhook', () => {
             ]),
           }),
         }),
-      } as never)
+      }
+
+      // Mock db.select for both attempt lookup and installation lookup
+      // eslint-disable-next-line no-secrets/no-secrets
+      // (execution order: handlePullRequestSynchronize checks attempt first, then calls getCommitCount which checks installation)
+      vi.mocked(db.select)
+        .mockReturnValueOnce(attemptLookupChain as never)
+        .mockReturnValueOnce(installationLookupChain as never)
 
       // Mock GitHub API response
       global.fetch = vi.fn().mockResolvedValue({
@@ -847,44 +869,65 @@ describe('/api/github/webhook', () => {
         }),
       } as never)
 
-      // Mock db.select: first for installation lookup, second for attempt lookup
+      // Create separate mock chains for each select call
+      const installationLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: 'install-uuid',
+                installationId: '12345', // GitHub's installation ID
+                accountId: '123',
+                accountLogin: 'recallnet',
+                accountType: 'Organization',
+                isActive: true,
+                installedAt: new Date(),
+                suspendedAt: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ]),
+          }),
+        }),
+      }
+
+      const attemptLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: 'recallnet/js-recall',
+                prNumber: TEST_PR_NUMBER,
+                commitCount: 1,
+              },
+            ]),
+          }),
+        }),
+      }
+
+      // Mock db.select: first for attempt lookup, second for installation lookup
+      // eslint-disable-next-line no-secrets/no-secrets
+      // (execution order: handlePullRequestSynchronize checks attempt first, then calls getCommitCount which checks installation)
       vi.mocked(db.select)
-        .mockReturnValueOnce({
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([
-                {
-                  installation_id: '12345', // Use snake_case as returned by database
-                  account_login: 'recallnet',
-                },
-              ]),
-            }),
-          }),
-        } as never)
-        .mockReturnValueOnce({
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([
-                {
-                  id: TEST_ATTEMPT_ID,
-                  issueId: TEST_ISSUE_ID,
-                  agentName: 'cursor',
-                  repo: 'recallnet/js-recall',
-                  prNumber: TEST_PR_NUMBER,
-                  commitCount: 1,
-                },
-              ]),
-            }),
-          }),
-        } as never)
+        .mockReturnValueOnce(attemptLookupChain as never)
+        .mockReturnValueOnce(installationLookupChain as never)
 
       // Mock getInstallationToken
-      vi.mocked(getInstallationToken).mockResolvedValue('ghs_installation_token')
+      vi.mocked(getInstallationToken).mockResolvedValue(
+        'ghs_installation_token'
+      )
 
       // Mock GitHub API response
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => [{ sha: 'commit1' }, { sha: 'commit2' }, { sha: 'commit3' }],
+        json: async () => [
+          { sha: 'commit1' },
+          { sha: 'commit2' },
+          { sha: 'commit3' },
+        ],
       })
       global.fetch = mockFetch
 
