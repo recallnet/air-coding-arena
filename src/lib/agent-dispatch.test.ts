@@ -357,7 +357,7 @@ describe('dispatchMissingAgents', () => {
     expect(count).toBe(1)
     expect(mockCreateComment).toHaveBeenCalledWith({
       issueId: 'linear-123',
-      body: '@[Cursor](user-1) please work on this issue.',
+      body: '@[Cursor](user-1) please work on this issue and submit a PR.',
     })
     expect(mockInsert).toHaveBeenCalled()
   })
@@ -440,7 +440,7 @@ describe('dispatchMissingAgents', () => {
     expect(mockCreateComment).toHaveBeenCalledTimes(1)
     expect(mockCreateComment).toHaveBeenCalledWith({
       issueId: 'linear-123',
-      body: '@[Engine](user-2) please work on this issue.',
+      body: '@[Engine](user-2) please work on this issue and submit a PR.',
     })
   })
 
@@ -515,7 +515,7 @@ describe('dispatchMissingAgents', () => {
     expect(count).toBe(1)
     expect(mockCreateComment).toHaveBeenCalledWith({
       issueId: 'linear-123',
-      body: '@[Unknown](user-unknown) please work on this issue.',
+      body: '@[Unknown](user-unknown) please work on this issue and submit a PR.',
     })
     expect(mockInsert).toHaveBeenCalledWith('issue_agents')
   })
@@ -740,7 +740,7 @@ describe('dispatchMissingAgents', () => {
     expect(mockCreateComment).toHaveBeenCalledTimes(1)
     expect(mockCreateComment).toHaveBeenCalledWith({
       issueId: 'linear-123',
-      body: '@[Engine](user-2) please work on this issue.',
+      body: '@[Engine](user-2) please work on this issue and submit a PR.',
     })
   })
 

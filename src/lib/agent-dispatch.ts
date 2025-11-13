@@ -168,7 +168,7 @@ export async function dispatchMissingAgents(
 
       // Create simple dispatch comment with proper @mention: @[displayName](userId)
       const mention = `@[${agentConfig.displayName}](${userId})`
-      const commentBody = `${mention} please work on this issue.`
+      const commentBody = `${mention} please work on this issue and submit a PR.`
 
       await client.createComment({
         issueId: linearId,
