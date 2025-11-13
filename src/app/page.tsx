@@ -31,6 +31,9 @@ import {
 } from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
 
+// Revalidate every 30 seconds - fresh data without constant DB queries
+export const revalidate = 30
+
 /**
  * Dashboard home page component.
  * Displays agent leaderboard with performance metrics.
