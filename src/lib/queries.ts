@@ -8,12 +8,14 @@
 import { desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { attempts, issues, issueAgents } from '@/db/schema'
+import { attempts, issues, issueAgents, agentScores, agentScoreHistory } from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
   Issue,
   IssueWithAttemptData,
+  AgentScore,
+  AgentScoreHistory,
 } from '@/types/database'
 
 /**
@@ -779,4 +781,51 @@ export async function getIssuesWithAgents(
       agents,
     }
   })
+}
+
+/**
+ * Gets all agent scores ordered by ordinal score (highest first).
+ *
+ * @returns Array of agent scores
+ */
+export async function getAgentScores(): Promise<AgentScore[]> {
+  return db
+    .select()
+    .from(agentScores)
+    .orderBy(desc(agentScores.ordinal))
+}
+
+/**
+ * Gets score for a specific agent.
+ *
+ * @param agentName - Agent identifier
+ * @returns Agent score or null if not found
+ */
+export async function getAgentScore(agentName: string): Promise<AgentScore | null> {
+  const result = await db
+    .select()
+    .from(agentScores)
+    .where(eq(agentScores.agentName, agentName))
+    .limit(1)
+
+  return result[0] ?? null
+}
+
+/**
+ * Gets rating history for a specific agent.
+ *
+ * @param agentName - Agent identifier
+ * @param limit - Maximum number of records (default: 100)
+ * @returns Array of historical scores ordered by completion date (newest first)
+ */
+export async function getAgentScoreHistory(
+  agentName: string,
+  limit = 100
+): Promise<AgentScoreHistory[]> {
+  return db
+    .select()
+    .from(agentScoreHistory)
+    .where(eq(agentScoreHistory.agentName, agentName))
+    .orderBy(desc(agentScoreHistory.completedAt))
+    .limit(limit)
 }

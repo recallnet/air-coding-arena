@@ -19,6 +19,9 @@ import {
   getAgentTemporalStats,
   getRecentActivity,
   getIssuesWithAgents,
+  getAgentScores,
+  getAgentScore,
+  getAgentScoreHistory,
 } from './queries'
 
 // Mock the db client before importing queries
@@ -1323,6 +1326,208 @@ describe('getIssuesWithAgents', () => {
       mockDb.execute.mockRejectedValue(error as never)
 
       await expect(getIssuesWithAgents()).rejects.toThrow(errorMessage)
+    })
+  })
+})
+
+describe('agent rating queries', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('getAgentScores', () => {
+    it('should return all agent scores ordered by ordinal DESC', async () => {
+      const mockDbResult = [
+        {
+          id: 'score-1',
+          agentName: MOCK_AGENT_NAME,
+          mu: 26.5,
+          sigma: 7.8,
+          ordinal: 1320.5,
+          gamesPlayed: 5,
+          lastUpdatedAt: MOCK_DATE_1,
+          createdAt: MOCK_DATE_1,
+        },
+        {
+          id: 'score-2',
+          agentName: 'engine',
+          mu: 25.2,
+          sigma: 8.0,
+          ordinal: 1300.2,
+          gamesPlayed: 3,
+          lastUpdatedAt: MOCK_DATE_1,
+          createdAt: MOCK_DATE_1,
+        },
+      ]
+
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue(mockDbResult),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScores()
+
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toHaveLength(2)
+      if (result.length > 1) {
+        // Verify descending order by ordinal
+        expect(result[0]!.ordinal).toBeGreaterThanOrEqual(result[1]!.ordinal)
+      }
+    })
+
+    it('should include all rating fields', async () => {
+      const mockDbResult = [
+        {
+          id: 'score-1',
+          agentName: MOCK_AGENT_NAME,
+          mu: 26.5,
+          sigma: 7.8,
+          ordinal: 1320.5,
+          gamesPlayed: 5,
+          lastUpdatedAt: MOCK_DATE_1,
+          createdAt: MOCK_DATE_1,
+        },
+      ]
+
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue(mockDbResult),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScores()
+
+      if (result.length > 0) {
+        const firstScore = result[0]!
+        expect(firstScore).toHaveProperty('agentName')
+        expect(firstScore).toHaveProperty('mu')
+        expect(firstScore).toHaveProperty('sigma')
+        expect(firstScore).toHaveProperty('ordinal')
+        expect(firstScore).toHaveProperty('gamesPlayed')
+      }
+    })
+
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue([]),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScores()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('getAgentScore', () => {
+    it('should return score for specific agent', async () => {
+      const mockDbResult = [
+        {
+          id: 'score-1',
+          agentName: MOCK_AGENT_NAME,
+          mu: 26.5,
+          sigma: 7.8,
+          ordinal: 1320.5,
+          gamesPlayed: 5,
+          lastUpdatedAt: MOCK_DATE_1,
+          createdAt: MOCK_DATE_1,
+        },
+      ]
+
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue(mockDbResult),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScore(MOCK_AGENT_NAME)
+
+      expect(result).toBeDefined()
+      expect(result?.agentName).toBe(MOCK_AGENT_NAME)
+      expect(result?.mu).toBeGreaterThan(0)
+    })
+
+    it('should return null for non-existent agent', async () => {
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScore('nonexistent')
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('getAgentScoreHistory', () => {
+    it('should return history for agent ordered by completedAt DESC', async () => {
+      const mockDbResult = [
+        {
+          id: 'history-1',
+          agentName: MOCK_AGENT_NAME,
+          issueId: 'issue-1',
+          mu: 27.0,
+          sigma: 7.5,
+          ordinal: 1330.0,
+          rank: 1,
+          completedAt: MOCK_DATE_3,
+          createdAt: MOCK_DATE_3,
+        },
+        {
+          id: 'history-2',
+          agentName: MOCK_AGENT_NAME,
+          issueId: 'issue-2',
+          mu: 26.5,
+          sigma: 7.8,
+          ordinal: 1320.5,
+          rank: 2,
+          completedAt: MOCK_DATE_2,
+          createdAt: MOCK_DATE_2,
+        },
+      ]
+
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue(mockDbResult),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScoreHistory(MOCK_AGENT_NAME)
+
+      expect(Array.isArray(result)).toBe(true)
+      if (result.length > 1) {
+        // Verify descending order by date
+        expect(result[0]!.completedAt.getTime()).toBeGreaterThanOrEqual(
+          result[1]!.completedAt.getTime()
+        )
+      }
+    })
+
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentScoreHistory('nonexistent')
+
+      expect(result).toEqual([])
     })
   })
 })
