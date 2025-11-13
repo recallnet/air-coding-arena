@@ -39,6 +39,11 @@ vi.mock('@/lib/update-ratings', () => ({
   updateRatingsForIssue: vi.fn(),
 }))
 
+// Mock Next.js cache revalidation
+vi.mock('next/cache', () => ({
+  updateTag: vi.fn(),
+}))
+
 /**
  * Helper to create authenticated request
  *

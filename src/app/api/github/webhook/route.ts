@@ -7,6 +7,7 @@
 import crypto from 'node:crypto'
 
 import { and, eq } from 'drizzle-orm'
+import { updateTag } from 'next/cache'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -318,7 +319,10 @@ async function handlePullRequestClosed(
     // Update agent ratings after PR merge
     // Critical business logic - fail loudly if this breaks
     await updateRatingsForIssue(attempt.issueId)
-    console.log(`[GitHub] Updated ratings for issue ${attempt.issueId}`)
+    await updateTag('agent-stats')
+    console.log(
+      `[GitHub] Updated ratings for issue ${attempt.issueId} and invalidated cache`
+    )
   } else {
     // PR was closed without merging
     await db

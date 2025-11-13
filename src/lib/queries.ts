@@ -34,7 +34,6 @@ import type {
  * ```
  */
 export async function getAgentStats(): Promise<AgentStats[]> {
-  'use cache'
   const result = await db.execute<{
     agent_name: string
     attempts: number
@@ -473,7 +472,6 @@ export type AgentTemporalStat = {
 export async function getAgentTemporalStats(
   days: number = 30
 ): Promise<AgentTemporalStat[]> {
-  'use cache'
   const result = await db.execute<{
     date: string
     agent_name: string
@@ -703,7 +701,6 @@ export async function getRecentActivity(
 export async function getIssuesWithAgents(
   limit: number = 30
 ): Promise<IssueWithAgents[]> {
-  'use cache'
   const result = await db.execute<{
     id: string
     linear_key: string
