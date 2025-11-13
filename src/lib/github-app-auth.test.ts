@@ -1,7 +1,12 @@
+/* eslint-disable no-undef */
 import jwt from 'jsonwebtoken'
-import { describe, test, expect, beforeEach, afterEach } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
-import { generateAppJWT } from './github-app-auth'
+import {
+  generateAppJWT,
+  getInstallationToken,
+  clearTokenCache,
+} from './github-app-auth'
 
 /* eslint-disable no-secrets/no-secrets */
 // Test private key - not a real secret, used only for unit testing JWT generation
@@ -55,6 +60,112 @@ describe('GitHub App Auth', () => {
     delete process.env['GITHUB_APP_PRIVATE_KEY']
     expect(() => generateAppJWT()).toThrow(
       'GITHUB_APP_PRIVATE_KEY not configured'
+    )
+  })
+})
+
+describe('Installation Token Management', () => {
+  const originalEnv = process.env
+
+  beforeEach(() => {
+    process.env = {
+      ...originalEnv,
+      GITHUB_APP_ID: '123456',
+      GITHUB_APP_PRIVATE_KEY: TEST_PRIVATE_KEY,
+    }
+  })
+
+  afterEach(() => {
+    clearTokenCache()
+    vi.restoreAllMocks()
+    process.env = originalEnv
+  })
+
+  test('getInstallationToken should fetch token from GitHub', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        token: 'ghs_test_token',
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+      }),
+    })
+    global.fetch = mockFetch
+
+    const token = await getInstallationToken('12345')
+
+    expect(token).toBe('ghs_test_token')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.github.com/app/installations/12345/access_tokens',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        }),
+      })
+    )
+  })
+
+  test('getInstallationToken should cache tokens', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        token: 'ghs_cached_token',
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+      }),
+    })
+    global.fetch = mockFetch
+
+    // First call should fetch
+    const token1 = await getInstallationToken('12345')
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    // Second call should use cache
+    const token2 = await getInstallationToken('12345')
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(token1).toBe(token2)
+  })
+
+  test('getInstallationToken should refresh expired tokens', async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: 'ghs_old_token',
+          expires_at: new Date(Date.now() + 100).toISOString(), // Expires in 100ms
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: 'ghs_new_token',
+          expires_at: new Date(Date.now() + 3600000).toISOString(),
+        }),
+      })
+    global.fetch = mockFetch
+
+    const token1 = await getInstallationToken('12345')
+    expect(token1).toBe('ghs_old_token')
+
+    // Wait for token to expire
+    await new Promise((resolve) => setTimeout(resolve, 150))
+
+    const token2 = await getInstallationToken('12345')
+    expect(token2).toBe('ghs_new_token')
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  test('getInstallationToken should throw on API error', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+    })
+    global.fetch = mockFetch
+
+    await expect(getInstallationToken('99999')).rejects.toThrow(
+      'Failed to get installation token: 404 Not Found'
     )
   })
 })
