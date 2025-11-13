@@ -995,4 +995,82 @@ describe('IssuePage', () => {
       expect(mockGetIssueById).toHaveBeenCalledWith('test-id-123')
     })
   })
+
+  describe('PR Comparison', () => {
+    it('renders PR comparison section when agents have PRs', async () => {
+      const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
+        ...createMockIssue({
+          id: MOCK_ISSUE_ID,
+          linearId: MOCK_LINEAR_ID,
+          linearKey: MOCK_LINEAR_KEY,
+          title: MOCK_ISSUE_TITLE,
+          url: MOCK_LINEAR_URL,
+          repo: MOCK_REPO,
+          status: MOCK_STATUS_IN_PROGRESS,
+          arenaReadyLabeledAt: MOCK_READY_DATE,
+          createdAt: MOCK_CREATED_DATE,
+        }),
+        attempts: [
+          {
+            id: MOCK_ATTEMPT_ID_1,
+            issueId: MOCK_ISSUE_ID,
+            agentName: MOCK_AGENT_CURSOR,
+            repo: MOCK_REPO,
+            prNumber: 1234,
+            prUrl: 'https://github.com/org/repo/pull/1234',
+            branch: MOCK_BRANCH,
+            openedAt: MOCK_OPENED_DATE,
+            mergedAt: null,
+            closedAt: null,
+            status: MOCK_STATUS_OPEN,
+            commitCount: 5,
+            lastCommitSha: MOCK_COMMIT_SHA,
+            ciStatus: null,
+            ciLastCheckedAt: null,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
+          },
+          {
+            id: MOCK_ATTEMPT_ID_2,
+            issueId: MOCK_ISSUE_ID,
+            agentName: MOCK_AGENT_ENGINE,
+            repo: MOCK_REPO,
+            prNumber: 1235,
+            prUrl: 'https://github.com/org/repo/pull/1235',
+            branch: 'feature/fix-2',
+            openedAt: MOCK_OPENED_DATE,
+            mergedAt: null,
+            closedAt: null,
+            status: MOCK_STATUS_OPEN,
+            commitCount: 3,
+            lastCommitSha: 'def456',
+            ciStatus: null,
+            ciLastCheckedAt: null,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
+          },
+        ],
+        agents: [
+          {
+            agentName: MOCK_AGENT_CURSOR,
+            displayName: 'Cursor',
+            avatarUrl: null,
+            status: 'submitted',
+          },
+          {
+            agentName: MOCK_AGENT_ENGINE,
+            displayName: 'Engine',
+            avatarUrl: null,
+            status: 'submitted',
+          },
+        ],
+      }
+
+      mockGetIssueById.mockResolvedValue(mockIssue)
+
+      render(await IssuePage({ params: { id: MOCK_ISSUE_ID } }))
+
+      expect(screen.getByText('PR Comparison')).toBeInTheDocument()
+    })
+  })
 })

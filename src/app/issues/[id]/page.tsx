@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { AgentAvatar } from '@/components/AgentAvatar'
+import { PRComparisonContainer } from '@/components/PRComparisonContainer'
 import { Badge } from '@/components/ui/Badge'
 import {
   Card,
@@ -25,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import { generateMockPRComparison } from '@/lib/mock-pr-data'
 import { getIssueById } from '@/lib/queries'
 import type { AttemptStatus, IssueStatus } from '@/types/database'
 
@@ -356,6 +358,46 @@ export default async function IssuePage({
           )}
         </CardContent>
       </Card>
+
+      {/* PR Comparison Section - Milestone 1 */}
+      {issue.agents.length >= 2 && (
+        <div className="mt-6">
+          <PRComparisonContainer
+            agents={(() => {
+              // Generate mock PR data for agents with attempts
+              const agentsWithAttempts = issue.agents.filter((agent) =>
+                issue.attempts.some(
+                  (attempt) => attempt.agentName === agent.agentName
+                )
+              )
+
+              if (agentsWithAttempts.length < 2) {
+                return []
+              }
+
+              const mockComparison = generateMockPRComparison(
+                agentsWithAttempts.map((a) => a.agentName)
+              )
+
+              return mockComparison.agents.map((agentData, index) => {
+                const agent = agentsWithAttempts[index]
+                if (!agent) {
+                  return {
+                    ...agentData,
+                    displayName: null,
+                    avatarUrl: null,
+                  }
+                }
+                return {
+                  ...agentData,
+                  displayName: agent.displayName ?? null,
+                  avatarUrl: agent.avatarUrl ?? null,
+                }
+              })
+            })()}
+          />
+        </div>
+      )}
     </main>
   )
 }
