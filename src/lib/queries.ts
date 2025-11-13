@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 
-import { desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, sql, and } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import {
@@ -859,4 +859,114 @@ export async function getAgentScoreHistory(
     .where(eq(agentScoreHistory.agentName, agentName))
     .orderBy(desc(agentScoreHistory.completedAt))
     .limit(limit)
+}
+
+/**
+ * Issue participation record with latest attempt details.
+ */
+export type IssueParticipationRecord = {
+  agentName: string
+  status: string
+  triggeredAt: Date | null
+  latestPrUrl: string | null
+  latestPrStatus: string | null
+  commitCount: number | null
+}
+
+/**
+ * Get agent participation summary for an issue.
+ * Includes both issueAgents status and latest attempt details.
+ *
+ * This query joins issueAgents with attempts to provide a comprehensive view of:
+ * - Which agents are participating (from issueAgents table)
+ * - Their overall status (pending, submitted, accepted, rejected)
+ * - Details of their most recent PR (from attempts table)
+ *
+ * Use this when you need to display agent participation on an issue detail page.
+ *
+ * @param issueId - UUID of the issue
+ * @returns Array of agent participation records with latest PR info
+ *
+ * @example
+ * ```ts
+ * const participation = await getIssueParticipation('issue-uuid')
+ * // [
+ * //   { agentName: 'cursor', status: 'submitted', latestPrUrl: '...', ... },
+ * //   { agentName: 'engine', status: 'pending', latestPrUrl: null, ... }
+ * // ]
+ * ```
+ */
+export async function getIssueParticipation(
+  issueId: string
+): Promise<IssueParticipationRecord[]> {
+  const result = await db.execute<{
+    agent_name: string
+    status: string
+    triggered_at: Date | null
+    latest_pr_url: string | null
+    latest_pr_status: string | null
+    commit_count: number | null
+  }>(sql`
+    SELECT
+      ia.agent_name,
+      ia.status,
+      ia.triggered_at,
+      a.pr_url AS latest_pr_url,
+      a.status AS latest_pr_status,
+      a.commit_count
+    FROM issue_agents ia
+    LEFT JOIN LATERAL (
+      SELECT pr_url, status, commit_count
+      FROM attempts
+      WHERE attempts.issue_id = ia.issue_id
+        AND attempts.agent_name = ia.agent_name
+      ORDER BY opened_at DESC
+      LIMIT 1
+    ) a ON true
+    WHERE ia.issue_id = ${issueId}
+    ORDER BY ia.triggered_at ASC
+  `)
+
+  return result.map((row) => ({
+    agentName: row.agent_name,
+    status: row.status,
+    triggeredAt: row.triggered_at,
+    latestPrUrl: row.latest_pr_url,
+    latestPrStatus: row.latest_pr_status,
+    commitCount: row.commit_count !== null ? Number(row.commit_count) : null,
+  }))
+}
+
+/**
+ * Get full PR history for an agent on an issue.
+ * Returns all attempts ordered by most recent first.
+ *
+ * This query retrieves the complete history of PR submissions from a specific agent
+ * for a specific issue. Useful for tracking resubmissions and PR iterations.
+ *
+ * Use this when you need to see all PRs an agent has submitted, not just the latest one.
+ *
+ * @param issueId - UUID of the issue
+ * @param agentName - Name of the agent (e.g., 'cursor', 'engine', 'cyrus')
+ * @returns Array of attempts ordered by openedAt DESC
+ *
+ * @example
+ * ```ts
+ * const attempts = await getAgentAttempts('issue-uuid', 'cursor')
+ * // [
+ * //   { id: '...', prNumber: 3, status: 'open', openedAt: Date(2024-01-03), ... },
+ * //   { id: '...', prNumber: 2, status: 'closed', openedAt: Date(2024-01-02), ... },
+ * //   { id: '...', prNumber: 1, status: 'closed', openedAt: Date(2024-01-01), ... }
+ * // ]
+ * ```
+ */
+export async function getAgentAttempts(
+  issueId: string,
+  agentName: string
+): Promise<Attempt[]> {
+  return db
+    .select()
+    .from(attempts)
+    .where(and(eq(attempts.issueId, issueId), eq(attempts.agentName, agentName)))
+    .orderBy(desc(attempts.openedAt))
 }

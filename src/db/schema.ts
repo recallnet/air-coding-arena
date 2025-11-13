@@ -59,7 +59,24 @@ export const issues = pgTable('issues', {
 })
 
 /**
- * Attempts table - Each PR opened by an agent for an issue.
+ * Attempts table - Tracks individual PR submissions and their lifecycle.
+ *
+ * Each record represents one PR submission for an issue by an agent.
+ * Contains detailed PR metrics including commit counts, CI status, and merge outcomes.
+ *
+ * Created by: Linear webhook when PR attachment added to issue
+ * Updated by: GitHub webhook on PR events (synchronized, check_suite, closed)
+ *
+ * Relationship with issueAgents:
+ * - Multiple attempts can exist for one issueAgent (PR resubmissions)
+ * - attempt.status reflects outcome of that specific PR ('open' | 'merged' | 'closed')
+ * - issueAgent.status is derived from attempt outcomes
+ *
+ * Data flow:
+ * 1. Linear webhook receives attachment.create -> creates attempt with 'open' status
+ * 2. GitHub webhook receives pull_request.synchronized -> updates commitCount
+ * 3. GitHub webhook receives check_suite.completed -> updates ciStatus
+ * 4. GitHub webhook receives pull_request.closed -> updates status to 'merged'/'closed'
  */
 export const attempts = pgTable(
   'attempts',
@@ -93,7 +110,32 @@ export const attempts = pgTable(
 )
 
 /**
- * Issue agents table - Dispatch bookkeeping.
+ * Issue Agents table - Tracks agent participation and dispatch on issues.
+ *
+ * Represents which agents were mentioned/dispatched for each issue.
+ * This is the primary table for tracking agent involvement and final outcomes.
+ *
+ * Created by: Linear webhook when agent mentioned in issue comment
+ * Updated by: updateAgentStatusOnPR() when PR is created/closed
+ *
+ * Relationship with attempts:
+ * - One issueAgent record per (issue, agent) pair (enforced by unique constraint)
+ * - Zero or more attempts per issueAgent (agent may not submit PR, or resubmit)
+ * - issueAgent.status reflects final outcome for the agent on this issue
+ * - attempts table contains detailed PR metrics and lifecycle events
+ *
+ * Status lifecycle:
+ * - 'pending': Agent mentioned but no PR opened yet
+ * - 'submitted': Agent has open PR (updated when first PR created)
+ * - 'accepted': Agent's PR was merged (winner)
+ * - 'rejected': Agent's PR(s) closed without merge
+ * - 'ignored': Issue closed without agent submitting PR
+ * - 'dispatch_failed': Failed to dispatch agent to issue
+ *
+ * Single source of truth for:
+ * - Which agents were involved in an issue
+ * - Overall win/loss outcome per agent per issue
+ * - Agent dispatch timing and status
  */
 export const issueAgents = pgTable(
   'issue_agents',

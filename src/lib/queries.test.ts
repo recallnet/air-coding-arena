@@ -22,6 +22,8 @@ import {
   getAgentScores,
   getAgentScore,
   getAgentScoreHistory,
+  getIssueParticipation,
+  getAgentAttempts,
 } from './queries'
 
 // Mock the db client before importing queries
@@ -52,6 +54,8 @@ const PROPAGATE_ERROR_MESSAGE = 'should propagate the error'
 const DB_QUERY_FAILS_DESCRIPTION = 'when database query fails'
 const MOCK_ISSUE_TITLE_1 = 'Fix bug in dashboard'
 const MOCK_ISSUE_TITLE_2 = 'Add new feature'
+// eslint-disable-next-line sonarjs/no-duplicate-string -- Constant definition for reuse
+const MOCK_PR_URL_3 = 'https://github.com/pr/3'
 
 describe('getAgentStats', () => {
   beforeEach(() => {
@@ -1344,6 +1348,210 @@ describe('getIssuesWithAgents', () => {
       mockDb.execute.mockRejectedValue(error as never)
 
       await expect(getIssuesWithAgents()).rejects.toThrow(errorMessage)
+    })
+  })
+})
+
+describe('getIssueParticipation', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when issue has participating agents', () => {
+    it('should return agent participation with latest PR details', async () => {
+      const mockDbResult = [
+        {
+          agent_name: MOCK_AGENT_NAME,
+          status: 'submitted',
+          triggered_at: MOCK_DATE_1,
+          latest_pr_url: MOCK_PR_URL,
+          latest_pr_status: MOCK_STATUS_OPEN,
+          commit_count: 3,
+        },
+        {
+          agent_name: 'engine',
+          status: 'pending',
+          triggered_at: MOCK_DATE_2,
+          latest_pr_url: null,
+          latest_pr_status: null,
+          commit_count: null,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssueParticipation(MOCK_ISSUE_ID)
+
+      expect(result).toEqual([
+        {
+          agentName: MOCK_AGENT_NAME,
+          status: 'submitted',
+          triggeredAt: MOCK_DATE_1,
+          latestPrUrl: MOCK_PR_URL,
+          latestPrStatus: MOCK_STATUS_OPEN,
+          commitCount: 3,
+        },
+        {
+          agentName: 'engine',
+          status: 'pending',
+          triggeredAt: MOCK_DATE_2,
+          latestPrUrl: null,
+          latestPrStatus: null,
+          commitCount: null,
+        },
+      ])
+    })
+
+    it('should handle agents with multiple attempts (returns latest)', async () => {
+      const mockDbResult = [
+        {
+          agent_name: MOCK_AGENT_NAME,
+          status: 'rejected',
+          triggered_at: MOCK_DATE_1,
+          latest_pr_url: MOCK_PR_URL_2,
+          latest_pr_status: 'closed',
+          commit_count: 5,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssueParticipation(MOCK_ISSUE_ID)
+
+      expect(result).toHaveLength(1)
+      const first = result[0]
+      if (first) {
+        expect(first.agentName).toBe(MOCK_AGENT_NAME)
+        expect(first.latestPrUrl).toBe(MOCK_PR_URL_2)
+        expect(first.latestPrStatus).toBe('closed')
+      }
+    })
+  })
+
+  describe('when issue has no agents', () => {
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      mockDb.execute.mockResolvedValue([] as never)
+
+      const result = await getIssueParticipation('nonexistent-issue')
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const errorMessage = 'Database connection error'
+      const error = new Error(errorMessage)
+      mockDb.execute.mockRejectedValue(error as never)
+
+      await expect(getIssueParticipation(MOCK_ISSUE_ID)).rejects.toThrow(
+        errorMessage
+      )
+    })
+  })
+})
+
+describe('getAgentAttempts', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when agent has attempts on issue', () => {
+    it('should return all attempts ordered by openedAt DESC', async () => {
+      const mockAttempts: Attempt[] = [
+        createMockAttempt({
+          id: 'attempt-3',
+          issueId: MOCK_ISSUE_ID,
+          agentName: MOCK_AGENT_NAME,
+          repo: MOCK_REPO,
+          prNumber: 3,
+          prUrl: MOCK_PR_URL_3,
+          branch: 'fix/issue-1-v3',
+          openedAt: MOCK_DATE_3,
+          status: MOCK_STATUS_OPEN,
+          commitCount: 1,
+        }),
+        createMockAttempt({
+          id: 'attempt-2',
+          issueId: MOCK_ISSUE_ID,
+          agentName: MOCK_AGENT_NAME,
+          repo: MOCK_REPO,
+          prNumber: 2,
+          prUrl: MOCK_PR_URL_2,
+          branch: 'fix/issue-1-v2',
+          openedAt: MOCK_DATE_2,
+          status: 'closed',
+          commitCount: 5,
+        }),
+        createMockAttempt({
+          id: 'attempt-1',
+          issueId: MOCK_ISSUE_ID,
+          agentName: MOCK_AGENT_NAME,
+          repo: MOCK_REPO,
+          prNumber: 1,
+          prUrl: MOCK_PR_URL,
+          branch: MOCK_BRANCH,
+          openedAt: MOCK_DATE_1,
+          status: 'closed',
+          commitCount: 3,
+        }),
+      ]
+
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue(mockAttempts),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentAttempts(MOCK_ISSUE_ID, MOCK_AGENT_NAME)
+
+      expect(result).toEqual(mockAttempts)
+      expect(result).toHaveLength(3)
+      // Verify descending order
+      if (result.length === 3 && result[0] && result[1] && result[2]) {
+        expect(result[0].openedAt.getTime()).toBeGreaterThanOrEqual(
+          result[1].openedAt.getTime()
+        )
+        expect(result[1].openedAt.getTime()).toBeGreaterThanOrEqual(
+          result[2].openedAt.getTime()
+        )
+      }
+    })
+  })
+
+  describe('when agent has no attempts on issue', () => {
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue([]),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getAgentAttempts(MOCK_ISSUE_ID, 'nonexistent-agent')
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const errorMessage = 'Query timeout'
+      const error = new Error(errorMessage)
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockRejectedValue(error),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      await expect(
+        getAgentAttempts(MOCK_ISSUE_ID, MOCK_AGENT_NAME)
+      ).rejects.toThrow(errorMessage)
     })
   })
 })

@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { attempts, events } from '@/db/schema'
+import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
 import { updateRatingsForIssue } from '@/lib/update-ratings'
 
 type GitHubWebhookPayload = {
@@ -147,10 +148,14 @@ async function handlePullRequestSynchronize(
     .set({
       commitCount,
       lastCommitSha: headSha,
+      ciStatus: 'pending', // Reset CI status on new commit
+      ciLastCheckedAt: new Date(), // Track when we reset
     })
     .where(eq(attempts.id, attempt.id))
 
-  console.log(`[GitHub] Updated PR ${repo}#${prNumber}: ${commitCount} commits`)
+  console.log(
+    `[GitHub] Updated PR ${repo}#${prNumber}: ${commitCount} commits, CI reset to pending`
+  )
 }
 
 /**
@@ -158,22 +163,21 @@ async function handlePullRequestSynchronize(
  *
  * ```mermaid
  * stateDiagram-v2
- *   [*] --> pending: Initial state
+ *   [*] --> pending: PR opened
  *   pending --> success: check_suite (conclusion=success)
  *   pending --> failure: check_suite (conclusion=failure/timeout/cancelled)
  *   pending --> error: check_suite (conclusion=action_required)
  *   pending --> pending: check_suite (conclusion=neutral/skipped)
- *   success --> success: check_suite updates (no auto-reset)
- *   success --> failure: check_suite (new run fails)
- *   success --> error: check_suite (requires action)
- *   failure --> success: check_suite (fixed)
- *   failure --> failure: check_suite updates
- *   error --> success: check_suite (resolved)
- *   error --> failure: check_suite (failed)
+ *   success --> pending: new commit (synchronize)
+ *   failure --> pending: new commit (synchronize)
+ *   error --> pending: new commit (synchronize)
+ *   success --> success: check_suite (no new commits)
+ *   failure --> failure: check_suite (no new commits)
+ *   error --> error: check_suite (no new commits)
  *
  *   note right of pending
- *     New commits (synchronize) do NOT reset CI status
- *     Only check_suite events update status
+ *     New commits reset CI status to pending
+ *     Awaiting check_suite event for results
  *   end note
  * ```
  *
@@ -304,6 +308,17 @@ async function handlePullRequestClosed(
 
     console.log(`[GitHub] PR ${repo}#${prNumber} merged`)
 
+    // Update agent status (accepted/rejected)
+    try {
+      await updateAgentStatusOnPRClose(attempt.issueId, attempt.agentName, true)
+      console.log(
+        `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
+      )
+    } catch (error) {
+      console.error('Failed to update agent status:', error)
+      // Don't fail the webhook, just log the error
+    }
+
     // Update agent ratings after PR merge
     try {
       await updateRatingsForIssue(attempt.issueId)
@@ -323,6 +338,21 @@ async function handlePullRequestClosed(
       .where(eq(attempts.id, attempt.id))
 
     console.log(`[GitHub] PR ${repo}#${prNumber} closed without merge`)
+
+    // Update agent status (rejected)
+    try {
+      await updateAgentStatusOnPRClose(
+        attempt.issueId,
+        attempt.agentName,
+        false
+      )
+      console.log(
+        `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
+      )
+    } catch (error) {
+      console.error('Failed to update agent status:', error)
+      // Don't fail the webhook, just log the error
+    }
   }
 }
 

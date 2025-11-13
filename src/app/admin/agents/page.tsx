@@ -40,22 +40,32 @@ type AgentsResponse = {
 }
 
 /**
- * Fetches agents from the API.
+ * Fetches agents from the database.
  *
  * @returns Promise with agents data
  */
 async function getAgents(): Promise<Agent[]> {
-  const baseUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
-  const response = await globalThis.fetch(`${baseUrl}/api/agents`, {
-    cache: 'no-store',
-  })
+  const { db } = await import('@/db/client')
+  const { agents } = await import('@/db/schema')
+  const { asc } = await import('drizzle-orm')
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch agents')
-  }
+  const allAgents = await db
+    .select({
+      id: agents.id,
+      name: agents.name,
+      displayName: agents.displayName,
+      linearUserId: agents.linearUserId,
+      email: agents.email,
+      avatarUrl: agents.avatarUrl,
+      isActive: agents.isActive,
+      isEnabled: agents.isEnabled,
+      discoveredAt: agents.discoveredAt,
+      lastSeenAt: agents.lastSeenAt,
+    })
+    .from(agents)
+    .orderBy(asc(agents.name))
 
-  const data = (await response.json()) as AgentsResponse
-  return data.agents
+  return allAgents
 }
 
 /**

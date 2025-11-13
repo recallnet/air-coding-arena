@@ -5,6 +5,8 @@ import { NextRequest } from 'next/server'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 
 import { db } from '@/db/client'
+import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
+import { updateRatingsForIssue } from '@/lib/update-ratings'
 
 import { POST } from './route'
 
@@ -25,6 +27,16 @@ vi.mock('@/db/client', () => ({
     select: vi.fn(),
     update: vi.fn(),
   },
+}))
+
+// Mock agent status updates
+vi.mock('@/lib/agent-status', () => ({
+  updateAgentStatusOnPRClose: vi.fn(),
+}))
+
+// Mock rating updates
+vi.mock('@/lib/update-ratings', () => ({
+  updateRatingsForIssue: vi.fn(),
 }))
 
 /**
@@ -604,6 +616,307 @@ describe('/api/github/webhook', () => {
       // Should update with fallback count (1) when response is not array
       expect(db.update).toHaveBeenCalled()
     })
+
+    it('should reset CI status to pending when new commit pushed', async () => {
+      const payload = {
+        action: 'synchronize',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup - PR with previous success status
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+                commitCount: 2,
+                ciStatus: 'success', // Previous CI passed
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock GitHub API response
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { sha: 'commit1' },
+          { sha: 'commit2' },
+          { sha: 'commit3' },
+        ],
+      })
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Verify CI status reset to pending
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          commitCount: 3,
+          lastCommitSha: TEST_SHA,
+          ciStatus: 'pending',
+          ciLastCheckedAt: expect.any(Date),
+        })
+      )
+    })
+
+    it('should reset CI status from failure to pending on new commit', async () => {
+      const payload = {
+        action: 'synchronize',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup - PR with previous failure status
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+                commitCount: 1,
+                ciStatus: 'failure', // Previous CI failed
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock GitHub API response
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ sha: 'commit1' }, { sha: 'commit2' }],
+      })
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Verify CI status reset to pending
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'pending',
+          ciLastCheckedAt: expect.any(Date),
+        })
+      )
+    })
+
+    it('should reset CI status from error to pending on new commit', async () => {
+      const payload = {
+        action: 'synchronize',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup - PR with previous error status
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+                commitCount: 1,
+                ciStatus: 'error', // Previous CI had error
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock GitHub API response
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ sha: 'commit1' }, { sha: 'commit2' }],
+      })
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Verify CI status reset to pending
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'pending',
+          ciLastCheckedAt: expect.any(Date),
+        })
+      )
+    })
+  })
+
+  describe('CI status state transitions', () => {
+    beforeEach(() => {
+      vi.stubEnv('GITHUB_WEBHOOK_SECRET', TEST_SECRET)
+      vi.stubEnv('GITHUB_TOKEN', 'github_pat_test_token')
+      vi.clearAllMocks()
+    })
+
+    it('should transition from success to pending to failure', async () => {
+      // Step 1: Synchronize event (new commit) resets success to pending
+      const synchronizePayload = {
+        action: 'synchronize',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup - PR with previous success status
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+                commitCount: 2,
+                ciStatus: 'success',
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock GitHub API response
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { sha: 'commit1' },
+          { sha: 'commit2' },
+          { sha: 'commit3' },
+        ],
+      })
+
+      // Mock update operation for synchronize
+      const mockWhere1 = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet1 = vi.fn().mockReturnValue({ where: mockWhere1 })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet1 } as never)
+
+      const response1 = await POST(createAuthenticatedRequest(synchronizePayload))
+      expect(response1.status).toBe(200)
+
+      // Verify CI status reset to pending
+      expect(mockSet1).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'pending',
+          ciLastCheckedAt: expect.any(Date),
+        })
+      )
+
+      // Step 2: Check suite completed event updates pending to failure
+      vi.clearAllMocks()
+
+      const checkSuitePayload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'failure',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 2 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation for check_suite
+      const mockWhere2 = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet2 = vi.fn().mockReturnValue({ where: mockWhere2 })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet2 } as never)
+
+      const response2 = await POST(createAuthenticatedRequest(checkSuitePayload))
+      expect(response2.status).toBe(200)
+
+      // Verify CI status updated to failure
+      expect(mockSet2).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'failure',
+          ciLastCheckedAt: expect.any(Date),
+        })
+      )
+    })
   })
 
   describe('check_suite.completed', () => {
@@ -1026,6 +1339,16 @@ describe('/api/github/webhook', () => {
 
       // Verify update was called with merged status
       expect(db.update).toHaveBeenCalled()
+
+      // Verify agent status was updated
+      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith(
+        TEST_ISSUE_ID,
+        'cursor',
+        true
+      )
+
+      // Verify rating update was triggered
+      expect(updateRatingsForIssue).toHaveBeenCalledWith(TEST_ISSUE_ID)
     })
 
     it('should update attempt to closed when not merged', async () => {
@@ -1081,6 +1404,16 @@ describe('/api/github/webhook', () => {
           closedAt: expect.any(Date),
         })
       )
+
+      // Verify agent status was updated to rejected
+      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith(
+        TEST_ISSUE_ID,
+        'cursor',
+        false
+      )
+
+      // Verify rating update was NOT triggered for closed PRs
+      expect(updateRatingsForIssue).not.toHaveBeenCalled()
     })
 
     it('should ignore untracked PRs', async () => {
