@@ -59,16 +59,12 @@ describe('/api/github/app/callback', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        installations: [
-          {
-            id: 12345,
-            account: {
-              id: 67890,
-              login: 'recallnet',
-              type: 'Organization',
-            },
-          },
-        ],
+        id: 12345,
+        account: {
+          id: 67890,
+          login: 'recallnet',
+          type: 'Organization',
+        },
       }),
     })
     global.fetch = mockFetch
@@ -132,17 +128,13 @@ describe('/api/github/app/callback', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        installations: [
-          {
-            id: 12345,
-            account: {
-              id: 67890,
-              login: 'recallnet',
-              type: 'Organization',
-            },
-            suspended_at: '2024-01-01T00:00:00Z',
-          },
-        ],
+        id: 12345,
+        account: {
+          id: 67890,
+          login: 'recallnet',
+          type: 'Organization',
+        },
+        suspended_at: '2024-01-01T00:00:00Z',
       }),
     })
     global.fetch = mockFetch

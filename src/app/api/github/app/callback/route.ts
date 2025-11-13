@@ -29,7 +29,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Fetch installation details from GitHub
     const jwtToken = generateAppJWT()
     const response = await fetch(
-      `https://api.github.com/user/installations/${installationId}`,
+      `https://api.github.com/app/installations/${installationId}`,
       {
         headers: {
           Accept: 'application/vnd.github+json',
@@ -45,25 +45,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    const data = (await response.json()) as {
-      installations: Array<{
+    const installation = (await response.json()) as {
+      id: number
+      account: {
         id: number
-        account: {
-          id: number
-          login: string
-          type: string
-        }
-        suspended_at?: string
-      }>
-    }
-
-    const installation = data.installations[0]
-    if (!installation) {
-      throw new Error('Installation not found in response')
+        login: string
+        type: string
+      }
+      suspended_at?: string
     }
 
     // Upsert installation to database
-    const isSuspended = setupAction === 'suspend' || !!installation.suspended_at
+    const isSuspended =
+      setupAction === 'suspend' ||
+      (setupAction !== 'install' &&
+        setupAction !== 'update' &&
+        !!installation.suspended_at)
     await db
       .insert(githubAppInstallations)
       .values({
@@ -73,6 +70,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         accountType: installation.account.type,
         isActive: !isSuspended,
         suspendedAt: isSuspended ? new Date() : null,
+        installedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: [githubAppInstallations.installationId],

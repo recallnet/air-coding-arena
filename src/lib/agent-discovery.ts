@@ -115,6 +115,7 @@ export async function discoverAgents(): Promise<{
 
     return {
       name: agentName,
+      slug: agentName.toLowerCase().replace(/ /g, '-'),
       displayName: agentUser.displayName ?? agentUser.name,
       linearUserId: agentUser.id,
       email: agentUser.email ?? null,
