@@ -11,6 +11,7 @@ import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
+import { updateRatingsForIssue } from '@/lib/update-ratings'
 
 import { POST } from './route'
 
@@ -63,6 +64,7 @@ function createMockRequest(
 describe('Race Condition Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(updateRatingsForIssue).mockResolvedValue(undefined)
     process.env['LINEAR_WEBHOOK_SECRET'] = TEST_SECRET
     process.env['ARENA_LABEL'] = 'arena:ready'
   })
@@ -70,16 +72,27 @@ describe('Race Condition Integration Tests', () => {
   it('should handle two concurrent merged PR webhooks correctly', async () => {
     let winnerSet = false
     let winnerAttemptId: string | null = null
+    let winnerSetCount = 0 // Track how many times winner is actually set
+    let transactionInProgress = false // Simulate FOR UPDATE blocking
+    let winnerNewlySet = false // Track if winner was newly set in this transaction
 
-    // Mock transaction to simulate row locking behavior
+    // Mock transaction to simulate row locking behavior with sequential execution
     vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      // Wait for any in-progress transaction to complete (simulates FOR UPDATE blocking)
+      while (transactionInProgress) {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+      }
+
+      transactionInProgress = true
+      winnerNewlySet = false // Reset for this transaction
+
       const mockTx = {
         select: vi.fn(),
         update: vi.fn(),
       }
 
-      // Capture current winner state at transaction start (simulating row lock)
-      const winnerAtStart = winnerSet ? winnerAttemptId : null
+      // Capture current winner state AFTER acquiring lock (not at Promise.all time)
+      const winnerAtLockTime = winnerSet ? winnerAttemptId : null
 
       // First select: issue with/without winner (locked state)
       mockTx.select.mockReturnValueOnce({
@@ -89,7 +102,7 @@ describe('Race Condition Integration Tests', () => {
               limit: vi.fn().mockResolvedValue([
                 {
                   id: TEST_DB_ISSUE_ID,
-                  winnerAttemptId: winnerAtStart,
+                  winnerAttemptId: winnerAtLockTime,
                 },
               ]),
             }),
@@ -98,7 +111,7 @@ describe('Race Condition Integration Tests', () => {
       } as never)
 
       // If no winner set yet, mock winner selection
-      if (!winnerAtStart) {
+      if (!winnerAtLockTime) {
         // Second select: get winner attempt
         mockTx.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
@@ -122,6 +135,8 @@ describe('Race Condition Integration Tests', () => {
                 // First update: set winner
                 winnerSet = true
                 winnerAttemptId = 'attempt-a'
+                winnerSetCount++ // Increment counter
+                winnerNewlySet = true // Mark as newly set
               }
               // Second update: close losing attempts (no state change needed)
               return []
@@ -130,7 +145,11 @@ describe('Race Condition Integration Tests', () => {
         } as never)
       }
 
-      return callback(mockTx as any)
+      try {
+        return await callback(mockTx as any)
+      } finally {
+        transactionInProgress = false // Release lock
+      }
     })
 
     // Mock db.select for deduplication and issue lookup
@@ -209,11 +228,20 @@ describe('Race Condition Integration Tests', () => {
     expect(responseA.status).toBe(200)
     expect(responseB.status).toBe(200)
 
-    // Transaction should be called (at least once, possibly twice)
-    expect(db.transaction).toHaveBeenCalled()
+    // Transaction should be called twice (once for each webhook)
+    expect(db.transaction).toHaveBeenCalledTimes(2)
 
-    // Winner should be set exactly once
+    // CRITICAL: Winner should be set exactly once (not twice!)
+    expect(winnerSetCount).toBe(1)
     expect(winnerSet).toBe(true)
     expect(winnerAttemptId).toBe('attempt-a')
+
+    // Note: updateRatingsForIssue is currently called for both webhooks (2x)
+    // This is acceptable for now because rating updates are idempotent.
+    // However, ideally it should only be called when winner is NEWLY set (1x).
+    // This would require production code to track and return whether winner was newly set.
+    // TODO: Optimize production code to skip rating updates when winner already set
+    expect(updateRatingsForIssue).toHaveBeenCalledTimes(2)
+    expect(updateRatingsForIssue).toHaveBeenCalledWith(TEST_DB_ISSUE_ID)
   })
 })
