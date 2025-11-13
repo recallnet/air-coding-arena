@@ -5,10 +5,10 @@
  * @packageDocumentation
  */
 
-import { desc, eq, sql, and } from 'drizzle-orm'
+import { desc, eq, sql, and, or } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { attempts, issues, agentScores, agentScoreHistory } from '@/db/schema'
+import { attempts, issues, agentScores, agentScoreHistory, agents } from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
@@ -17,6 +17,28 @@ import type {
   AgentScore,
   AgentScoreHistory,
 } from '@/types/database'
+
+/**
+ * Fetches an agent by slug or name.
+ * Accepts either slug format (hyphens) or name format (spaces).
+ *
+ * @param slugOrName - Agent slug (e.g., "github-copilot") or name (e.g., "github copilot")
+ * @returns Promise resolving to agent record or null if not found
+ *
+ * @example
+ * ```ts
+ * const agent = await getAgentBySlugOrName('github-copilot')
+ * const agent2 = await getAgentBySlugOrName('github copilot')
+ * ```
+ */
+export async function getAgentBySlugOrName(slugOrName: string) {
+  // Try to find by slug first, then by name (in case input is actually a name with spaces)
+  const agent = await db.query.agents.findFirst({
+    where: or(eq(agents.slug, slugOrName), eq(agents.name, slugOrName)),
+  })
+
+  return agent ?? null
+}
 
 /**
  * Fetches aggregated statistics for all agents from the agent_stats view.

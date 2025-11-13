@@ -29,6 +29,7 @@ import {
   getAttemptsByAgent,
   getAgentScore,
   getAgentScoreHistory,
+  getAgentBySlugOrName,
 } from '@/lib/queries'
 import type { AttemptStatus } from '@/types/database'
 
@@ -105,16 +106,20 @@ export default async function AgentPage({
 }: PageProps): Promise<React.JSX.Element> {
   const { agentName: slugOrName } = await params
 
-  // Convert slug back to agent name (slug uses hyphens, name uses spaces)
-  const agentName = slugOrName.replace(/-/g, ' ')
+  // Look up agent by slug or name
+  // Handles both slug format (hyphens) and legacy URL-encoded format (spaces)
+  const agent = await getAgentBySlugOrName(slugOrName)
+
+  // If agent doesn't exist at all, return 404
+  if (!agent) {
+    notFound()
+  }
+
+  // Use the canonical agent name from the database
+  const agentName = agent.name
 
   // Fetch all attempts for this agent
   const attempts = await getAttemptsByAgent(agentName)
-
-  // If no attempts, return 404
-  if (attempts.length === 0) {
-    notFound()
-  }
 
   // Fetch all agent stats and find this agent's stats
   const allStats = await getAgentStats()
