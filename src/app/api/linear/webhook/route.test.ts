@@ -580,7 +580,6 @@ describe('/api/linear/webhook', () => {
         expect(response.status).toBe(200)
       }
     })
-
   })
 
   describe('Attachment.create - graceful agent name handling', () => {
@@ -752,22 +751,29 @@ describe('/api/linear/webhook', () => {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               for: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: 'uuid', winnerAttemptId: null }])
+                limit: vi
+                  .fn()
+                  .mockResolvedValue([{ id: 'uuid', winnerAttemptId: null }]),
               }),
               orderBy: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: 'winner-id', agentName: 'cursor' }])
-              })
-            })
-          })
+                limit: vi
+                  .fn()
+                  .mockResolvedValue([
+                    { id: 'winner-id', agentName: 'cursor' },
+                  ]),
+              }),
+            }),
+          }),
         }),
         update: vi.fn().mockReturnValue({
           set: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([])
-          })
-        })
+            where: vi.fn().mockResolvedValue([]),
+          }),
+        }),
       }
 
       vi.mocked(db.transaction).mockImplementation(async (callback) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return callback(mockTx as any)
       })
 
@@ -1191,40 +1197,49 @@ describe('updateWinner - race condition protection', () => {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             for: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([{ id: issueId, winnerAttemptId: null }])
-            })
-          })
-        })
+              limit: vi
+                .fn()
+                .mockResolvedValue([{ id: issueId, winnerAttemptId: null }]),
+            }),
+          }),
+        }),
       }),
       update: vi.fn().mockReturnValue({
         set: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([])
-        })
-      })
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      }),
     }
 
     vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return callback(mockTx as any)
     })
 
     // Mock attempts query - return attemptA as first merged
-    mockTx.select.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          for: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: issueId, winnerAttemptId: null }])
-          })
-        })
+    mockTx.select
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            for: vi.fn().mockReturnValue({
+              limit: vi
+                .fn()
+                .mockResolvedValue([{ id: issueId, winnerAttemptId: null }]),
+            }),
+          }),
+        }),
       })
-    }).mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: attemptA, agentName: 'cursor' }])
-          })
-        })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi
+                .fn()
+                .mockResolvedValue([{ id: attemptA, agentName: 'cursor' }]),
+            }),
+          }),
+        }),
       })
-    })
 
     // Call updateWinner (this will be extracted from route.ts)
     // For now, expect transaction to be called
@@ -1240,14 +1255,19 @@ describe('updateWinner - race condition protection', () => {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             for: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([{ id: issueId, winnerAttemptId: existingWinner }])
-            })
-          })
-        })
-      })
+              limit: vi
+                .fn()
+                .mockResolvedValue([
+                  { id: issueId, winnerAttemptId: existingWinner },
+                ]),
+            }),
+          }),
+        }),
+      }),
     }
 
     vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return callback(mockTx as any)
     })
 

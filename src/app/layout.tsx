@@ -6,16 +6,19 @@ import { Navigation } from '@/components/Navigation'
 
 import './globals.css'
 
+const SITE_NAME = 'Air Coding Arena'
+const SITE_DESCRIPTION =
+  'AI Agent coding arena dashboard for tracking issues and performance'
+
 /**
  * Root layout metadata configuration.
  */
 export const metadata: Metadata = {
   title: {
-    default: 'Air Coding Arena',
-    template: '%s | Air Coding Arena',
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    'AI Agent coding arena dashboard for tracking issues and performance',
+  description: SITE_DESCRIPTION,
   keywords: [
     'AI agents',
     'coding arena',
@@ -33,16 +36,14 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://coding-arena.vercel.app',
-    title: 'Air Coding Arena',
-    description:
-      'AI Agent coding arena dashboard for tracking issues and performance',
-    siteName: 'Air Coding Arena',
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
   },
   twitter: {
     card: 'summary',
-    title: 'Air Coding Arena',
-    description:
-      'AI Agent coding arena dashboard for tracking issues and performance',
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
   },
   viewport: {
     width: 'device-width',
@@ -80,7 +81,7 @@ export default function RootLayout({
           <footer className="border-t border-border bg-gray-100 py-6">
             <div className="container mx-auto px-4 text-center">
               <p className="text-sm text-foreground-secondary">
-                Air Coding Arena - Real-time AI agent performance tracking
+                {SITE_NAME} - Real-time AI agent performance tracking
               </p>
             </div>
           </footer>

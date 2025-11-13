@@ -7,7 +7,10 @@ export const size = {
 }
 export const contentType = 'image/png'
 
-// Icon component - minimal dark design matching Geist aesthetic
+/**
+ * Icon component - minimal dark design matching Geist aesthetic
+ * @returns ImageResponse containing the icon
+ */
 export default function Icon() {
   return new ImageResponse(
     (

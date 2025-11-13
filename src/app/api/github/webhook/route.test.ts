@@ -1479,7 +1479,11 @@ describe('/api/github/webhook', () => {
       expect(updateRatingsForIssue).not.toHaveBeenCalled()
 
       // But agent status should still be updated
-      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith('issue-123', 'cursor', true)
+      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith(
+        'issue-123',
+        'cursor',
+        true
+      )
     })
 
     it('should ignore untracked PRs', async () => {

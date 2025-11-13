@@ -7,7 +7,7 @@
 
 import crypto from 'node:crypto'
 
-import { NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
@@ -74,17 +74,18 @@ describe('Race Condition Integration Tests', () => {
     let winnerAttemptId: string | null = null
     let winnerSetCount = 0 // Track how many times winner is actually set
     let transactionInProgress = false // Simulate FOR UPDATE blocking
-    let winnerNewlySet = false // Track if winner was newly set in this transaction
 
     // Mock transaction to simulate row locking behavior with sequential execution
     vi.mocked(db.transaction).mockImplementation(async (callback) => {
       // Wait for any in-progress transaction to complete (simulates FOR UPDATE blocking)
       while (transactionInProgress) {
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => {
+          // eslint-disable-next-line no-undef
+          setTimeout(resolve, 10)
+        })
       }
 
       transactionInProgress = true
-      winnerNewlySet = false // Reset for this transaction
 
       const mockTx = {
         select: vi.fn(),
@@ -117,9 +118,11 @@ describe('Race Condition Integration Tests', () => {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               orderBy: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([
-                  { id: 'attempt-a', agentName: 'cursor' },
-                ]),
+                limit: vi
+                  .fn()
+                  .mockResolvedValue([
+                    { id: 'attempt-a', agentName: 'cursor' },
+                  ]),
               }),
             }),
           }),
@@ -136,7 +139,6 @@ describe('Race Condition Integration Tests', () => {
                 winnerSet = true
                 winnerAttemptId = 'attempt-a'
                 winnerSetCount++ // Increment counter
-                winnerNewlySet = true // Mark as newly set
               }
               // Second update: close losing attempts (no state change needed)
               return []
@@ -146,6 +148,7 @@ describe('Race Condition Integration Tests', () => {
       }
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return await callback(mockTx as any)
       } finally {
         transactionInProgress = false // Release lock
@@ -178,7 +181,8 @@ describe('Race Condition Integration Tests', () => {
           returning: vi.fn().mockImplementation(async () => {
             insertCallCount++
             // First two calls: events (both succeed)
-            if (insertCallCount <= 2) return [{ id: `event-${insertCallCount}` }]
+            if (insertCallCount <= 2)
+              return [{ id: `event-${insertCallCount}` }]
             // Events after that shouldn't happen
             return [{ id: `other-${insertCallCount}` }]
           }),

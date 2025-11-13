@@ -7,7 +7,10 @@ export const size = {
 }
 export const contentType = 'image/png'
 
-// Apple icon component - minimal dark design matching Geist aesthetic
+/**
+ * Apple icon component - minimal dark design matching Geist aesthetic
+ * @returns ImageResponse containing the apple icon
+ */
 export default function AppleIcon() {
   return new ImageResponse(
     (

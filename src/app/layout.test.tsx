@@ -159,7 +159,10 @@ describe('RootLayout', () => {
 
   describe('metadata', () => {
     it('should have correct title', () => {
-      expect(metadata.title).toBe('Air Coding Arena')
+      expect(metadata.title).toEqual({
+        default: 'Air Coding Arena',
+        template: '%s | Air Coding Arena',
+      })
     })
 
     it('should have correct description', () => {
