@@ -16,6 +16,9 @@ import {
   CardTitle,
 } from '@/components/ui/Card'
 
+// Force dynamic rendering - admin pages should always show fresh data
+export const dynamic = 'force-dynamic'
+
 /**
  * Agent type from API response
  */
