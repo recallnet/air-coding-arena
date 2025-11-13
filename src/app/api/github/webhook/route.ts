@@ -12,12 +12,15 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { attempts, events } from '@/db/schema'
+import { updateRatingsForIssue } from '@/lib/update-ratings'
 
 type GitHubWebhookPayload = {
   action: string
   pull_request?: {
     number: number
     head: { sha: string }
+    merged?: boolean
+    merged_at?: string | null
   }
   check_suite?: {
     status?: string
@@ -212,6 +215,73 @@ async function handleCheckSuiteCompleted(
   }
 }
 
+/**
+ * Handles PR closed events (merge or close)
+ *
+ * @param payload - GitHub webhook payload
+ */
+async function handlePullRequestClosed(
+  payload: GitHubWebhookPayload
+): Promise<void> {
+  const pr = payload.pull_request
+  if (!pr) return
+
+  const repo = payload.repository?.full_name
+  if (!repo) return
+
+  const prNumber = pr.number
+  const merged = pr.merged ?? false
+  const mergedAt = pr.merged_at ? new Date(pr.merged_at) : null
+
+  // Check if this PR is tracked
+  const attemptResult = await db
+    .select()
+    .from(attempts)
+    .where(and(eq(attempts.repo, repo), eq(attempts.prNumber, prNumber)))
+    .limit(1)
+
+  if (attemptResult.length === 0) {
+    console.log(`[GitHub] Ignoring PR ${repo}#${prNumber} - not tracked`)
+    return
+  }
+
+  const attempt = attemptResult[0]
+  if (!attempt) return
+
+  // Update attempt status
+  if (merged && mergedAt) {
+    await db
+      .update(attempts)
+      .set({
+        status: 'merged',
+        mergedAt,
+      })
+      .where(eq(attempts.id, attempt.id))
+
+    console.log(`[GitHub] PR ${repo}#${prNumber} merged`)
+
+    // Update agent ratings after PR merge
+    try {
+      await updateRatingsForIssue(attempt.issueId)
+      console.log(`[GitHub] Updated ratings for issue ${attempt.issueId}`)
+    } catch (error) {
+      console.error('Failed to update ratings:', error)
+      // Don't fail the webhook, just log the error
+    }
+  } else {
+    // PR was closed without merging
+    await db
+      .update(attempts)
+      .set({
+        status: 'closed',
+        closedAt: new Date(),
+      })
+      .where(eq(attempts.id, attempt.id))
+
+    console.log(`[GitHub] PR ${repo}#${prNumber} closed without merge`)
+  }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // 1. Verify signature
@@ -249,6 +319,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 3. Route by event type
     if (payload.action === 'synchronize') {
       await handlePullRequestSynchronize(payload)
+    } else if (payload.action === 'closed' && payload.pull_request) {
+      await handlePullRequestClosed(payload)
     } else if (payload.action === 'completed' && payload.check_suite) {
       await handleCheckSuiteCompleted(payload)
     } else {
