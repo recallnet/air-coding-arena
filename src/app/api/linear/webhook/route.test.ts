@@ -6,7 +6,7 @@
 
 import crypto from 'node:crypto'
 
-import type { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
@@ -750,4 +750,217 @@ describe('/api/linear/webhook', () => {
       expect(response.status).toBe(401)
     })
   })
+
+  describe('Time-window deduplication', () => {
+    const WEBHOOK_URL_TEST = 'http://localhost:3000/api/linear/webhook'
+
+    beforeEach(() => {
+      // Mock database calls for deduplication tests
+      const mockInsert = vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([]),
+        }),
+      })
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: mockInsert,
+      } as never)
+
+      // Mock select for time-window check (no recent events found by default)
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      } as never)
+
+      // Mock update for remove actions
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      } as never)
+    })
+
+    it('should deduplicate events within 5 second window for same action', async () => {
+      // First event: Issue update
+      const time1 = new Date().toISOString()
+      const payload1 = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: 'test-issue-123',
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: time1,
+        createdAt: time1,
+      }
+
+      const req1 = new NextRequest(WEBHOOK_URL_TEST, {
+        method: 'POST',
+        body: JSON.stringify(payload1),
+        headers: {
+          'linear-signature': createValidSignature(payload1),
+        },
+      })
+
+      const res1 = await POST(req1)
+      expect(res1.status).toBe(200)
+      const body1 = (await res1.json()) as { success: boolean }
+      expect(body1.success).toBe(true)
+
+      // Second event: Same issue, same action, 1 second later (different updatedAt)
+      // This should be deduplicated
+      const time2 = new Date(Date.now() + 1000).toISOString()
+      const payload2 = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: 'test-issue-123',
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: time2,
+        createdAt: time1,
+      }
+
+      const req2 = new NextRequest(WEBHOOK_URL_TEST, {
+        method: 'POST',
+        body: JSON.stringify(payload2),
+        headers: {
+          'linear-signature': createValidSignature(payload2),
+        },
+      })
+
+      const res2 = await POST(req2)
+      expect(res2.status).toBe(200)
+      const body2 = (await res2.json()) as { status: string }
+      expect(body2.status).toBe('deduplicated')
+    })
+
+    it('should NOT deduplicate different actions within time window', async () => {
+      // First event: Issue update
+      const time1 = new Date().toISOString()
+      const payload1 = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: 'test-issue-456',
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: time1,
+        createdAt: time1,
+      }
+
+      const req1 = new NextRequest(WEBHOOK_URL_TEST, {
+        method: 'POST',
+        body: JSON.stringify(payload1),
+        headers: {
+          'linear-signature': createValidSignature(payload1),
+        },
+      })
+
+      const res1 = await POST(req1)
+      expect(res1.status).toBe(200)
+
+      // Second event: Same issue, DIFFERENT action (remove), 1 second later
+      // This should NOT be deduplicated (different action)
+      const time2 = new Date(Date.now() + 1000).toISOString()
+      const payload2 = {
+        type: 'Issue',
+        action: 'remove',
+        data: {
+          id: 'test-issue-456',
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: time2,
+        createdAt: time1,
+      }
+
+      const req2 = new NextRequest(WEBHOOK_URL_TEST, {
+        method: 'POST',
+        body: JSON.stringify(payload2),
+        headers: {
+          'linear-signature': createValidSignature(payload2),
+        },
+      })
+
+      const res2 = await POST(req2)
+      expect(res2.status).toBe(200)
+      const body2 = (await res2.json()) as { success: boolean; status?: string }
+      // Should be processed, not deduplicated (different action)
+      expect(body2.success).toBe(true)
+      expect(body2.status).not.toBe('deduplicated')
+    })
+
+    it('should process events after 5 second window expires', async () => {
+      vi.useFakeTimers()
+      const startTime = Date.now()
+
+      // First event
+      const time1 = new Date(startTime).toISOString()
+      const payload1 = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: 'test-issue-789',
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: time1,
+        createdAt: time1,
+      }
+
+      const req1 = new NextRequest(WEBHOOK_URL_TEST, {
+        method: 'POST',
+        body: JSON.stringify(payload1),
+        headers: {
+          'linear-signature': createValidSignature(payload1),
+        },
+      })
+
+      await POST(req1)
+
+      // Advance time by 6 seconds (past the 5 second window)
+      vi.advanceTimersByTime(6000)
+
+      // Second event - should be processed (outside window)
+      const time2 = new Date(startTime + 6000).toISOString()
+      const payload2 = {
+        type: 'Issue',
+        action: 'update',
+        data: {
+          id: 'test-issue-789',
+          labels: [{ name: ARENA_LABEL }],
+        },
+        updatedAt: time2,
+        createdAt: time1,
+      }
+
+      const req2 = new NextRequest(WEBHOOK_URL_TEST, {
+        method: 'POST',
+        body: JSON.stringify(payload2),
+        headers: {
+          'linear-signature': createValidSignature(payload2),
+        },
+      })
+
+      const res2 = await POST(req2)
+      const body2 = (await res2.json()) as { success: boolean; status?: string }
+      expect(body2.success).toBe(true)
+      expect(body2.status).not.toBe('deduplicated')
+
+      vi.useRealTimers()
+    })
+  })
 })
+
+// Helper function to create valid signature
+function createValidSignature(payload: unknown): string {
+  const secret = process.env['LINEAR_WEBHOOK_SECRET'] ?? 'test-secret'
+  const body = JSON.stringify(payload)
+  const hmac = crypto.createHmac('sha256', secret)
+  return hmac.update(body).digest('hex')
+}
