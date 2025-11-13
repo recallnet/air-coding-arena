@@ -24,8 +24,7 @@
     "// === VALIDATION GATE - ALL CHECKS ===": "",
     "validate": "npm run type-check && npm run lint && npm run test && npm run format:check",
     "// === BUILD - RUNS VALIDATION FIRST ===": "",
-    "generate-diagrams": "tsx scripts/generate-state-diagrams.ts",
-    "build": "npm run generate-diagrams && npm run validate && next build",
+    "build": "npm run validate && next build",
     "// === DOCS GENERATION ===": "",
     "docs": "typedoc",
     "docs:serve": "npm run docs && npx serve docs/api",
@@ -38,13 +37,13 @@
     "db:seed": "tsx scripts/seed.ts",
     "export:linear": "tsx scripts/export-linear.ts",
     "backfill:metadata": "tsx scripts/backfill-metadata.ts",
+    "backfill:ratings": "tsx scripts/backfill-agent-ratings.ts",
     "// === HUSKY SETUP ===": "",
     "prepare": "husky"
   },
   "dependencies": {
     "@geist-ui/icons": "^1.0.2",
     "@linear/sdk": "^63.4.0",
-    "@xstate/graph": "^3.0.4",
     "drizzle-orm": "^0.44.7",
     "geist": "^1.5.1",
     "lucide-react": "^0.553.0",
@@ -52,8 +51,7 @@
     "openskill": "^4.1.0",
     "postgres": "^3.4.7",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "xstate": "^5.24.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.0.3",
@@ -90,7 +88,6 @@
     "eslint-plugin-testing-library": "^6.3.0",
     "eslint-plugin-unicorn": "^56.0.0",
     "eslint-plugin-vitest": "^0.5.4",
-    "eslint-plugin-xstate": "^3.2.1",
     "husky": "^9.1.6",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
