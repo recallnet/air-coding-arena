@@ -1,27 +1,5 @@
--- Create agent_scores table
-CREATE TABLE IF NOT EXISTS agent_scores (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_name TEXT NOT NULL UNIQUE,
-  mu REAL NOT NULL DEFAULT 25.0,
-  sigma REAL NOT NULL DEFAULT 8.333,
-  ordinal REAL NOT NULL DEFAULT 0.0,
-  games_played INTEGER NOT NULL DEFAULT 0,
-  last_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Create agent_score_history table
-CREATE TABLE IF NOT EXISTS agent_score_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_name TEXT NOT NULL,
-  issue_id UUID NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
-  mu REAL NOT NULL,
-  sigma REAL NOT NULL,
-  ordinal REAL NOT NULL,
-  rank INTEGER NOT NULL,
-  completed_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- NOTE: agent_scores and agent_score_history tables are created by Drizzle migration 0004
+-- This migration only adds indexes and seed data
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_agent_scores_agent_name ON agent_scores(agent_name);
