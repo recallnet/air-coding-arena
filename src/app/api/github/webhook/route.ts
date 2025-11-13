@@ -14,7 +14,6 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/client'
 import { attempts, events } from '@/db/schema'
 import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
-import { updateRatingsForIssue } from '@/lib/update-ratings'
 
 type GitHubWebhookPayload = {
   action: string
@@ -245,7 +244,7 @@ async function handleCheckSuiteCompleted(
  * Handles PR closed events (merge or close)
  *
  * Updates attempt status based on whether PR was merged or closed without merge.
- * On merge, triggers rating updates for all agents on the issue.
+ * Rating updates are handled by the Linear webhook in updateWinner transaction.
  *
  * ```mermaid
  * stateDiagram-v2
@@ -262,8 +261,8 @@ async function handleCheckSuiteCompleted(
  *   end note
  *
  *   note right of merged
- *     Triggers agent rating updates
- *     Uses OpenSkill algorithm
+ *     Agent status updated
+ *     Ratings handled by Linear webhook
  *   end note
  * ```
  *
@@ -316,12 +315,11 @@ async function handlePullRequestClosed(
       `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
     )
 
-    // Update agent ratings after PR merge
-    // Critical business logic - fail loudly if this breaks
-    await updateRatingsForIssue(attempt.issueId)
+    // NOTE: Rating updates moved to Linear webhook (updateWinner transaction)
+    // GitHub webhook only tracks commit counts and CI status
     revalidateTag('agent-stats')
     console.log(
-      `[GitHub] Updated ratings for issue ${attempt.issueId} and invalidated cache`
+      `[GitHub] Invalidated cache for issue ${attempt.issueId}`
     )
   } else {
     // PR was closed without merging

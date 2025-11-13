@@ -1298,7 +1298,7 @@ describe('/api/github/webhook', () => {
       vi.clearAllMocks()
     })
 
-    it('should update attempt to merged and trigger rating update', async () => {
+    it('should update attempt to merged and update agent status', async () => {
       const payload = {
         action: 'closed',
         pull_request: {
@@ -1356,8 +1356,8 @@ describe('/api/github/webhook', () => {
         true
       )
 
-      // Verify rating update was triggered
-      expect(updateRatingsForIssue).toHaveBeenCalledWith(TEST_ISSUE_ID)
+      // Rating updates moved to Linear webhook - should NOT be called here
+      expect(updateRatingsForIssue).not.toHaveBeenCalled()
     })
 
     it('should update attempt to closed when not merged', async () => {
@@ -1423,6 +1423,63 @@ describe('/api/github/webhook', () => {
 
       // Verify rating update was NOT triggered for closed PRs
       expect(updateRatingsForIssue).not.toHaveBeenCalled()
+    })
+
+    it('should NOT call updateRatingsForIssue when PR merged (rating updates moved to Linear)', async () => {
+      // Setup: tracked attempt exists
+      vi.mocked(db.select).mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: 'attempt-123',
+                issueId: 'issue-123',
+                agentName: 'cursor',
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock update
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      } as never)
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const payload = {
+        action: 'closed',
+        pull_request: {
+          number: 42,
+          head: { sha: 'abc123' },
+          merged: true,
+          merged_at: '2024-01-15T10:00:00Z',
+        },
+        repository: {
+          full_name: 'org/repo',
+        },
+      }
+
+      const req = createAuthenticatedRequest(payload)
+      const response = await POST(req)
+
+      expect(response.status).toBe(200)
+
+      // Rating updates should NOT be called (handled by Linear webhook now)
+      expect(updateRatingsForIssue).not.toHaveBeenCalled()
+
+      // But agent status should still be updated
+      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith('issue-123', 'cursor', true)
     })
 
     it('should ignore untracked PRs', async () => {
