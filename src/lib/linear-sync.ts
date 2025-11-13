@@ -142,7 +142,6 @@ export async function syncIssueFromLinear(
  * Walks up the parent chain to find the root @mention comment
  * @param commentId - ID of the PR comment
  * @param mentionedAgents - Agents mentioned in the PR comment itself
- * @param body - PR comment body
  * @param commentAgents - Map of comment IDs to agent mentions
  * @param commentParents - Map of comment IDs to parent comment IDs
  * @returns Agent name or "unknown"
@@ -150,7 +149,6 @@ export async function syncIssueFromLinear(
 async function determineAgentOwnershipFromThread(
   commentId: string,
   mentionedAgents: string[],
-  body: string,
   commentAgents: Map<string, string[]>,
   commentParents: Map<string, string | null>
 ): Promise<string> {
@@ -265,7 +263,6 @@ async function syncComments(
       const agentName = await determineAgentOwnershipFromThread(
         commentId,
         mentionedAgents,
-        body,
         commentAgents,
         commentParents
       )
@@ -310,11 +307,11 @@ async function syncComments(
 
 /**
  * Syncs attachments to find PR links
- * @param issueId - Database issue ID
+ * @param _issueId - Database issue ID (unused - attachments are skipped)
  * @param attachments - Attachment nodes from Linear API
  */
 async function syncAttachments(
-  issueId: string,
+  _issueId: string,
   attachments: Array<{
     url?: string | null
     title?: string | null
@@ -333,42 +330,14 @@ async function syncAttachments(
     const [, org, repoName, prNumber] = prMatch
     if (!org || !repoName || !prNumber) continue
 
-    const repo = `${org}/${repoName}`
-
-    // Agent must be explicitly tracked - NO GUESSING
-    // Should be in the comment metadata or parent thread
-    const agentName = 'unknown' // TODO: Get from comment thread
-
-    let status = 'open'
-    let mergedAt: Date | undefined
-
-    if (attachment.subtitle?.includes('merged')) {
-      status = 'merged'
-      mergedAt = new Date()
-    } else if (attachment.subtitle?.includes('closed')) {
-      status = 'closed'
-    }
-
-    await db
-      .insert(attempts)
-      .values({
-        issueId,
-        agentName,
-        repo,
-        prNumber: Number.parseInt(prNumber, 10),
-        prUrl: url,
-        branch: null,
-        openedAt: attachment.createdAt,
-        mergedAt,
-        status,
-        commitCount: 1,
-        sourceAttachmentId: attachment.id,
-        sourceAttachmentUrl: url,
-      })
-      .onConflictDoUpdate({
-        target: [attempts.issueId, attempts.agentName, attempts.prNumber],
-        set: { status, mergedAt },
-      })
+    // Orphaned attachments (created outside comment thread) are skipped
+    // Agent tracking requires PRs to be linked via comments with @mentions
+    // These attachments will be picked up by comment sync when agent posts PR link
+    console.log(
+      `Skipping orphaned attachment ${attachment.id} for PR ${url} - ` +
+        `agent tracking requires PR links in comments with @mentions`
+    )
+    continue
   }
 }
 

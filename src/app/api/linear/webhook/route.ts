@@ -257,10 +257,24 @@ async function handleAttachmentEvent(
     status = 'closed'
   }
 
-  // Agent must be explicitly tracked in Linear - NO GUESSING
-  // The agent name should be in the PR comment that created this attachment
-  // If we don't have it, something is broken in our workflow
-  const agentName = 'unknown' // TODO: Get from Linear comment metadata
+  // Extract branch from attachment metadata (if available)
+  const metadata = attachment.metadata as Record<string, unknown> | undefined
+  const branch = metadata?.['branch'] as string | undefined
+
+  // Extract agent name from branch name (format: issue-key--description--agent-{name})
+  // Branch naming convention must be followed for tracking to work
+  const agentMatch = branch?.match(/agent-([a-z]+)$/i)
+  const agentName = agentMatch?.[1]?.toLowerCase()
+
+  // If we can't extract agent name from branch, fail loudly
+  // This indicates the workflow is broken and needs fixing
+  if (!agentName) {
+    throw new Error(
+      `Cannot determine agent name for PR ${attachment.url}. ` +
+        `Branch must follow naming convention: issue-key--description--agent-{name}. ` +
+        `Got branch: ${branch ?? 'undefined'}`
+    )
+  }
 
   // Upsert attempt
   await db
@@ -271,7 +285,7 @@ async function handleAttachmentEvent(
       repo,
       prNumber: Number.parseInt(prNumber, 10),
       prUrl: attachment.url,
-      branch,
+      branch: branch ?? null,
       openedAt: new Date(),
       mergedAt,
       status,

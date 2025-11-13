@@ -309,24 +309,16 @@ async function handlePullRequestClosed(
     console.log(`[GitHub] PR ${repo}#${prNumber} merged`)
 
     // Update agent status (accepted/rejected)
-    try {
-      await updateAgentStatusOnPRClose(attempt.issueId, attempt.agentName, true)
-      console.log(
-        `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
-      )
-    } catch (error) {
-      console.error('Failed to update agent status:', error)
-      // Don't fail the webhook, just log the error
-    }
+    // Critical business logic - fail loudly if this breaks
+    await updateAgentStatusOnPRClose(attempt.issueId, attempt.agentName, true)
+    console.log(
+      `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
+    )
 
     // Update agent ratings after PR merge
-    try {
-      await updateRatingsForIssue(attempt.issueId)
-      console.log(`[GitHub] Updated ratings for issue ${attempt.issueId}`)
-    } catch (error) {
-      console.error('Failed to update ratings:', error)
-      // Don't fail the webhook, just log the error
-    }
+    // Critical business logic - fail loudly if this breaks
+    await updateRatingsForIssue(attempt.issueId)
+    console.log(`[GitHub] Updated ratings for issue ${attempt.issueId}`)
   } else {
     // PR was closed without merging
     await db
@@ -340,19 +332,15 @@ async function handlePullRequestClosed(
     console.log(`[GitHub] PR ${repo}#${prNumber} closed without merge`)
 
     // Update agent status (rejected)
-    try {
-      await updateAgentStatusOnPRClose(
-        attempt.issueId,
-        attempt.agentName,
-        false
-      )
-      console.log(
-        `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
-      )
-    } catch (error) {
-      console.error('Failed to update agent status:', error)
-      // Don't fail the webhook, just log the error
-    }
+    // Critical business logic - fail loudly if this breaks
+    await updateAgentStatusOnPRClose(
+      attempt.issueId,
+      attempt.agentName,
+      false
+    )
+    console.log(
+      `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
+    )
   }
 }
 

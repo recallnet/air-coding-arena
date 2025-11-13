@@ -752,11 +752,11 @@ describe('syncIssueFromLinear', () => {
 
     await syncIssueFromLinear('linear-issue-id')
 
-    // Should create attempt from attachment
-    expect(mockInsert).toHaveBeenCalled()
+    // Orphaned attachments are now skipped - no insert should happen
+    expect(mockInsert).not.toHaveBeenCalled()
   })
 
-  it('should detect merged status from attachment subtitle', async () => {
+  it('should skip orphaned attachment with merged status', async () => {
     const mockAttachments = {
       nodes: [
         {
@@ -805,11 +805,11 @@ describe('syncIssueFromLinear', () => {
 
     await syncIssueFromLinear('linear-issue-id')
 
-    // Should detect merged status
-    expect(mockInsert).toHaveBeenCalled()
+    // Orphaned attachments are now skipped - no insert should happen
+    expect(mockInsert).not.toHaveBeenCalled()
   })
 
-  it('should detect closed status from attachment subtitle', async () => {
+  it('should skip orphaned attachment with closed status', async () => {
     const mockAttachments = {
       nodes: [
         {
@@ -858,8 +858,8 @@ describe('syncIssueFromLinear', () => {
 
     await syncIssueFromLinear('linear-issue-id')
 
-    // Should detect closed status
-    expect(mockInsert).toHaveBeenCalled()
+    // Orphaned attachments are now skipped - no insert should happen
+    expect(mockInsert).not.toHaveBeenCalled()
   })
 
   it('should extract full issue metadata with all fields populated', async () => {

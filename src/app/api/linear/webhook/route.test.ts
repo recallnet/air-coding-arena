@@ -424,6 +424,9 @@ describe('/api/linear/webhook', () => {
           url: TEST_PR_URL,
           title: 'cursor: Fix issue',
           subtitle: 'org/repo #42',
+          metadata: {
+            branch: 'eng-123--fix-issue--agent-cursor',
+          },
           issue: { id: TEST_ISSUE_ID },
         },
         updatedAt: TEST_TIMESTAMP,
@@ -509,12 +512,11 @@ describe('/api/linear/webhook', () => {
       expect(mockSelect).toHaveBeenCalled()
     })
 
-    it('should guess agent from branch name', async () => {
+    it('should extract agent from branch name', async () => {
       const testCases = [
         { branch: 'eng-123--fix--agent-cursor', expected: 'cursor' },
         { branch: 'eng-124--feature--agent-engine', expected: 'engine' },
         { branch: 'eng-125--refactor--agent-cyrus', expected: 'cyrus' },
-        { branch: 'eng-126--other', expected: 'unknown' },
       ]
 
       for (const testCase of testCases) {
@@ -556,6 +558,46 @@ describe('/api/linear/webhook', () => {
       }
     })
 
+    it('should fail loudly when branch does not contain agent name', async () => {
+      const payload = {
+        type: 'Attachment',
+        action: 'create',
+        data: {
+          id: 'attach-no-agent',
+          url: TEST_PR_URL,
+          title: 'Test PR',
+          subtitle: 'org/repo #42 • open',
+          metadata: { branch: 'eng-126--other' },
+          issue: { id: TEST_ISSUE_ID },
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([{ id: 'uuid' }]),
+          }),
+        }),
+      } as never)
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+          onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+        }),
+      } as never)
+
+      const req = createMockRequest(payload)
+      const response = await POST(req)
+
+      // Should return 500 error when agent cannot be determined
+      expect(response.status).toBe(500)
+    })
+
     it('should detect merged status from subtitle', async () => {
       const payload = {
         type: 'Attachment',
@@ -565,6 +607,9 @@ describe('/api/linear/webhook', () => {
           url: TEST_PR_URL,
           title: 'Add feature X',
           subtitle: 'org/repo #42 • merged',
+          metadata: {
+            branch: 'eng-123--feature-x--agent-cursor',
+          },
           issue: { id: TEST_ISSUE_ID },
         },
         updatedAt: '2024-01-01T01:00:00Z',
