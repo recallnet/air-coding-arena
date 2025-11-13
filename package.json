@@ -34,7 +34,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:manual": "tsx scripts/run-manual-migration.ts",
     "db:studio": "drizzle-kit studio",
-    "db:push": "drizzle-kit push",
+    "db:push": "drizzle-kit push && npm run db:migrate:manual",
     "db:seed": "tsx scripts/seed.ts",
     "export:linear": "tsx scripts/export-linear.ts",
     "backfill:metadata": "tsx scripts/backfill-metadata.ts",
