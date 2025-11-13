@@ -9,7 +9,7 @@ import { eq, and } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { issues, issueAgents, attempts } from '@/db/schema'
 
-import { getAgentHandles } from './agent-config'
+import { getAgentConfigs } from './agent-config'
 import { extractIssueMetadata } from './linear-metadata'
 
 /**
@@ -293,21 +293,25 @@ async function buildCommentMaps(
     )
 
     // Find agent mentions in comment
-    for (const handle of await getAgentHandles()) {
-      const agentName = handle.substring(1).toLowerCase()
+    // Get full agent configs to map from displayName to agent name
+    const agentConfigs = await getAgentConfigs()
+    for (const agent of agentConfigs) {
+      const displayName = agent.displayName.toLowerCase()
       const lowerBody = body.toLowerCase()
 
+      // Match both @displayName and @[displayName] formats
       if (
-        lowerBody.includes(`@${agentName}`) ||
-        lowerBody.includes(`@[${agentName}]`)
+        lowerBody.includes(`@${displayName}`) ||
+        lowerBody.includes(`@[${displayName}]`)
       ) {
-        mentionedAgents.push(agentName)
+        // Use the actual agent name (not displayName) for database insertion
+        mentionedAgents.push(agent.name)
 
         await db
           .insert(issueAgents)
           .values({
             issueId,
-            agentName,
+            agentName: agent.name, // Use agent.name, not displayName
             status: 'pending',
             triggeredAt: createdAt,
           })
