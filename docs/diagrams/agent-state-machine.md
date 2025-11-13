@@ -1,7 +1,7 @@
 # Agent Lifecycle State Machine
 
 **Generated from:** `src/machines/agentMachine.ts`
-**Last Updated:** 2025-11-13T01:08:53.147Z
+**Last Updated:** 2025-11-13T01:12:07.317Z
 
 ```mermaid
 stateDiagram-v2

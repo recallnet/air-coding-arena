@@ -64,9 +64,11 @@ export const agentMachine = setup({
     },
     accepted: {
       type: 'final',
+      description: 'Agent won the competition. Rating increased via OpenSkill Plackett-Luce model.',
     },
     rejected: {
       type: 'final',
+      description: 'Agent lost or PR closed without merge. Rating updated based on ranking.',
     },
     ignored: {
       type: 'final',
