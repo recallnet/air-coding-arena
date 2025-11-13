@@ -4,7 +4,7 @@
  */
 
 import { LinearClient } from '@linear/sdk'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import { issues, issueAgents } from '@/db/schema'
@@ -86,15 +86,21 @@ export async function dispatchMissingAgents(
   // 3. Get configured agents
   const configuredAgents = await getAgentNames()
 
-  // 4. Get already-dispatched agents
+  // 4. Get already-dispatched agents (excluding dispatch_failed to allow retry)
   const dispatchedAgents = await db
     .select({ agentName: issueAgents.agentName })
     .from(issueAgents)
-    .where(eq(issueAgents.issueId, dbIssueId))
+    .where(
+      and(
+        eq(issueAgents.issueId, dbIssueId),
+        // Exclude dispatch_failed - these should be retried
+        ne(issueAgents.status, 'dispatch_failed')
+      )
+    )
 
   const dispatchedNames = new Set(dispatchedAgents.map((a) => a.agentName))
 
-  // 5. Find missing agents
+  // 5. Find missing agents (includes dispatch_failed agents for retry)
   const missingAgents = configuredAgents.filter(
     (agent) => !dispatchedNames.has(agent)
   )
@@ -169,13 +175,22 @@ export async function dispatchMissingAgents(
         body: commentBody,
       })
 
-      // Record dispatch in database
-      await db.insert(issueAgents).values({
-        issueId: dbIssueId,
-        agentName,
-        status: 'pending',
-        triggeredAt: new Date(),
-      })
+      // Record dispatch in database (or update if retrying dispatch_failed)
+      await db
+        .insert(issueAgents)
+        .values({
+          issueId: dbIssueId,
+          agentName,
+          status: 'pending',
+          triggeredAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [issueAgents.issueId, issueAgents.agentName],
+          set: {
+            status: 'pending',
+            triggeredAt: new Date(),
+          },
+        })
 
       dispatchedCount++
       console.log(`✅ Dispatched ${agentName} to ${issue.linearKey}`)

@@ -319,7 +319,9 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(db).select = mockSelect
 
     const mockInsert = vi.fn().mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      }),
     })
     vi.mocked(db).insert = mockInsert
 
@@ -393,7 +395,9 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(db).select = mockSelect
 
     const mockInsert = vi.fn().mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      }),
     })
     vi.mocked(db).insert = mockInsert
 
@@ -473,7 +477,9 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(db).select = mockSelect
 
     const mockInsert = vi.fn().mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      }),
     })
     vi.mocked(db).insert = mockInsert
 
@@ -547,7 +553,9 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(db).select = mockSelect
 
     const mockInsert = vi.fn().mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      }),
     })
     vi.mocked(db).insert = mockInsert
 
@@ -683,7 +691,9 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(db).select = mockSelect
 
     const mockInsert = vi.fn().mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      }),
     })
     vi.mocked(db).insert = mockInsert
 
