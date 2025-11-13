@@ -28,6 +28,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 3,
           cumulativeFailures: 1,
+          ordinal: 1500,
         },
       ]
 
@@ -45,6 +46,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 3,
           cumulativeFailures: 1,
+          ordinal: 1550,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -52,6 +54,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 3,
           cumulativeWins: 2,
           cumulativeFailures: 1,
+          ordinal: 1500,
         },
       ]
 
@@ -69,6 +72,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 3,
           cumulativeFailures: 1,
+          ordinal: 1500,
         },
       ]
 
@@ -90,6 +94,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 10,
           cumulativeWins: 8,
           cumulativeFailures: 2,
+          ordinal: 1550,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -97,6 +102,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 4,
           cumulativeFailures: 1,
+          ordinal: 1520,
         },
       ]
 
@@ -114,6 +120,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 10,
           cumulativeWins: 8,
           cumulativeFailures: 2,
+          ordinal: 1600,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -121,6 +128,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 3,
           cumulativeFailures: 2,
+          ordinal: 1520,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -128,6 +136,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 7,
           cumulativeWins: 5,
           cumulativeFailures: 2,
+          ordinal: 1550,
         },
       ]
 
@@ -146,6 +155,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 15,
           cumulativeWins: 12,
           cumulativeFailures: 3,
+          ordinal: 1580,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -153,6 +163,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 10,
           cumulativeWins: 8,
           cumulativeFailures: 2,
+          ordinal: 1540,
         },
         {
           date: MOCK_DATE_2024_01_01,
@@ -160,6 +171,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 4,
           cumulativeFailures: 1,
+          ordinal: 1510,
         },
       ]
 
@@ -177,6 +189,7 @@ describe('TemporalLeaderboard', () => {
           cumulativeAttempts: 10,
           cumulativeWins: 7,
           cumulativeFailures: 3,
+          ordinal: 1550,
         },
       ]
 

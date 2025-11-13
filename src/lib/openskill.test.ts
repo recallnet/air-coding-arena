@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
 import { rating, ordinal } from 'openskill'
+import { describe, it, expect } from 'vitest'
+
 import { updateRatingsForCompletedIssue, initializeAgentRating, calculateOrdinal } from './openskill'
 
 describe('openskill rating service', () => {
@@ -68,12 +69,12 @@ describe('openskill rating service', () => {
       const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
 
       // Winner's mu should increase
-      expect(result.cursor.mu).toBeGreaterThan(beforeRatings.cursor.mu)
+      expect(result['cursor']?.mu).toBeGreaterThan(beforeRatings['cursor'].mu)
       // Winner's sigma should decrease (more certain)
-      expect(result.cursor.sigma).toBeLessThan(beforeRatings.cursor.sigma)
+      expect(result['cursor']?.sigma).toBeLessThan(beforeRatings['cursor'].sigma)
 
       // Loser's mu should decrease
-      expect(result.cyrus.mu).toBeLessThan(beforeRatings.cyrus.mu)
+      expect(result['cyrus']?.mu).toBeLessThan(beforeRatings['cyrus'].mu)
     })
 
     it('should handle single agent (no competition)', () => {
@@ -86,7 +87,7 @@ describe('openskill rating service', () => {
       const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
 
       // Single agent: rating shouldn't change much
-      expect(result.cursor.mu).toBeCloseTo(beforeRatings.cursor.mu, 1)
+      expect(result['cursor']?.mu).toBeCloseTo(beforeRatings['cursor'].mu, 1)
     })
 
     it('should not include DNF agents in rating calculation', () => {
@@ -102,9 +103,9 @@ describe('openskill rating service', () => {
       const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
 
       // Cyrus not in ranking, should not be in result
-      expect(result.cyrus).toBeUndefined()
-      expect(result.cursor).toBeDefined()
-      expect(result.engine).toBeDefined()
+      expect(result['cyrus']).toBeUndefined()
+      expect(result['cursor']).toBeDefined()
+      expect(result['engine']).toBeDefined()
     })
 
     it('should throw error when agent in ranking not found in currentRatings', () => {

@@ -20,13 +20,13 @@ describe('agent-config', () => {
   })
 
   describe('getAgentConfigs', () => {
-    it('should parse JSON agent config', () => {
+    it('should parse JSON agent config', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'cursor', handle: '@Cursor' },
         { name: 'engine', handle: '@Engine' },
       ])
 
-      const configs = getAgentConfigs()
+      const configs = await getAgentConfigs()
 
       expect(configs).toEqual([
         { name: 'cursor', handle: '@Cursor' },
@@ -34,44 +34,44 @@ describe('agent-config', () => {
       ])
     })
 
-    it('should preserve case-sensitive handles', () => {
+    it('should preserve case-sensitive handles', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'cursor', handle: '@Cursor' },
         { name: 'factory', handle: '@Factory' },
       ])
 
-      const configs = getAgentConfigs()
+      const configs = await getAgentConfigs()
 
       expect(configs[0]?.handle).toBe('@Cursor')
       expect(configs[1]?.handle).toBe('@Factory')
     })
 
-    it('should lowercase agent names', () => {
+    it('should lowercase agent names', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'CURSOR', handle: '@Cursor' },
         { name: 'Engine', handle: '@Engine' },
       ])
 
-      const configs = getAgentConfigs()
+      const configs = await getAgentConfigs()
 
       expect(configs[0]?.name).toBe('cursor')
       expect(configs[1]?.name).toBe('engine')
     })
 
-    it('should trim whitespace', () => {
+    it('should trim whitespace', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: ' cursor ', handle: ' @Cursor ' },
       ])
 
-      const configs = getAgentConfigs()
+      const configs = await getAgentConfigs()
 
       expect(configs[0]).toEqual({ name: 'cursor', handle: '@Cursor' })
     })
 
-    it('should fall back to defaults if not set', () => {
+    it('should fall back to defaults if not set', async () => {
       delete process.env['AGENTS_CONFIG_JSON']
 
-      const configs = getAgentConfigs()
+      const configs = await getAgentConfigs()
 
       expect(configs).toHaveLength(4)
       expect(configs.map((c) => c.name)).toEqual([
@@ -82,96 +82,138 @@ describe('agent-config', () => {
       ])
     })
 
-    it('should throw if JSON is invalid', () => {
+    it('should fall back to defaults if JSON is invalid', async () => {
       process.env['AGENTS_CONFIG_JSON'] = 'invalid json'
 
-      expect(() => getAgentConfigs()).toThrow('Invalid JSON')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
 
-    it('should throw if not an array', () => {
+    it('should fall back to defaults if not an array', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify({ name: 'cursor' })
 
-      expect(() => getAgentConfigs()).toThrow('must be an array')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
 
-    it('should throw if array is empty', () => {
+    it('should fall back to defaults if array is empty', async () => {
       process.env['AGENTS_CONFIG_JSON'] = '[]'
 
-      expect(() => getAgentConfigs()).toThrow('must specify at least one agent')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
 
-    it('should throw if name is missing', () => {
+    it('should fall back to defaults if name is missing', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { handle: '@Cursor' },
       ])
 
-      expect(() => getAgentConfigs()).toThrow('missing required field: name')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
 
-    it('should throw if handle is missing', () => {
+    it('should fall back to defaults if handle is missing', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([{ name: 'cursor' }])
 
-      expect(() => getAgentConfigs()).toThrow('missing required field: handle')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
 
-    it('should throw if name is empty string', () => {
+    it('should fall back to defaults if name is empty string', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: '', handle: '@Cursor' },
       ])
 
-      expect(() => getAgentConfigs()).toThrow('missing required field: name')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
 
-    it('should throw if handle is empty string', () => {
+    it('should fall back to defaults if handle is empty string', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'cursor', handle: '' },
       ])
 
-      expect(() => getAgentConfigs()).toThrow('missing required field: handle')
+      const configs = await getAgentConfigs()
+      expect(configs).toEqual([
+        { name: 'cursor', handle: '@Cursor' },
+        { name: 'engine', handle: '@Engine' },
+        { name: 'cyrus', handle: '@Cyrus' },
+        { name: 'factory', handle: '@Factory' },
+      ])
     })
   })
 
   describe('getAgentHandles', () => {
-    it('should return array of handles', () => {
+    it('should return array of handles', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'cursor', handle: '@Cursor' },
         { name: 'engine', handle: '@Engine' },
       ])
 
-      const handles = getAgentHandles()
+      const handles = await getAgentHandles()
 
       expect(handles).toEqual(['@Cursor', '@Engine'])
     })
 
-    it('should preserve case in handles', () => {
+    it('should preserve case in handles', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'factory', handle: '@Factory' },
       ])
 
-      const handles = getAgentHandles()
+      const handles = await getAgentHandles()
 
       expect(handles[0]).toBe('@Factory')
     })
   })
 
   describe('getAgentNames', () => {
-    it('should return array of names', () => {
+    it('should return array of names', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'cursor', handle: '@Cursor' },
         { name: 'engine', handle: '@Engine' },
       ])
 
-      const names = getAgentNames()
+      const names = await getAgentNames()
 
       expect(names).toEqual(['cursor', 'engine'])
     })
 
-    it('should return lowercase names', () => {
+    it('should return lowercase names', async () => {
       process.env['AGENTS_CONFIG_JSON'] = JSON.stringify([
         { name: 'CURSOR', handle: '@Cursor' },
       ])
 
-      const names = getAgentNames()
+      const names = await getAgentNames()
 
       expect(names[0]).toBe('cursor')
     })
@@ -186,35 +228,35 @@ describe('agent-config', () => {
       ])
     })
 
-    it('should detect agent in branch name', () => {
-      expect(guessAgentFromText('cursor/fix-bug')).toBe('cursor')
-      expect(guessAgentFromText('engine-123-feature')).toBe('engine')
-      expect(guessAgentFromText('factory-pr-branch')).toBe('factory')
+    it('should detect agent in branch name', async () => {
+      expect(await guessAgentFromText('cursor/fix-bug')).toBe('cursor')
+      expect(await guessAgentFromText('engine-123-feature')).toBe('engine')
+      expect(await guessAgentFromText('factory-pr-branch')).toBe('factory')
     })
 
-    it('should detect agent in PR title', () => {
-      expect(guessAgentFromText('feat: Add feature by Cursor')).toBe('cursor')
-      expect(guessAgentFromText('Factory agent implementation')).toBe('factory')
+    it('should detect agent in PR title', async () => {
+      expect(await guessAgentFromText('feat: Add feature by Cursor')).toBe('cursor')
+      expect(await guessAgentFromText('Factory agent implementation')).toBe('factory')
     })
 
-    it('should be case-insensitive for detection', () => {
-      expect(guessAgentFromText('CURSOR/fix')).toBe('cursor')
-      expect(guessAgentFromText('Engine-PR')).toBe('engine')
-      expect(guessAgentFromText('FACTORY-branch')).toBe('factory')
+    it('should be case-insensitive for detection', async () => {
+      expect(await guessAgentFromText('CURSOR/fix')).toBe('cursor')
+      expect(await guessAgentFromText('Engine-PR')).toBe('engine')
+      expect(await guessAgentFromText('FACTORY-branch')).toBe('factory')
     })
 
-    it('should return unknown if no match', () => {
-      expect(guessAgentFromText('some-random-branch')).toBe('unknown')
+    it('should return unknown if no match', async () => {
+      expect(await guessAgentFromText('some-random-branch')).toBe('unknown')
     })
 
-    it('should return first match if multiple agents mentioned', () => {
+    it('should return first match if multiple agents mentioned', async () => {
       // cursor comes before engine in config
-      expect(guessAgentFromText('cursor-and-engine-pr')).toBe('cursor')
+      expect(await guessAgentFromText('cursor-and-engine-pr')).toBe('cursor')
     })
 
-    it('should handle partial matches', () => {
-      expect(guessAgentFromText('my-cursor-feature')).toBe('cursor')
-      expect(guessAgentFromText('factory-2024')).toBe('factory')
+    it('should handle partial matches', async () => {
+      expect(await guessAgentFromText('my-cursor-feature')).toBe('cursor')
+      expect(await guessAgentFromText('factory-2024')).toBe('factory')
     })
   })
 })

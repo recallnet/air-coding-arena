@@ -132,6 +132,8 @@ describe('AgentPage', () => {
           attempts: 1,
           wins: 1,
           acceptancePct: 100.0,
+          ordinal: 1500,
+          gamesPlayed: 1,
         },
       ])
 
@@ -177,6 +179,8 @@ describe('AgentPage', () => {
           attempts: 1,
           wins: 0,
           acceptancePct: 0.0,
+          ordinal: 1500,
+          gamesPlayed: 1,
         },
       ])
 
@@ -216,6 +220,8 @@ describe('AgentPage', () => {
             attempts: 5,
             wins: 3,
             acceptancePct: 60.0,
+            ordinal: 1500,
+            gamesPlayed: 5,
           },
         ])
 
@@ -255,6 +261,8 @@ describe('AgentPage', () => {
             attempts: 5,
             wins: 3,
             acceptancePct: 60.0,
+            ordinal: 1500,
+            gamesPlayed: 5,
           },
         ])
 
@@ -294,6 +302,8 @@ describe('AgentPage', () => {
             attempts: 10,
             wins: 8,
             acceptancePct: 80.5,
+            ordinal: 1600,
+            gamesPlayed: 10,
           },
         ])
 
@@ -334,6 +344,8 @@ describe('AgentPage', () => {
             attempts: 5,
             wins: 3,
             acceptancePct: 60.0,
+            ordinal: 1500,
+            gamesPlayed: 5,
           },
         ])
 
@@ -379,6 +391,8 @@ describe('AgentPage', () => {
             attempts: 10,
             wins: 9,
             acceptancePct: 90.0,
+            ordinal: 1650,
+            gamesPlayed: 10,
           },
         ])
 
@@ -418,6 +432,8 @@ describe('AgentPage', () => {
             attempts: 10,
             wins: 6,
             acceptancePct: 60.0,
+            ordinal: 1500,
+            gamesPlayed: 10,
           },
         ])
 
@@ -459,6 +475,8 @@ describe('AgentPage', () => {
             attempts: 4,
             wins: 3,
             acceptancePct: 75.0,
+            ordinal: 1550,
+            gamesPlayed: 4,
           },
         ])
 
@@ -502,6 +520,8 @@ describe('AgentPage', () => {
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
+            ordinal: 1500,
+            gamesPlayed: 1,
           },
         ])
 
@@ -543,6 +563,8 @@ describe('AgentPage', () => {
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
+            ordinal: 1500,
+            gamesPlayed: 1,
           },
         ])
 
@@ -586,6 +608,8 @@ describe('AgentPage', () => {
             attempts: 1,
             wins: 1,
             acceptancePct: 100.0,
+            ordinal: 1550,
+            gamesPlayed: 1,
           },
         ])
 
@@ -629,6 +653,8 @@ describe('AgentPage', () => {
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
+            ordinal: 1500,
+            gamesPlayed: 1,
           },
         ])
 
@@ -668,6 +694,8 @@ describe('AgentPage', () => {
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
+            ordinal: 1500,
+            gamesPlayed: 1,
           },
         ])
 
@@ -709,6 +737,8 @@ describe('AgentPage', () => {
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
+            ordinal: 1500,
+            gamesPlayed: 1,
           },
         ])
 
@@ -776,6 +806,8 @@ describe('AgentPage', () => {
             attempts: 2,
             wins: 1,
             acceptancePct: 50.0,
+            ordinal: 1500,
+            gamesPlayed: 2,
           },
         ])
 
@@ -820,6 +852,8 @@ describe('AgentPage', () => {
               attempts: 1,
               wins: 1,
               acceptancePct: 100.0,
+              ordinal: 1550,
+              gamesPlayed: 1,
             },
           ])
 
@@ -858,6 +892,8 @@ describe('AgentPage', () => {
               attempts: 1,
               wins: 0,
               acceptancePct: 0.0,
+              ordinal: 1500,
+              gamesPlayed: 1,
             },
           ])
 
@@ -896,6 +932,8 @@ describe('AgentPage', () => {
               attempts: 1,
               wins: 0,
               acceptancePct: 0.0,
+              ordinal: 1500,
+              gamesPlayed: 1,
             },
           ])
 
@@ -934,6 +972,8 @@ describe('AgentPage', () => {
               attempts: 1,
               wins: 0,
               acceptancePct: 0.0,
+              ordinal: 1500,
+              gamesPlayed: 1,
             },
           ])
 

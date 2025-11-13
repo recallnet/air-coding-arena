@@ -57,6 +57,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
@@ -81,6 +83,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
@@ -101,6 +105,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
@@ -121,12 +127,16 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 12,
         },
         {
           agentName: 'engine',
           attempts: 5,
           wins: 3,
           acceptancePct: 60.0,
+          ordinal: 15.0,
+          gamesPlayed: 7,
         },
       ]
 
@@ -151,6 +161,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.12345,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
@@ -169,18 +181,24 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
         {
           agentName: 'engine',
           attempts: 5,
           wins: 3,
           acceptancePct: 60.0,
+          ordinal: 15.0,
+          gamesPlayed: 5,
         },
         {
           agentName: 'cyrus',
           attempts: 8,
           wins: 7,
           acceptancePct: 87.5,
+          ordinal: 25.0,
+          gamesPlayed: 8,
         },
       ]
 
@@ -207,6 +225,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
@@ -224,12 +244,16 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
         {
           agentName: 'engine',
           attempts: 5,
           wins: 4,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 5,
         },
       ]
 
@@ -258,6 +282,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
@@ -281,6 +307,8 @@ describe('Home', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 20.0,
+          gamesPlayed: 10,
         },
       ]
 
