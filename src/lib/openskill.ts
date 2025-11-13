@@ -6,7 +6,7 @@
  */
 
 import { rating, rate, ordinal } from 'openskill'
-import type { Rating } from 'openskill/dist/types'
+import type { Rating } from 'openskill'
 
 /**
  * Default OpenSkill rating configuration.
