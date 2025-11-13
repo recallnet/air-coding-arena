@@ -8,6 +8,20 @@ import crypto from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+import { db } from '@/db/client'
+import { events } from '@/db/schema'
+
+type GitHubWebhookPayload = {
+  action: string
+  pull_request?: {
+    number: number
+    head: { sha: string }
+  }
+  repository?: {
+    full_name: string
+  }
+}
+
 /**
  * Verifies GitHub webhook signature using HMAC SHA-256
  */
@@ -44,7 +58,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const payload = JSON.parse(body)
+    const payload = JSON.parse(body) as GitHubWebhookPayload
+
+    // 2. Check idempotency
+    const pr = payload.pull_request
+    const eventKey = pr
+      ? `github:${payload.action}:${pr.number}:${pr.head.sha}`
+      : `github:${payload.action}:${Date.now()}`
+
+    const existing = await db
+      .insert(events)
+      .values({
+        source: 'github',
+        key: eventKey,
+        payload,
+      })
+      .onConflictDoNothing({
+        target: [events.source, events.key],
+      })
+      .returning({ id: events.id })
+
+    if (existing.length === 0) {
+      return NextResponse.json({ status: 'duplicate' })
+    }
+
+    // 3. Route by event type (TODO: implement handlers)
+    console.log(`[GitHub] ${payload.action} event received`)
 
     return NextResponse.json({ success: true })
   } catch (error) {
