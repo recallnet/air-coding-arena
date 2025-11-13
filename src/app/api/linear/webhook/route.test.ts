@@ -581,23 +581,13 @@ describe('/api/linear/webhook', () => {
       }
     })
 
-    it('should fail loudly when branch does not contain agent name', async () => {
-      const payload = {
-        type: 'Attachment',
-        action: 'create',
-        data: {
-          id: 'attach-no-agent',
-          url: TEST_PR_URL,
-          title: 'Test PR',
-          subtitle: TEST_ATTACHMENT_SUBTITLE,
-          metadata: { branch: 'eng-126--other' },
-          issue: { id: TEST_ISSUE_ID },
-        },
-        updatedAt: TEST_TIMESTAMP,
-        createdAt: TEST_TIMESTAMP,
-      }
+  })
 
-      // Mock db.select to handle both time-window check and issue lookup
+  describe('Attachment.create - graceful agent name handling', () => {
+    it('should skip attempt creation when branch name lacks agent info', async () => {
+      const { syncIssueFromLinear } = await import('@/lib/linear-sync')
+
+      // Mock: issue exists in database
       let selectCallCount = 0
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
@@ -607,26 +597,109 @@ describe('/api/linear/webhook', () => {
               // First call: time-window check (no recent events)
               if (selectCallCount === 1) return []
               // Second call: issue lookup (return issue)
-              return [{ id: 'uuid' }]
+              return [{ id: TEST_DB_ISSUE_ID }]
             }),
           }),
         }),
       } as never)
 
+      // Mock event insert
       vi.mocked(db.insert).mockReturnValue({
         values: vi.fn().mockReturnValue({
           onConflictDoNothing: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([{ id: 1 }]),
           }),
-          onConflictDoUpdate: vi.fn().mockResolvedValue([]),
         }),
       } as never)
+
+      // Mock syncIssueFromLinear
+      vi.mocked(syncIssueFromLinear).mockResolvedValue(undefined)
+
+      const payload = {
+        type: 'Attachment',
+        action: 'create',
+        data: {
+          id: TEST_ATTACHMENT_ID,
+          url: TEST_PR_URL,
+          title: 'PR Title',
+          subtitle: TEST_ATTACHMENT_SUBTITLE,
+          metadata: {
+            branch: 'main', // No agent suffix
+          },
+          issue: { id: TEST_ISSUE_ID },
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
 
       const req = createMockRequest(payload)
       const response = await POST(req)
 
-      // Should return 500 error when agent cannot be determined
-      expect(response.status).toBe(500)
+      // Should succeed (200) not throw (500)
+      expect(response.status).toBe(200)
+
+      // Should call syncIssueFromLinear to handle via comment thread
+      expect(syncIssueFromLinear).toHaveBeenCalledWith(TEST_ISSUE_ID)
+
+      // Should NOT create attempt (db.insert only called once for event)
+      expect(db.insert).toHaveBeenCalledOnce()
+    })
+
+    it('should create attempt when branch name contains agent', async () => {
+      // Mock: issue exists
+      let selectCallCount = 0
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call: time-window check (no recent events)
+              if (selectCallCount === 1) return []
+              // Second call: issue lookup (return issue)
+              return [{ id: TEST_DB_ISSUE_ID }]
+            }),
+          }),
+        }),
+      } as never)
+
+      // Mock insert for both event and attempt
+      let insertCallCount = 0
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockImplementation(() => {
+          insertCallCount++
+          return {
+            onConflictDoNothing: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue([{ id: insertCallCount }]),
+            }),
+            onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+          }
+        }),
+      } as never)
+
+      const payload = {
+        type: 'Attachment',
+        action: 'create',
+        data: {
+          id: TEST_ATTACHMENT_ID,
+          url: TEST_PR_URL,
+          title: 'PR Title',
+          subtitle: TEST_ATTACHMENT_SUBTITLE,
+          metadata: {
+            branch: 'ENG-123--fix-bug--agent-cursor',
+          },
+          issue: { id: TEST_ISSUE_ID },
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      const req = createMockRequest(payload)
+      const response = await POST(req)
+
+      expect(response.status).toBe(200)
+
+      // Should create attempt with agent name from branch (insert called twice: event + attempt)
+      expect(db.insert).toHaveBeenCalledTimes(2)
     })
 
     it('should detect merged status from subtitle', async () => {

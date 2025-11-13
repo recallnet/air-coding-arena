@@ -285,27 +285,30 @@ async function handleAttachmentEvent(
   const metadata = attachment.metadata as Record<string, unknown> | undefined
   const branch = metadata?.['branch'] as string | undefined
 
-  // Extract agent name from branch name (format: issue-key--description--agent-{name})
-  // Branch naming convention must be followed for tracking to work
+  // Try to extract agent name from branch (best effort, not required)
   const agentMatch = branch?.match(/agent-([a-z]+)$/i)
-  const agentName = agentMatch?.[1]?.toLowerCase()
+  const agentNameFromBranch = agentMatch?.[1]?.toLowerCase()
 
-  // If we can't extract agent name from branch, fail loudly
-  // This indicates the workflow is broken and needs fixing
-  if (!agentName) {
-    throw new Error(
-      `Cannot determine agent name for PR ${attachment.url}. ` +
-        `Branch must follow naming convention: issue-key--description--agent-{name}. ` +
-        `Got branch: ${branch ?? 'undefined'}`
+  // If can't determine agent from branch, defer to comment sync
+  // Comment sync will create the attempt with proper agent provenance from @mention thread
+  if (!agentNameFromBranch) {
+    console.log(
+      `Skipping attempt creation for ${attachment.url} - ` +
+        `agent provenance not available from branch name. ` +
+        `Will be created by comment sync with @mention attribution.`
     )
+
+    // Trigger immediate sync to process comment thread
+    await syncIssueFromLinear(attachment.issue.id)
+    return
   }
 
-  // Upsert attempt
+  // Agent known from branch - create attempt immediately
   await db
     .insert(attempts)
     .values({
       issueId,
-      agentName,
+      agentName: agentNameFromBranch,
       repo,
       prNumber: Number.parseInt(prNumber, 10),
       prUrl: attachment.url,
@@ -322,20 +325,23 @@ async function handleAttachmentEvent(
       set: {
         status,
         mergedAt,
+        branch: branch ?? sql`${attempts.branch}`,
         sourceAttachmentId: attachment.id,
         sourceAttachmentUrl: attachment.url,
       },
     })
 
   // Update agent status to submitted
-  await updateAgentStatusOnPR(issueId, agentName)
+  await updateAgentStatusOnPR(issueId, agentNameFromBranch)
 
   // If merged, check for winner
   if (status === 'merged') {
     await updateWinner(issueId)
   }
 
-  console.log(`Attempt created/updated: ${repo}#${prNumber} (${status})`)
+  console.log(
+    `Attempt created/updated: ${repo}#${prNumber} (agent: ${agentNameFromBranch}, status: ${status})`
+  )
 }
 
 /**
