@@ -1015,6 +1015,59 @@ describe('/api/linear/webhook', () => {
 
       vi.useRealTimers()
     })
+
+    it('should handle 10 rapid webhooks like Linear delete spam', async () => {
+      const issueId = 'spam-issue-999'
+      let processedCount = 0
+      let deduplicatedCount = 0
+
+      // Reset the select mock to track state across requests
+      let selectCallCount = 0
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call returns empty (no recent events)
+              // All subsequent calls return event (recent event found)
+              return selectCallCount === 1 ? [] : [{ id: 1, createdAt: new Date() }]
+            }),
+          }),
+        }),
+      } as never)
+
+      // Simulate 10 webhooks arriving within 500ms (like real Linear behavior)
+      for (let i = 0; i < 10; i++) {
+        const payload = {
+          type: 'Issue',
+          action: 'update',
+          data: { id: issueId },
+          updatedAt: new Date(Date.now() + i * 50).toISOString(), // 50ms apart
+          createdAt: new Date().toISOString(),
+        }
+
+        const req = new NextRequest(WEBHOOK_URL_TEST, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: {
+            'linear-signature': createValidSignature(payload),
+          },
+        })
+
+        const res = await POST(req)
+        const body = (await res.json()) as { success?: boolean; status?: string }
+
+        if (body.success) {
+          processedCount++
+        } else if (body.status === 'deduplicated') {
+          deduplicatedCount++
+        }
+      }
+
+      // Should process first one, deduplicate the other 9
+      expect(processedCount).toBe(1)
+      expect(deduplicatedCount).toBe(9)
+    })
   })
 })
 
