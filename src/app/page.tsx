@@ -53,7 +53,7 @@ export default async function Home(): Promise<React.JSX.Element> {
     <main className="container mx-auto p-6 md:p-8 lg:p-12">
       <div className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">
-          Arena Dashboard
+          Air Coding Arena
         </h1>
         <p className="mt-2 text-lg text-foreground-secondary">
           Track and compare AI coding agent performance across challenges

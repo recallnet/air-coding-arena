@@ -6,7 +6,7 @@ import { LinearClient } from '@linear/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
-import { issues } from '@/db/schema'
+import { attempts, issues } from '@/db/schema'
 
 import { syncIssueFromLinear } from './linear-sync'
 
@@ -21,6 +21,11 @@ vi.mock('@/db/client', () => ({
 
 vi.mock('@linear/sdk', () => ({
   LinearClient: vi.fn(),
+}))
+
+// Mock agent-dispatch to avoid complex query mocking
+vi.mock('./agent-dispatch', () => ({
+  dispatchMissingAgents: vi.fn().mockResolvedValue(0),
 }))
 
 /**
@@ -93,7 +98,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -171,7 +180,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -220,7 +233,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -279,7 +296,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -343,7 +364,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -397,7 +422,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -456,7 +485,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -505,7 +538,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -554,7 +591,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -586,6 +627,82 @@ describe('syncIssueFromLinear', () => {
     expect(mockUpdate).toHaveBeenCalledWith(issues)
   })
 
+  it('should attribute PR to agent mentioned in parent comment thread', async () => {
+    // Scenario: @engine is mentioned in parent comment, PR link is in child reply
+    const mockComments = {
+      nodes: [
+        {
+          id: 'comment-1',
+          body: '@engine can you fix this?',
+          createdAt: '2024-01-01T00:00:00Z',
+          parentId: null, // root comment
+        },
+        {
+          id: 'comment-2',
+          body: 'https://github.com/org/repo/pull/1562',
+          createdAt: '2024-01-02T00:00:00Z',
+          parentId: 'comment-1', // replies to @mention
+        },
+      ],
+    }
+
+    const mockIssue = createMockIssue({
+      comments: vi.fn().mockResolvedValue(mockComments),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
+    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    const mockValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-id')
+
+    // Should create attempt with 'engine' agent (not 'unknown')
+    // First insert is for issueAgents, second is for attempts
+    expect(mockInsert).toHaveBeenCalledTimes(2)
+
+    // Find the attempts.insert call
+    const attemptsInsertCall = mockInsert.mock.calls.find(
+      (call) => call[0] === attempts
+    )
+    expect(attemptsInsertCall).toBeDefined()
+
+    // Check that the values function was called with engine agent
+    const valuesCall = mockValues.mock.calls[mockValues.mock.calls.length - 1]
+    expect(valuesCall?.[0]).toMatchObject({
+      agentName: 'engine',
+      prNumber: 1562,
+    })
+
+    // Should also update agent status to 'submitted' for engine
+    expect(mockUpdate).toHaveBeenCalledTimes(2) // once for issue, once for agent
+  })
+
   it('should handle attachments with PR links', async () => {
     const mockAttachments = {
       nodes: [
@@ -610,7 +727,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -659,7 +780,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -708,7 +833,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
@@ -786,7 +915,11 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
     const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })

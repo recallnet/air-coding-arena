@@ -65,7 +65,7 @@ describe('Home', () => {
       render(await Home())
 
       expect(
-        screen.getByRole('heading', { name: 'Arena Dashboard' })
+        screen.getByRole('heading', { name: 'Air Coding Arena' })
       ).toBeInTheDocument()
       expect(
         screen.getByText(
@@ -335,7 +335,7 @@ describe('Home', () => {
       render(await Home())
 
       expect(
-        screen.getByRole('heading', { name: 'Arena Dashboard' })
+        screen.getByRole('heading', { name: 'Air Coding Arena' })
       ).toBeInTheDocument()
       expect(
         screen.getByText(

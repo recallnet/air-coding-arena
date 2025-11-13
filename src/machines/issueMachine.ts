@@ -1,4 +1,4 @@
-import { setup } from 'xstate';
+import { setup } from 'xstate'
 
 /**
  * Issue lifecycle state machine for arena competitions.
@@ -11,21 +11,21 @@ import { setup } from 'xstate';
  */
 
 type IssueContext = {
-  issueId: string;
-  winnerAgentName?: string;
-  agentCount: number;
-};
+  issueId: string
+  winnerAgentName?: string
+  agentCount: number
+}
 
 type IssueEvents =
   | { type: 'FIRST_PR_SUBMITTED' }
   | { type: 'PR_MERGED'; agentName: string }
   | { type: 'LABEL_REMOVED' }
-  | { type: 'ISSUE_CLOSED' };
+  | { type: 'ISSUE_CLOSED' }
 
 export const issueMachine = setup({
   types: {} as {
-    context: IssueContext;
-    events: IssueEvents;
+    context: IssueContext
+    events: IssueEvents
   },
 }).createMachine({
   id: 'issue',
@@ -68,4 +68,4 @@ export const issueMachine = setup({
       type: 'final',
     },
   },
-});
+})

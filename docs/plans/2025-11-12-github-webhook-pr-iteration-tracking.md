@@ -1,6 +1,7 @@
-# GitHub Webhook Integration: PR Iteration Tracking
+# GitHub Webhook Integration: PR Iteration & CI Tracking
 
 **Date:** 2025-11-12
+**Updated:** 2025-11-12 (Added CI status tracking)
 **Status:** 📋 Planning
 **Priority:** HIGH
 **Complexity:** Medium
@@ -9,11 +10,33 @@
 
 ## Executive Summary
 
-Implement GitHub webhook handler to track PR iteration cycles during agent competitions. Currently, the system only tracks PR open/merge/close events via Linear attachments. This misses the critical feedback loop: reviewers requesting changes, agents pushing additional commits, and the back-and-forth collaboration that measures agent quality.
+Implement GitHub webhook handler to track PR iteration cycles and CI status during agent competitions. Currently, the system only tracks PR open/merge/close events via Linear attachments. This misses critical quality signals: iteration counts, CI pass/fail status, and the feedback loop that measures agent quality.
 
-**Current Gap:** `commitCount` field exists in schema but never gets updated (stuck at 1).
+**Current Gaps:**
+- `commitCount` field exists in schema but never gets updated (stuck at 1)
+- No visibility into whether an agent's PR has passing CI/tests
 
-**Goal:** Track PR evolution through review cycles to measure how well agents respond to feedback.
+**Goals:**
+- Track PR evolution through review cycles to measure iteration efficiency
+- Track CI status to identify agents with passing tests vs failing tests
+
+---
+
+## What's New (Updated 2025-11-12)
+
+**CI Status Tracking Added:**
+- New schema fields: `ciStatus`, `ciLastCheckedAt`
+- Support for both modern Check Runs API and legacy Status API
+- Webhooks: `check_suite.completed` and `status` events
+- Dashboard can now show: ✅ passing, ❌ failing, ⏳ pending, ⚠️ error
+- +13 unit tests (38 total, was 25)
+- +1.5 days to implementation timeline (14 days total, was 12)
+
+**Why this matters:**
+- Reviewers can quickly see which PRs are ready (green CI)
+- Measure "% of agents that submit with passing tests"
+- Avoid wasting time reviewing PRs with failing tests
+- Quality signal: agents with green CI on first push vs multiple iterations
 
 ---
 
@@ -33,14 +56,22 @@ Via GitHub PR events:
 - Updated commit count as agent iterates
 - PR synchronize events (new commits)
 - Accurate timeline of work iterations
+- **CI status (passing/failing tests)**
+- **Check run results (build, lint, tests)**
 
 ### Real-World Impact
 
-**Scenario:** Reviewer asks agent to add tests
+**Scenario 1:** Reviewer asks agent to add tests
 - ❌ System doesn't see the 3 additional commits agent pushes
 - ❌ `commitCount` stays at 1 forever
 - ❌ Can't measure "time from review feedback to next commit"
 - ❌ Can't identify which agents iterate well vs ignore feedback
+
+**Scenario 2:** Agent submits PR with failing tests
+- ❌ Dashboard shows PR as "submitted" but doesn't indicate CI is red
+- ❌ Can't quickly see which PRs are ready for review (green CI)
+- ❌ Can't measure "% of PRs with passing CI on first push"
+- ❌ Reviewers waste time on PRs that aren't ready
 
 ---
 
@@ -65,15 +96,22 @@ pending → submitted → accepted/rejected
 - Falls back to open/closed/pending
 - ✅ Multiple agents can show `accepted` if both merged
 
-### Schema: Ready ✅
+### Schema: Needs Update 🔧
 
-**Attempts table** (src/db/schema.ts:37-61):
+**Attempts table** (src/db/schema.ts:61-85):
 ```typescript
-commitCount: integer('commit_count').notNull().default(1),
-lastCommitSha: text('last_commit_sha'),
+commitCount: integer('commit_count').notNull().default(1), // ← Update via synchronize
+lastCommitSha: text('last_commit_sha'), // ← Update via synchronize
+// NEW FIELDS NEEDED:
+ciStatus: text('ci_status'), // ← 'pending' | 'success' | 'failure' | 'error' | null
+ciLastCheckedAt: timestamp('ci_last_checked_at'), // ← When we last got CI status
 ```
 
-Fields exist but are never updated beyond initial value.
+**Schema Migration Required:**
+```sql
+ALTER TABLE attempts ADD COLUMN ci_status TEXT;
+ALTER TABLE attempts ADD COLUMN ci_last_checked_at TIMESTAMP WITH TIME ZONE;
+```
 
 ---
 
@@ -125,9 +163,11 @@ Fields exist but are never updated beyond initial value.
 **Endpoint:** `/api/github/webhook/route.ts` (NEW FILE)
 
 **Events to handle:**
-1. `pull_request.synchronize` - Agent pushes new commits
+1. `pull_request.synchronize` - Agent pushes new commits → update commitCount
 2. `pull_request.opened` - Track if Linear missed it
 3. `pull_request.closed` - Update final status
+4. **`check_suite.completed`** - CI finished running → update ciStatus
+5. **`status`** - Commit status updated (fallback for repos using Status API)
 
 **NOT handling initially:**
 - Review comments (phase 2)
@@ -186,7 +226,82 @@ Update attempts table:
 
 ---
 
+## CI Status Tracking Details
+
+### GitHub Check Suites vs Status API
+
+GitHub has two systems for CI status:
+
+1. **Check Runs API** (modern, recommended)
+   - Used by GitHub Actions, CircleCI, Travis CI
+   - Webhook: `check_suite.completed`
+   - Status values: `success`, `failure`, `neutral`, `cancelled`, `timed_out`, `action_required`
+
+2. **Status API** (legacy, but still used)
+   - Used by older CI systems
+   - Webhook: `status`
+   - Status values: `success`, `failure`, `error`, `pending`
+
+**Strategy:** Handle both events, normalize to common values.
+
+### CI Status Mapping
+
+```typescript
+type CIStatus = 'pending' | 'success' | 'failure' | 'error' | null
+
+// Map GitHub values → our schema
+const normalizeCIStatus = (github: string): CIStatus => {
+  if (github === 'success') return 'success'
+  if (github === 'failure' || github === 'timed_out' || github === 'cancelled') return 'failure'
+  if (github === 'error' || github === 'action_required') return 'error'
+  if (github === 'pending' || github === 'neutral') return 'pending'
+  return null
+}
+```
+
+### What CI Status Tells Us
+
+- **`success`**: All checks passed → PR is ready for review
+- **`failure`**: Tests failed → Agent needs to fix code
+- **`error`**: CI had a problem (config issue, infrastructure)
+- **`pending`**: CI is currently running
+- **`null`**: No CI configured for this PR
+
+### UI Benefits
+
+Dashboard can now show:
+- ✅ Green checkmark for passing CI
+- ❌ Red X for failing CI
+- ⏳ Yellow spinner for pending CI
+- ⚠️ Warning icon for CI errors
+- Filter: "Show only PRs with passing tests"
+
+---
+
 ## Implementation Plan
+
+### Phase 0: Schema Migration (NEW)
+
+#### Task 0: Add CI Status Fields
+**File:** `src/db/schema.ts`
+
+**Changes:**
+```typescript
+export const attempts = pgTable('attempts', {
+  // ... existing fields ...
+  ciStatus: text('ci_status'), // 'pending' | 'success' | 'failure' | 'error' | null
+  ciLastCheckedAt: timestamp('ci_last_checked_at', { withTimezone: true }),
+})
+```
+
+**Migration:** `drizzle-kit generate` → `drizzle-kit migrate`
+
+**Tests:**
+- Schema includes new fields
+- Default values work (null)
+- Queries return ciStatus correctly
+
+---
 
 ### Phase 1: Infrastructure (Tasks 1-3)
 
@@ -447,9 +562,126 @@ async function handlePullRequestClosed(
 
 ---
 
-### Phase 4: Integration & Testing (Tasks 8-10)
+### Phase 4: CI Status Handlers (Tasks 8-9) **NEW**
 
-#### Task 8: Environment Configuration
+#### Task 8: Handle check_suite.completed
+**Function:** `handleCheckSuiteCompleted()`
+
+**Purpose:** Update CI status when GitHub Actions / modern CI completes
+
+**Logic:**
+```typescript
+async function handleCheckSuiteCompleted(
+  payload: {
+    check_suite: {
+      head_sha: string
+      conclusion: 'success' | 'failure' | 'neutral' | 'cancelled' | 'timed_out' | 'action_required' | null
+      pull_requests: Array<{ number: number }>
+    }
+    repository: { full_name: string }
+  }
+): Promise<void> {
+  const conclusion = payload.check_suite.conclusion
+  if (!conclusion) return // Still running
+
+  const ciStatus = normalizeCIStatus(conclusion)
+  const repo = payload.repository.full_name
+  const prNumbers = payload.check_suite.pull_requests.map(pr => pr.number)
+
+  // Update all PRs associated with this check suite
+  for (const prNumber of prNumbers) {
+    await db
+      .update(attempts)
+      .set({
+        ciStatus,
+        ciLastCheckedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(attempts.repo, repo),
+          eq(attempts.prNumber, prNumber)
+        )
+      )
+
+    console.log(`Updated CI status for ${repo}#${prNumber}: ${ciStatus}`)
+  }
+}
+```
+
+**Tests:**
+- Success check suite → ciStatus='success'
+- Failure check suite → ciStatus='failure'
+- Cancelled/timed_out → ciStatus='failure'
+- Action required → ciStatus='error'
+- Updates ciLastCheckedAt timestamp
+- Handles multiple PRs in one check suite
+
+#### Task 9: Handle status (Legacy CI)
+**Function:** `handleStatus()`
+
+**Purpose:** Fallback for repos using legacy Status API
+
+**Logic:**
+```typescript
+async function handleStatus(
+  payload: {
+    sha: string
+    state: 'success' | 'failure' | 'error' | 'pending'
+    context: string // e.g., "continuous-integration/travis-ci"
+    target_url: string | null
+    branches: Array<{ name: string }>
+    repository: { full_name: string }
+  }
+): Promise<void> {
+  const ciStatus = normalizeCIStatus(payload.state)
+  const repo = payload.repository.full_name
+  const sha = payload.sha
+
+  // Find PR(s) with this commit SHA
+  const prAttempts = await db
+    .select()
+    .from(attempts)
+    .where(
+      and(
+        eq(attempts.repo, repo),
+        eq(attempts.lastCommitSha, sha)
+      )
+    )
+
+  if (prAttempts.length === 0) {
+    console.log(`No tracked PRs for commit ${sha}`)
+    return
+  }
+
+  // Update all matching PRs
+  for (const attempt of prAttempts) {
+    await db
+      .update(attempts)
+      .set({
+        ciStatus,
+        ciLastCheckedAt: new Date(),
+      })
+      .where(eq(attempts.id, attempt.id))
+
+    console.log(`Updated CI status for PR#${attempt.prNumber}: ${ciStatus}`)
+  }
+}
+```
+
+**Tests:**
+- Success status → ciStatus='success'
+- Failure status → ciStatus='failure'
+- Error status → ciStatus='error'
+- Pending status → ciStatus='pending'
+- Finds PR by lastCommitSha
+- Handles multiple PRs with same SHA
+- Ignores unknown commits (not tracked)
+
+---
+
+### Phase 5: Integration & Testing (Tasks 10-12)
+
+#### Task 10: Environment Configuration
 
 **Required env vars:**
 ```bash
@@ -469,10 +701,12 @@ ALLOWED_REPOS=recallnet/js-recall,recallnet/other-repo
 - Secret: Same as `GITHUB_WEBHOOK_SECRET`
 - Events:
   - ✅ Pull requests
+  - ✅ **Check suites** (NEW - for CI status)
+  - ✅ **Statuses** (NEW - legacy CI fallback)
   - ❌ Issue comments (phase 2)
   - ❌ Pull request reviews (phase 2)
 
-#### Task 9: End-to-End Test Script
+#### Task 11: End-to-End Test Script
 
 **Script:** `scripts/test-github-webhook.ts`
 
@@ -486,22 +720,24 @@ ALLOWED_REPOS=recallnet/js-recall,recallnet/other-repo
 **Validation:**
 ```typescript
 const before = await getAttempt(repo, prNumber)
-console.log(`Before: ${before.commitCount} commits`)
+console.log(`Before: ${before.commitCount} commits, CI: ${before.ciStatus}`)
 
 // Trigger PR synchronize (push commit)
 await pushCommit(repo, branch)
 
-// Wait for webhook
-await sleep(5000)
+// Wait for webhooks (PR sync + CI)
+await sleep(10000) // CI takes longer
 
 const after = await getAttempt(repo, prNumber)
-console.log(`After: ${after.commitCount} commits`)
+console.log(`After: ${after.commitCount} commits, CI: ${after.ciStatus}`)
 
 assert(after.commitCount > before.commitCount, 'Commit count should increase')
 assert(after.lastCommitSha !== before.lastCommitSha, 'SHA should update')
+assert(after.ciStatus !== null, 'CI status should be set')
+assert(after.ciLastCheckedAt > before.ciLastCheckedAt, 'CI timestamp updated')
 ```
 
-#### Task 10: Update Documentation
+#### Task 12: Update Documentation
 
 **Files to update:**
 1. `README.md` - Add GitHub webhook setup instructions
@@ -513,20 +749,31 @@ assert(after.lastCommitSha !== before.lastCommitSha, 'SHA should update')
 
 ## Database Schema Changes
 
-### No Changes Required ✅
+### Migration Required 🔧
 
-Existing schema supports all needed fields:
+**New fields to add:**
 
 ```typescript
-// src/db/schema.ts (already exists)
+// src/db/schema.ts
 export const attempts = pgTable('attempts', {
-  commitCount: integer('commit_count').notNull().default(1), // ← We update this
-  lastCommitSha: text('last_commit_sha'), // ← We update this
-  status: text('status').notNull(), // ← We update this on close
-  mergedAt: timestamp('merged_at', { withTimezone: true }), // ← We update this
-  closedAt: timestamp('closed_at', { withTimezone: true }), // ← We update this
+  // Existing fields (we update these)
+  commitCount: integer('commit_count').notNull().default(1), // ← Update via synchronize
+  lastCommitSha: text('last_commit_sha'), // ← Update via synchronize
+  status: text('status').notNull(), // ← Update on close
+  mergedAt: timestamp('merged_at', { withTimezone: true }), // ← Update on close
+  closedAt: timestamp('closed_at', { withTimezone: true }), // ← Update on close
+
+  // NEW FIELDS (add these)
+  ciStatus: text('ci_status'), // ← 'pending' | 'success' | 'failure' | 'error' | null
+  ciLastCheckedAt: timestamp('ci_last_checked_at', { withTimezone: true }), // ← CI check timestamp
 })
 ```
+
+**Migration steps:**
+1. Add fields to schema.ts
+2. Run `npm run db:generate` (creates migration file)
+3. Run `npm run db:migrate` (applies to database)
+4. Update TypeScript types in queries.ts
 
 ---
 
@@ -597,7 +844,15 @@ export const attempts = pgTable('attempts', {
    - Winner selection triggered
    - Missing attempt handled
 
-**Total:** ~25 unit tests
+6. CI status handlers (13 tests)
+   - check_suite.completed success/failure/error
+   - Status API success/failure/error/pending
+   - normalizeCIStatus mapping
+   - ciLastCheckedAt timestamp updates
+   - Multiple PRs in check suite
+   - SHA-based PR lookup for legacy status
+
+**Total:** ~38 unit tests (was 25, added 13 for CI tracking)
 
 ### Integration Tests
 
@@ -885,16 +1140,19 @@ ALLOWED_REPOS=recallnet/js-recall
 ## Acceptance Criteria
 
 ### Must Have (v0.4.0)
+- [ ] Schema migration adds ciStatus and ciLastCheckedAt fields
 - [ ] GitHub webhook route created and tested
 - [ ] Signature verification working (HMAC SHA-256)
 - [ ] Idempotency preventing duplicate processing
 - [ ] `pull_request.synchronize` updates commitCount
 - [ ] `pull_request.closed` updates status/timestamps
+- [ ] **`check_suite.completed` updates ciStatus** (NEW)
+- [ ] **`status` event updates ciStatus** (NEW - legacy fallback)
 - [ ] GitHub API integration fetches accurate commit counts
-- [ ] Unit tests >90% coverage
-- [ ] End-to-end test passes on real PR
+- [ ] Unit tests >90% coverage (~38 tests)
+- [ ] End-to-end test passes on real PR (commit count + CI status)
 - [ ] Documentation updated (README, CHANGELOG, M2-DEPLOYMENT)
-- [ ] Deployed to production with webhook configured
+- [ ] Deployed to production with webhooks configured
 
 ### Nice to Have (Future)
 - [ ] Review comment tracking
@@ -922,14 +1180,16 @@ ALLOWED_REPOS=recallnet/js-recall
 
 | Phase | Duration | Effort |
 |-------|----------|--------|
+| Schema Migration (Task 0) | 0.5 days | 4 hours |
 | Infrastructure (Tasks 1-3) | 2 days | 16 hours |
 | Synchronize Handler (Tasks 4-6) | 2 days | 16 hours |
 | Close Handler (Task 7) | 1 day | 8 hours |
-| Testing & Docs (Tasks 8-10) | 2 days | 16 hours |
+| **CI Status Handlers (Tasks 8-9)** | **1.5 days** | **12 hours** |
+| Testing & Docs (Tasks 10-12) | 2 days | 16 hours |
 | Code Review & Fixes | 1 day | 8 hours |
 | Staging Deployment | 2 days | 16 hours |
 | Production Rollout | 2 days | 16 hours |
-| **Total** | **12 days** | **96 hours** |
+| **Total** | **14 days** | **112 hours** |
 
 **Confidence:** High (similar to completed Linear webhook work)
 

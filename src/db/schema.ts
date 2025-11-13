@@ -76,6 +76,11 @@ export const attempts = pgTable(
     status: text('status').notNull(),
     commitCount: integer('commit_count').notNull().default(1),
     lastCommitSha: text('last_commit_sha'),
+
+    // CI Status tracking fields
+    ciStatus: text('ci_status'), // 'pending' | 'success' | 'failure' | 'error' | null
+    ciLastCheckedAt: timestamp('ci_last_checked_at', { withTimezone: true }),
+
     sourceAttachmentId: text('source_attachment_id'),
     sourceAttachmentUrl: text('source_attachment_url'),
   },

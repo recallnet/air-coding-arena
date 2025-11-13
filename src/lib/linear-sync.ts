@@ -124,6 +124,17 @@ export async function syncIssueFromLinear(
 
   // 5. Sync attachments → attempts
   await syncAttachments(issueId, attachments.nodes)
+
+  // 6. Dispatch missing agents (Milestone 3)
+  // This is idempotent - only dispatches agents not already in issue_agents table
+  // Only dispatches to open/in_progress issues
+  try {
+    const { dispatchMissingAgents } = await import('./agent-dispatch')
+    await dispatchMissingAgents(issueId)
+  } catch (error) {
+    // Log but don't fail sync if dispatch fails
+    console.error('Failed to dispatch missing agents:', error)
+  }
 }
 
 /**
@@ -179,7 +190,7 @@ type CommentWithParent = {
   id: string
   body?: string | null
   createdAt: Date
-  parentId?: string | undefined | null
+  parentId?: string | null
 }
 
 /**
@@ -203,14 +214,20 @@ async function syncComments(
     const commentId = comment.id
     const mentionedAgents: string[] = []
 
-    // Get parent ID if it exists
-    const parentId: string | undefined | null = comment.parentId
-    commentParents.set(commentId, parentId ?? null)
+    // Get parent ID directly from the parentId field
+    const parentId = comment.parentId ?? null
+    commentParents.set(commentId, parentId)
 
     // Sync agent mentions
     for (const handle of getAgentHandles()) {
-      if (body.toLowerCase().includes(handle.toLowerCase())) {
-        const agentName = handle.substring(1).toLowerCase() // Remove @ prefix and normalize to lowercase
+      const agentName = handle.substring(1).toLowerCase() // Remove @ prefix: "@engine" -> "engine"
+      const lowerBody = body.toLowerCase()
+
+      // Match both plain text (@engine) and Linear's mention format (@[engine](...))
+      if (
+        lowerBody.includes(`@${agentName}`) ||
+        lowerBody.includes(`@[${agentName}]`)
+      ) {
         mentionedAgents.push(agentName)
 
         await db

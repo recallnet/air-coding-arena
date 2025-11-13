@@ -302,6 +302,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_MERGED,
         commitCount: 5,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -360,21 +362,22 @@ describe('IssuePage', () => {
 
     describe('status badges', () => {
       it('should display "Unknown" badge for null status', async () => {
-        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
-          ...createMockIssue({
-            id: MOCK_ISSUE_ID,
-            linearId: MOCK_LINEAR_ID,
-            linearKey: MOCK_LINEAR_KEY,
-            title: MOCK_ISSUE_TITLE,
-            url: MOCK_LINEAR_URL,
-            repo: MOCK_REPO,
-            status: null,
-            arenaReadyLabeledAt: MOCK_READY_DATE,
-            createdAt: MOCK_CREATED_DATE,
-          }),
-          attempts: [],
-          agents: [],
-        }
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } =
+          {
+            ...createMockIssue({
+              id: MOCK_ISSUE_ID,
+              linearId: MOCK_LINEAR_ID,
+              linearKey: MOCK_LINEAR_KEY,
+              title: MOCK_ISSUE_TITLE,
+              url: MOCK_LINEAR_URL,
+              repo: MOCK_REPO,
+              status: null,
+              arenaReadyLabeledAt: MOCK_READY_DATE,
+              createdAt: MOCK_CREATED_DATE,
+            }),
+            attempts: [],
+            agents: [],
+          }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
 
@@ -389,7 +392,10 @@ describe('IssuePage', () => {
         > = ['Done', 'In Progress', 'In Review', 'Todo', 'Backlog', 'Canceled']
 
         for (const status of statuses) {
-          const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
+          const mockIssue: Issue & {
+            attempts: Attempt[]
+            agents: IssueAgent[]
+          } = {
             ...createMockIssue({
               id: MOCK_ISSUE_ID,
               linearId: MOCK_LINEAR_ID,
@@ -488,6 +494,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -535,6 +543,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_MERGED,
         commitCount: 5,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -582,6 +592,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -625,6 +637,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -670,6 +684,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_OPEN,
         commitCount: 3,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -721,6 +737,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_MERGED,
         commitCount: 5,
         lastCommitSha: MOCK_COMMIT_SHA,
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -739,6 +757,8 @@ describe('IssuePage', () => {
         status: MOCK_STATUS_CLOSED,
         commitCount: 2,
         lastCommitSha: 'def456',
+        ciStatus: null,
+        ciLastCheckedAt: null,
         sourceAttachmentId: null,
         sourceAttachmentUrl: null,
       }
@@ -787,25 +807,28 @@ describe('IssuePage', () => {
           status: MOCK_STATUS_MERGED,
           commitCount: 5,
           lastCommitSha: MOCK_COMMIT_SHA,
+          ciStatus: null,
+          ciLastCheckedAt: null,
           sourceAttachmentId: null,
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
-          ...createMockIssue({
-            id: MOCK_ISSUE_ID,
-            linearId: MOCK_LINEAR_ID,
-            linearKey: MOCK_LINEAR_KEY,
-            title: MOCK_ISSUE_TITLE,
-            url: MOCK_LINEAR_URL,
-            repo: MOCK_REPO,
-            status: MOCK_STATUS_DONE,
-            arenaReadyLabeledAt: MOCK_READY_DATE,
-            createdAt: MOCK_CREATED_DATE,
-          }),
-          attempts: [mockAttempt],
-          agents: [],
-        }
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } =
+          {
+            ...createMockIssue({
+              id: MOCK_ISSUE_ID,
+              linearId: MOCK_LINEAR_ID,
+              linearKey: MOCK_LINEAR_KEY,
+              title: MOCK_ISSUE_TITLE,
+              url: MOCK_LINEAR_URL,
+              repo: MOCK_REPO,
+              status: MOCK_STATUS_DONE,
+              arenaReadyLabeledAt: MOCK_READY_DATE,
+              createdAt: MOCK_CREATED_DATE,
+            }),
+            attempts: [mockAttempt],
+            agents: [],
+          }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
 
@@ -829,25 +852,28 @@ describe('IssuePage', () => {
           status: MOCK_STATUS_OPEN,
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          ciStatus: null,
+          ciLastCheckedAt: null,
           sourceAttachmentId: null,
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
-          ...createMockIssue({
-            id: MOCK_ISSUE_ID,
-            linearId: MOCK_LINEAR_ID,
-            linearKey: MOCK_LINEAR_KEY,
-            title: MOCK_ISSUE_TITLE,
-            url: MOCK_LINEAR_URL,
-            repo: MOCK_REPO,
-            status: MOCK_STATUS_IN_PROGRESS,
-            arenaReadyLabeledAt: MOCK_READY_DATE,
-            createdAt: MOCK_CREATED_DATE,
-          }),
-          attempts: [mockAttempt],
-          agents: [],
-        }
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } =
+          {
+            ...createMockIssue({
+              id: MOCK_ISSUE_ID,
+              linearId: MOCK_LINEAR_ID,
+              linearKey: MOCK_LINEAR_KEY,
+              title: MOCK_ISSUE_TITLE,
+              url: MOCK_LINEAR_URL,
+              repo: MOCK_REPO,
+              status: MOCK_STATUS_IN_PROGRESS,
+              arenaReadyLabeledAt: MOCK_READY_DATE,
+              createdAt: MOCK_CREATED_DATE,
+            }),
+            attempts: [mockAttempt],
+            agents: [],
+          }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
 
@@ -871,25 +897,28 @@ describe('IssuePage', () => {
           status: MOCK_STATUS_CLOSED,
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          ciStatus: null,
+          ciLastCheckedAt: null,
           sourceAttachmentId: null,
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
-          ...createMockIssue({
-            id: MOCK_ISSUE_ID,
-            linearId: MOCK_LINEAR_ID,
-            linearKey: MOCK_LINEAR_KEY,
-            title: MOCK_ISSUE_TITLE,
-            url: MOCK_LINEAR_URL,
-            repo: MOCK_REPO,
-            status: MOCK_STATUS_IN_PROGRESS,
-            arenaReadyLabeledAt: MOCK_READY_DATE,
-            createdAt: MOCK_CREATED_DATE,
-          }),
-          attempts: [mockAttempt],
-          agents: [],
-        }
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } =
+          {
+            ...createMockIssue({
+              id: MOCK_ISSUE_ID,
+              linearId: MOCK_LINEAR_ID,
+              linearKey: MOCK_LINEAR_KEY,
+              title: MOCK_ISSUE_TITLE,
+              url: MOCK_LINEAR_URL,
+              repo: MOCK_REPO,
+              status: MOCK_STATUS_IN_PROGRESS,
+              arenaReadyLabeledAt: MOCK_READY_DATE,
+              createdAt: MOCK_CREATED_DATE,
+            }),
+            attempts: [mockAttempt],
+            agents: [],
+          }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
 
@@ -913,25 +942,28 @@ describe('IssuePage', () => {
           status: 'invalid-status' as 'open', // Type assertion to test invalid status
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
+          ciStatus: null,
+          ciLastCheckedAt: null,
           sourceAttachmentId: null,
           sourceAttachmentUrl: null,
         }
 
-        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
-          ...createMockIssue({
-            id: MOCK_ISSUE_ID,
-            linearId: MOCK_LINEAR_ID,
-            linearKey: MOCK_LINEAR_KEY,
-            title: MOCK_ISSUE_TITLE,
-            url: MOCK_LINEAR_URL,
-            repo: MOCK_REPO,
-            status: MOCK_STATUS_IN_PROGRESS,
-            arenaReadyLabeledAt: MOCK_READY_DATE,
-            createdAt: MOCK_CREATED_DATE,
-          }),
-          attempts: [mockAttempt],
-          agents: [],
-        }
+        const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } =
+          {
+            ...createMockIssue({
+              id: MOCK_ISSUE_ID,
+              linearId: MOCK_LINEAR_ID,
+              linearKey: MOCK_LINEAR_KEY,
+              title: MOCK_ISSUE_TITLE,
+              url: MOCK_LINEAR_URL,
+              repo: MOCK_REPO,
+              status: MOCK_STATUS_IN_PROGRESS,
+              arenaReadyLabeledAt: MOCK_READY_DATE,
+              createdAt: MOCK_CREATED_DATE,
+            }),
+            attempts: [mockAttempt],
+            agents: [],
+          }
 
         mockGetIssueById.mockResolvedValue(mockIssue)
 

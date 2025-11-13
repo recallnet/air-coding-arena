@@ -16,12 +16,12 @@ vi.mock('next/navigation', () => ({
 
 describe('Navigation', () => {
   describe('Component Rendering', () => {
-    it('renders the Arena Dashboard brand link', () => {
+    it('renders the Air Coding Arena brand link', () => {
       vi.mocked(usePathname).mockReturnValue('/')
 
       render(<Navigation />)
 
-      const brandLink = screen.getByRole('link', { name: /arena dashboard/i })
+      const brandLink = screen.getByRole('link', { name: /air coding arena/i })
       expect(brandLink).toBeInTheDocument()
       expect(brandLink).toHaveAttribute('href', '/')
     })

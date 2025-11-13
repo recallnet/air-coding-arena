@@ -71,7 +71,13 @@ export type AttemptStatus = 'open' | 'merged' | 'closed'
 /**
  * Issue agent status values.
  */
-export type IssueAgentStatus = 'queued' | 'triggered' | 'failed' | 'skipped'
+export type IssueAgentStatus =
+  | 'pending'
+  | 'submitted'
+  | 'accepted'
+  | 'rejected'
+  | 'ignored'
+  | 'dispatch_failed'
 
 /**
  * Agent stats from the agent_stats view.

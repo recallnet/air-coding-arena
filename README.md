@@ -145,19 +145,23 @@ mockUserService.getUser.mockResolvedValue({ id: '1', name: 'Test' })
 The coding arena uses XState to model agent and issue lifecycles. State machines are defined in TypeScript and diagrams are auto-generated in CI.
 
 **View diagrams:**
+
 - [Agent Lifecycle](docs/diagrams/agent-state-machine.md)
 - [Issue Lifecycle](docs/diagrams/issue-state-machine.md)
 
 **Source code:**
+
 - `src/machines/agentMachine.ts` - Agent state machine definition
 - `src/machines/issueMachine.ts` - Issue state machine definition
 
 **Generate diagrams manually:**
+
 ```bash
 npm run generate-diagrams
 ```
 
 Diagrams are automatically regenerated:
+
 - On every commit (pre-commit hook)
 - During build (`npm run build`)
 

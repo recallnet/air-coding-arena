@@ -75,7 +75,7 @@ describe('agentMachine - comprehensive path coverage', () => {
     const paths = getShortestPaths(agentMachine)
 
     // Verify all terminal states are reachable
-    const terminalStates = paths.map(p => p.state.value)
+    const terminalStates = paths.map((p) => p.state.value)
     expect(terminalStates).toContain('accepted')
     expect(terminalStates).toContain('rejected')
     expect(terminalStates).toContain('ignored')
@@ -85,7 +85,9 @@ describe('agentMachine - comprehensive path coverage', () => {
     for (const [i, path] of paths.entries()) {
       console.log(`\nPath ${i} -> ${path.state.value}:`)
       for (const [j, step] of path.steps.entries()) {
-        console.log(`  ${j + 1}. ${step.event?.type || 'initial'} → ${step.state.value}`)
+        console.log(
+          `  ${j + 1}. ${step.event?.type || 'initial'} → ${step.state.value}`
+        )
       }
     }
   })
@@ -164,7 +166,10 @@ describe('agentMachine - invalid transitions', () => {
     expect(actor.getSnapshot().value).toBe('submitted')
 
     // Can't submit PR again
-    actor.send({ type: 'PR_SUBMITTED', prUrl: 'https://github.com/org/repo/pull/2' })
+    actor.send({
+      type: 'PR_SUBMITTED',
+      prUrl: 'https://github.com/org/repo/pull/2',
+    })
     expect(actor.getSnapshot().value).toBe('submitted') // No transition
   })
 

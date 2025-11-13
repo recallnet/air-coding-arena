@@ -62,7 +62,7 @@ describe('issueMachine - comprehensive path coverage', () => {
     const paths = getShortestPaths(issueMachine)
 
     // Verify all terminal states are reachable
-    const terminalStates = paths.map(p => p.state.value)
+    const terminalStates = paths.map((p) => p.state.value)
     expect(terminalStates).toContain('completed')
     expect(terminalStates).toContain('cancelled')
 
@@ -70,7 +70,9 @@ describe('issueMachine - comprehensive path coverage', () => {
     for (const [i, path] of paths.entries()) {
       console.log(`\nPath ${i} -> ${path.state.value}:`)
       for (const [j, step] of path.steps.entries()) {
-        console.log(`  ${j + 1}. ${step.event?.type || 'initial'} → ${step.state.value}`)
+        console.log(
+          `  ${j + 1}. ${step.event?.type || 'initial'} → ${step.state.value}`
+        )
       }
     }
   })

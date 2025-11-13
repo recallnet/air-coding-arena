@@ -68,6 +68,8 @@ export function createMockAttempt(partial: Partial<Attempt> = {}): Attempt {
     status: 'open',
     commitCount: 1,
     lastCommitSha: 'abc123',
+    ciStatus: null,
+    ciLastCheckedAt: null,
     sourceAttachmentId: null,
     sourceAttachmentUrl: null,
     ...partial,

@@ -237,6 +237,52 @@ export default async function IssuePage({
         </CardContent>
       </Card>
 
+      {/* Agents Card */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Agents</CardTitle>
+          <CardDescription>
+            All agents assigned to this issue with their current status
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {issue.agents.length === 0 ? (
+            <div className="py-8 text-center text-foreground-secondary">
+              No agents assigned yet
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {issue.agents.map((agent) => (
+                <div
+                  key={agent.agentName}
+                  className="bg-background-subtle flex items-center gap-2 rounded-lg border border-border px-4 py-2"
+                >
+                  <Link
+                    href={`/agents/${agent.agentName}`}
+                    className="font-medium text-blue-900 transition-colors hover:underline"
+                  >
+                    {agent.agentName}
+                  </Link>
+                  <Badge
+                    variant={
+                      agent.status === 'accepted'
+                        ? 'success'
+                        : agent.status === 'submitted'
+                          ? 'warning'
+                          : agent.status === 'rejected'
+                            ? 'error'
+                            : 'outline'
+                    }
+                  >
+                    {agent.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Attempts Card */}
       <Card>
         <CardHeader>

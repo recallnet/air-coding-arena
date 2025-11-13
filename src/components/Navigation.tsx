@@ -61,7 +61,7 @@ export function Navigation(): React.JSX.Element {
             href="/"
             className="text-lg font-semibold tracking-tight text-foreground transition-colors hover:text-blue-900"
           >
-            Arena Dashboard
+            Air Coding Arena
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">

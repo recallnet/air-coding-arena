@@ -71,6 +71,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const payload = JSON.parse(body) as LinearWebhookPayload
 
+    // Log all webhook events for debugging
+    console.log(
+      `[Webhook] Received: type=${payload.type}, action=${payload.action}`
+    )
+
     // 2. Check idempotency
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dataId = payload.data['id'] as any as string
@@ -139,6 +144,7 @@ function verifyLinearSignature(
 /**
  * Handles Issue webhook events.
  * Upserts issue when arena:ready label is present and syncs existing state.
+ * Marks issue as deleted when issue is deleted or label is removed.
  * Webhook stores basic fields only - sync enriches with full metadata.
  *
  * @param payload - Linear webhook payload
@@ -146,11 +152,33 @@ function verifyLinearSignature(
 async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
   const issue = payload.data as unknown as LinearWebhookIssue
 
+  // Handle issue deletion or removal
+  if (payload.action === 'remove') {
+    await db
+      .update(issues)
+      .set({ status: 'deleted' })
+      .where(eq(issues.linearId, issue.id))
+
+    console.log(`Issue ${issue.identifier} marked as deleted`)
+    return
+  }
+
   // Check for arena:ready label
   const arenaLabel = process.env['ARENA_LABEL'] ?? 'arena:ready'
   const hasArenaLabel = issue.labels?.some((label) => label.name === arenaLabel)
 
-  if (!hasArenaLabel) return
+  // If label was removed, mark as deleted
+  if (!hasArenaLabel) {
+    await db
+      .update(issues)
+      .set({ status: 'deleted' })
+      .where(eq(issues.linearId, issue.id))
+
+    console.log(
+      `Issue ${issue.identifier} arena label removed, marked as deleted`
+    )
+    return
+  }
 
   // Upsert issue with basic fields from webhook
   // Full metadata will be added by syncIssueFromLinear

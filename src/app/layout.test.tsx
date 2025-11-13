@@ -60,7 +60,7 @@ describe('RootLayout', () => {
         </RootLayout>
       )
 
-      const brandLink = screen.getByRole('link', { name: /arena dashboard/i })
+      const brandLink = screen.getByRole('link', { name: /air coding arena/i })
       expect(brandLink).toBeInTheDocument()
     })
 
@@ -177,7 +177,7 @@ describe('RootLayout', () => {
 
   describe('metadata', () => {
     it('should have correct title', () => {
-      expect(metadata.title).toBe('Arena Dashboard')
+      expect(metadata.title).toBe('Air Coding Arena')
     })
 
     it('should have correct description', () => {

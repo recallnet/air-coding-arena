@@ -10,7 +10,7 @@ import './globals.css'
  * Root layout metadata configuration.
  */
 export const metadata: Metadata = {
-  title: 'Arena Dashboard',
+  title: 'Air Coding Arena',
   description:
     'AI Agent coding arena dashboard for tracking issues and performance',
 }

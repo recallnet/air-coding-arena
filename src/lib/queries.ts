@@ -198,7 +198,12 @@ export async function getIssueById(
     ...issue,
     attempts: issueAttempts,
     agents: agents.map((agent) => {
-      const status = agent.status as 'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
+      const status = agent.status as
+        | 'pending'
+        | 'submitted'
+        | 'accepted'
+        | 'rejected'
+        | 'ignored'
       if (
         status !== 'pending' &&
         status !== 'submitted' &&
@@ -276,6 +281,8 @@ export async function getAttemptsByAgent(
     status: string
     commit_count: number
     last_commit_sha: string | null
+    ci_status: string | null
+    ci_last_checked_at: Date | null
     source_attachment_id: string | null
     source_attachment_url: string | null
     issue_linear_key: string
@@ -294,6 +301,8 @@ export async function getAttemptsByAgent(
       a.status,
       a.commit_count,
       a.last_commit_sha,
+      a.ci_status,
+      a.ci_last_checked_at,
       a.source_attachment_id,
       a.source_attachment_url,
       i.linear_key AS issue_linear_key
@@ -317,6 +326,8 @@ export async function getAttemptsByAgent(
     status: row.status,
     commitCount: row.commit_count,
     lastCommitSha: row.last_commit_sha,
+    ciStatus: row.ci_status,
+    ciLastCheckedAt: row.ci_last_checked_at,
     sourceAttachmentId: row.source_attachment_id,
     sourceAttachmentUrl: row.source_attachment_url,
     issueLinearKey: row.issue_linear_key,
