@@ -649,6 +649,165 @@ describe('dispatchMissingAgents', () => {
 
     expect(count).toBe(0)
   })
+
+  it('should skip agents already mentioned in Linear comments', async () => {
+    const { db } = await import('@/db/client')
+    let selectCallCount = 0
+    const mockSelect = vi.fn().mockImplementation(() => {
+      selectCallCount++
+      if (selectCallCount === 1) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([
+                {
+                  id: 'test-id',
+                  linearId: 'linear-123',
+                  linearKey: 'ENG-123',
+                  title: 'Test',
+                  url: 'https://test.com',
+                  status: 'In Progress',
+                },
+              ]),
+            }),
+          }),
+        }
+      } else {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([]),
+          }),
+        }
+      }
+    })
+    vi.mocked(db).select = mockSelect
+
+    const mockInsert = vi.fn().mockReturnValue({
+      values: vi.fn().mockResolvedValue(undefined),
+    })
+    vi.mocked(db).insert = mockInsert
+
+    const { getAgentNames, getAgentConfigs } = await import('./agent-config')
+    vi.mocked(getAgentNames).mockResolvedValue(['cursor', 'engine'])
+    vi.mocked(getAgentConfigs).mockResolvedValue([
+      {
+        name: 'cursor',
+        handle: '@Cursor',
+        displayName: 'Cursor',
+        linearUserId: 'user-1',
+      },
+      {
+        name: 'engine',
+        handle: '@Engine',
+        displayName: 'Engine',
+        linearUserId: 'user-2',
+      },
+    ])
+
+    const { LinearClient } = await import('@linear/sdk')
+    const mockCreateComment = vi.fn().mockResolvedValue({})
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [
+          { body: '@cursor is already working on this' },
+          { body: 'Some other comment' },
+        ],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
+    vi.mocked(LinearClient).mockImplementation(
+      () =>
+        ({
+          createComment: mockCreateComment,
+          issue: mockIssue,
+        }) as never
+    )
+
+    const count = await dispatchMissingAgents('test-id')
+
+    // Should only dispatch engine, not cursor (already mentioned)
+    expect(count).toBe(1)
+    expect(mockCreateComment).toHaveBeenCalledTimes(1)
+    expect(mockCreateComment).toHaveBeenCalledWith({
+      issueId: 'linear-123',
+      body: '@[Engine](user-2) please work on this issue.',
+    })
+  })
+
+  it('should return 0 when all agents already mentioned in Linear comments', async () => {
+    const { db } = await import('@/db/client')
+    let selectCallCount = 0
+    const mockSelect = vi.fn().mockImplementation(() => {
+      selectCallCount++
+      if (selectCallCount === 1) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([
+                {
+                  id: 'test-id',
+                  linearId: 'linear-123',
+                  linearKey: 'ENG-123',
+                  title: 'Test',
+                  url: 'https://test.com',
+                  status: 'In Progress',
+                },
+              ]),
+            }),
+          }),
+        }
+      } else {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([]),
+          }),
+        }
+      }
+    })
+    vi.mocked(db).select = mockSelect
+
+    const { getAgentNames, getAgentConfigs } = await import('./agent-config')
+    vi.mocked(getAgentNames).mockResolvedValue(['cursor', 'engine'])
+    vi.mocked(getAgentConfigs).mockResolvedValue([
+      {
+        name: 'cursor',
+        handle: '@Cursor',
+        displayName: 'Cursor',
+        linearUserId: 'user-1',
+      },
+      {
+        name: 'engine',
+        handle: '@Engine',
+        displayName: 'Engine',
+        linearUserId: 'user-2',
+      },
+    ])
+
+    const { LinearClient } = await import('@linear/sdk')
+    const mockCreateComment = vi.fn()
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [
+          { body: '@[cursor] please work on this' },
+          { body: '@[engine] already assigned' },
+        ],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
+    vi.mocked(LinearClient).mockImplementation(
+      () =>
+        ({
+          createComment: mockCreateComment,
+          issue: mockIssue,
+        }) as never
+    )
+
+    const count = await dispatchMissingAgents('test-id')
+
+    // Should not dispatch any agents
+    expect(count).toBe(0)
+    expect(mockCreateComment).not.toHaveBeenCalled()
+  })
 })
 
 describe('dispatchAgentsToIssue (legacy)', () => {
