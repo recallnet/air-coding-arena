@@ -59,6 +59,28 @@ export async function syncIssueFromLinear(
     }
   }
 
+  console.log(
+    `[syncIssue] Fetched ${allComments.length} comments from Linear API for issue ${linearIssueId}`
+  )
+
+  // Transform Linear SDK comments to include parentId
+  // Linear SDK comments have a lazy-loading 'parent' promise, not a direct 'parentId' field
+  const commentsWithParentId: CommentWithParent[] = await Promise.all(
+    allComments.map(async (comment) => {
+      const parent = await comment.parent
+      return {
+        id: comment.id,
+        body: comment.body,
+        createdAt: comment.createdAt,
+        parentId: parent?.id ?? null,
+      }
+    })
+  )
+
+  console.log(
+    `[syncIssue] Resolved parent relationships for ${commentsWithParentId.length} comments`
+  )
+
   const attachments = await issue.attachments()
   const labels = await issue.labels()
   const assignee = await issue.assignee
@@ -135,7 +157,7 @@ export async function syncIssueFromLinear(
   await db.update(issues).set(metadata).where(eq(issues.id, issueId))
 
   // 4. Sync comments → agent mentions
-  await syncComments(issueId, allComments)
+  await syncComments(issueId, commentsWithParentId)
 
   // 5. Sync attachments → attempts
   await syncAttachments(issueId, attachments.nodes)
@@ -167,30 +189,68 @@ async function determineAgentOwnershipFromThread(
   commentAgents: Map<string, string[]>,
   commentParents: Map<string, string | null>
 ): Promise<string> {
+  console.log(
+    `[determineOwnership] Starting for comment ${commentId.substring(0, 8)}...`
+  )
+
   // First, check if agent is mentioned in this comment
   if (mentionedAgents.length > 0 && mentionedAgents[0]) {
+    console.log(
+      `[determineOwnership]   ✓ Found agent in current comment: ${mentionedAgents[0]}`
+    )
     return mentionedAgents[0]
   }
+
+  console.log(
+    `[determineOwnership]   No agent in current comment, walking parent chain...`
+  )
 
   // Walk up the parent chain to find @mentions
   // NO GUESSING - agent must be explicitly mentioned
   let currentId: string | null = commentId
   const visited = new Set<string>()
+  let depth = 0
 
   while (currentId && !visited.has(currentId)) {
     visited.add(currentId)
+    depth++
 
     // Check if this comment has an agent mention
     const agents = commentAgents.get(currentId) ?? []
+    console.log(
+      `[determineOwnership]   Depth ${depth}: comment ${currentId.substring(0, 8)}... has ${agents.length} agents: ${agents.join(', ') || 'none'}`
+    )
+
     if (agents.length > 0 && agents[0]) {
+      console.log(
+        `[determineOwnership]   ✓ Found agent at depth ${depth}: ${agents[0]}`
+      )
       return agents[0]
     }
 
     // Move to parent
     const parentId = commentParents.get(currentId)
+    console.log(
+      `[determineOwnership]   Parent of ${currentId.substring(0, 8)}... is ${parentId ? parentId.substring(0, 8) + '...' : 'null'}`
+    )
     currentId = parentId ?? null
+
+    if (!currentId) {
+      console.log(
+        `[determineOwnership]   ✗ Reached end of parent chain (no more parents)`
+      )
+    }
   }
 
+  if (currentId && visited.has(currentId)) {
+    console.log(
+      `[determineOwnership]   ✗ Detected cycle in comment chain at ${currentId.substring(0, 8)}...`
+    )
+  }
+
+  console.log(
+    `[determineOwnership]   ✗ No agent found in entire chain - returning 'unknown'`
+  )
   return 'unknown'
 }
 
@@ -202,36 +262,41 @@ type CommentWithParent = {
 }
 
 /**
- * Syncs comments to find agent mentions and PR links
+ * Builds maps of comment agents and parent relationships
  * @param issueId - Database issue ID
- * @param comments - Comment nodes from Linear API
+ * @param comments - Comment nodes to process
+ * @returns Maps of comment agents and parent IDs
  */
-async function syncComments(
+async function buildCommentMaps(
   issueId: string,
   comments: CommentWithParent[]
-): Promise<void> {
-  // Track which agents are mentioned in each comment (by comment ID)
+): Promise<{
+  commentAgents: Map<string, string[]>
+  commentParents: Map<string, string | null>
+}> {
   const commentAgents: Map<string, string[]> = new Map()
-  // Track parent IDs
   const commentParents: Map<string, string | null> = new Map()
 
-  // PHASE 1: Build agent mentions map and parent relationships for all comments
   for (const comment of comments) {
     const body = comment.body ?? ''
     const createdAt = comment.createdAt
     const commentId = comment.id
     const mentionedAgents: string[] = []
-
-    // Get parent ID directly from the parentId field
     const parentId = comment.parentId ?? null
+
     commentParents.set(commentId, parentId)
 
-    // Sync agent mentions
+    console.log(
+      `[syncComments] Comment ${commentId.substring(0, 8)}... ` +
+        `parentId: ${parentId ? parentId.substring(0, 8) + '...' : 'null'}, ` +
+        `body preview: ${body.substring(0, 50)}...`
+    )
+
+    // Find agent mentions in comment
     for (const handle of await getAgentHandles()) {
-      const agentName = handle.substring(1).toLowerCase() // Remove @ prefix: "@engine" -> "engine"
+      const agentName = handle.substring(1).toLowerCase()
       const lowerBody = body.toLowerCase()
 
-      // Match both plain text (@engine) and Linear's mention format (@[engine](...))
       if (
         lowerBody.includes(`@${agentName}`) ||
         lowerBody.includes(`@[${agentName}]`)
@@ -253,17 +318,37 @@ async function syncComments(
       }
     }
 
+    if (mentionedAgents.length > 0) {
+      console.log(
+        `[syncComments]   ✓ Found agent mentions: ${mentionedAgents.join(', ')}`
+      )
+    }
+
     commentAgents.set(commentId, mentionedAgents)
   }
 
-  // PHASE 2: Extract PR URLs now that we have the full agent map
+  return { commentAgents, commentParents }
+}
+
+/**
+ * Processes PR URLs found in comments and creates attempts
+ * @param issueId - Database issue ID
+ * @param comments - Comment nodes to search for PR URLs
+ * @param commentAgents - Map of comment IDs to agent mentions
+ * @param commentParents - Map of comment IDs to parent IDs
+ */
+async function processPRURLs(
+  issueId: string,
+  comments: CommentWithParent[],
+  commentAgents: Map<string, string[]>,
+  commentParents: Map<string, string | null>
+): Promise<void> {
   for (const comment of comments) {
     const body = comment.body ?? ''
     const createdAt = comment.createdAt
     const commentId = comment.id
     const mentionedAgents = commentAgents.get(commentId) ?? []
 
-    // Extract GitHub PR URLs from comment body
     const prRegex = /github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/g
     let prMatch: RegExpExecArray | null
 
@@ -274,7 +359,16 @@ async function syncComments(
       const repo = `${org}/${repoName}`
       const prUrl = `https://github.com/${org}/${repoName}/pull/${prNumber}`
 
-      // Determine agent using parent relationship
+      console.log(
+        `[syncComments] Found PR URL in comment ${commentId.substring(0, 8)}...: ${prUrl}`
+      )
+      console.log(
+        `[syncComments]   This comment has ${mentionedAgents.length} agent mentions: ${mentionedAgents.join(', ') || 'none'}`
+      )
+      console.log(
+        `[syncComments]   Parent ID: ${commentParents.get(commentId) ?? 'null'}`
+      )
+
       const agentName = await determineAgentOwnershipFromThread(
         commentId,
         mentionedAgents,
@@ -282,7 +376,10 @@ async function syncComments(
         commentParents
       )
 
-      // Create attempt entry
+      console.log(
+        `[syncComments]   ✓ Determined agent: ${agentName}${agentName === 'unknown' ? ' ⚠️  UNKNOWN!' : ''}`
+      )
+
       await db
         .insert(attempts)
         .values({
@@ -304,7 +401,6 @@ async function syncComments(
           set: { prUrl, status: 'open' },
         })
 
-      // Update agent status from "pending" to "submitted"
       if (agentName !== 'unknown') {
         await db
           .update(issueAgents)
@@ -318,6 +414,32 @@ async function syncComments(
       }
     }
   }
+}
+
+/**
+ * Syncs comments to find agent mentions and PR links
+ * @param issueId - Database issue ID
+ * @param comments - Comment nodes from Linear API
+ */
+async function syncComments(
+  issueId: string,
+  comments: CommentWithParent[]
+): Promise<void> {
+  console.log(`[syncComments] Starting sync for issue ${issueId}`)
+  console.log(`[syncComments] Total comments to process: ${comments.length}`)
+
+  // PHASE 1: Build agent mentions map and parent relationships
+  const { commentAgents, commentParents } = await buildCommentMaps(
+    issueId,
+    comments
+  )
+
+  console.log(
+    `[syncComments] Phase 1 complete. Built maps with ${commentAgents.size} comments, ${commentParents.size} parent relationships`
+  )
+
+  // PHASE 2: Extract PR URLs and create attempts
+  await processPRURLs(issueId, comments, commentAgents, commentParents)
 }
 
 /**

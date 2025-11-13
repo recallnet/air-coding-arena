@@ -723,19 +723,20 @@ describe('syncIssueFromLinear', () => {
 
   it('should attribute PR to agent mentioned in parent comment thread', async () => {
     // Scenario: @engine is mentioned in parent comment, PR link is in child reply
+    // Note: Linear SDK comments have lazy-loading 'parent' promise, not direct 'parentId'
     const mockComments = {
       nodes: [
         {
           id: 'comment-1',
           body: '@engine can you fix this?',
-          createdAt: '2024-01-01T00:00:00Z',
-          parentId: null, // root comment
+          createdAt: new Date('2024-01-01T00:00:00Z'),
+          parent: Promise.resolve(null), // root comment has no parent
         },
         {
           id: 'comment-2',
           body: 'https://github.com/org/repo/pull/1562',
-          createdAt: '2024-01-02T00:00:00Z',
-          parentId: 'comment-1', // replies to @mention
+          createdAt: new Date('2024-01-02T00:00:00Z'),
+          parent: Promise.resolve({ id: 'comment-1' }), // replies to @mention
         },
       ],
       pageInfo: { hasNextPage: false },
