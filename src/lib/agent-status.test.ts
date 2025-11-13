@@ -8,7 +8,6 @@ import { db } from '@/db/client'
 import {
   updateAgentStatusOnPR,
   markIgnoredOnIssueClosed,
-  updateAgentStatusOnPRClose,
 } from './agent-status'
 
 vi.mock('@/db/client', () => ({
