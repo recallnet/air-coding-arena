@@ -16,6 +16,7 @@ import { db } from '@/db/client'
 import { issues, attempts, events } from '@/db/schema'
 import { updateAgentStatusOnPR } from '@/lib/agent-status'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
+import { updateRatingsForIssue } from '@/lib/update-ratings'
 import type { LinearWebhookIssue } from '@/types/linear'
 
 /**
@@ -338,38 +339,63 @@ async function handleAttachmentEvent(
 }
 
 /**
- * Updates winner for an issue.
- * Selects first merged attempt and closes others.
+ * Updates winner for an issue with transaction-based race condition protection.
+ * Uses row-level locking to ensure only one webhook can set the winner.
+ * Idempotent - safe to call multiple times.
  *
  * @param issueId - Issue UUID
  */
 async function updateWinner(issueId: string): Promise<void> {
-  // Get first merged attempt
-  const winnerResult = await db
-    .select({ id: attempts.id })
-    .from(attempts)
-    .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'merged')))
-    .orderBy(asc(attempts.mergedAt), asc(attempts.openedAt))
-    .limit(1)
+  await db.transaction(async (tx) => {
+    // 1. Lock the issue row (prevents concurrent winner updates)
+    const issueResult = await tx
+      .select({ id: issues.id, winnerAttemptId: issues.winnerAttemptId })
+      .from(issues)
+      .where(eq(issues.id, issueId))
+      .for('update') // PostgreSQL row lock - blocks concurrent updates
+      .limit(1)
 
-  if (winnerResult.length === 0) return
+    if (issueResult.length === 0) return
 
-  const winnerId = winnerResult[0]?.id
-  if (!winnerId) return
+    const issue = issueResult[0]
+    if (!issue) return
 
-  // Set winner
-  await db
-    .update(issues)
-    .set({ winnerAttemptId: winnerId })
-    .where(eq(issues.id, issueId))
+    // 2. If winner already set, skip (idempotency)
+    if (issue.winnerAttemptId) {
+      console.log(`Winner already set for issue ${issueId}`)
+      return
+    }
 
-  // Close other attempts
-  await db
-    .update(attempts)
-    .set({ status: 'closed', closedAt: new Date() })
-    .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'open')))
+    // 3. Get first merged attempt (within transaction)
+    const winnerResult = await tx
+      .select({ id: attempts.id, agentName: attempts.agentName })
+      .from(attempts)
+      .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'merged')))
+      .orderBy(asc(attempts.mergedAt), asc(attempts.openedAt))
+      .limit(1)
 
-  console.log(`Winner set for issue ${issueId}`)
+    if (winnerResult.length === 0) return
+
+    const winner = winnerResult[0]
+    if (!winner) return
+
+    // 4. Set winner (atomic with lock)
+    await tx
+      .update(issues)
+      .set({ winnerAttemptId: winner.id })
+      .where(eq(issues.id, issueId))
+
+    // 5. Close losing attempts
+    await tx
+      .update(attempts)
+      .set({ status: 'closed', closedAt: new Date() })
+      .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'open')))
+
+    // 6. Update ratings once per issue (inside transaction)
+    await updateRatingsForIssue(issueId)
+
+    console.log(`Winner set for issue ${issueId}: ${winner.agentName}`)
+  })
 }
 
 /**

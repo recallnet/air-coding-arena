@@ -10,7 +10,6 @@ import type {
   AgentPRData,
   PRFile,
   CIStatus,
-  PRStatus,
 } from '@/types/pr-comparison'
 
 const MOCK_FILES: PRFile[] = [
@@ -78,13 +77,12 @@ const MOCK_FILES: PRFile[] = [
 export function generateMockPRComparison(agentNames: string[]): PRComparison {
   const agents: AgentPRData[] = agentNames.map((name, index) => {
     const ciStatuses: CIStatus[] = ['passing', 'failing', 'pending', 'none']
-    const prStatuses: PRStatus[] = ['open', 'merged', 'closed']
 
     return {
       name,
       githubHandle: `${name}-agent`,
       prNumber: 1234 + index,
-      prStatus: prStatuses[index % 3] as PRStatus,
+      prStatus: 'open', // Milestone 1: All PRs shown as "open" for consistency
       ciStatus: ciStatuses[index % 4] as CIStatus,
       // Vary files slightly between agents
       files: MOCK_FILES.map((file) => ({
