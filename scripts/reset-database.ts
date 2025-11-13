@@ -17,6 +17,8 @@ async function resetDatabase(): Promise<void> {
   await db.execute(drizzleSql.raw('DROP TABLE IF EXISTS issues CASCADE'))
   await db.execute(drizzleSql.raw('DROP TABLE IF EXISTS agents CASCADE'))
   await db.execute(drizzleSql.raw('DROP TABLE IF EXISTS agent_config CASCADE'))
+  await db.execute(drizzleSql.raw('DROP TABLE IF EXISTS agent_scores CASCADE'))
+  await db.execute(drizzleSql.raw('DROP TABLE IF EXISTS agent_score_history CASCADE'))
 
   console.log('All tables dropped.')
   console.log('Run "npm run db:push" to recreate tables from schema.ts')
