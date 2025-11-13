@@ -53,7 +53,10 @@ function createMockIssue(overrides?: Record<string, unknown>) {
     parent: Promise.resolve(null),
     team: Promise.resolve(null),
     state: Promise.resolve(null),
-    comments: vi.fn().mockResolvedValue({ nodes: [] }),
+    comments: vi.fn().mockResolvedValue({
+      nodes: [],
+      pageInfo: { hasNextPage: false },
+    }),
     attachments: vi.fn().mockResolvedValue({ nodes: [] }),
     ...overrides,
   }
@@ -85,6 +88,9 @@ describe('syncIssueFromLinear', () => {
           createdAt: '2024-01-02T00:00:00Z',
         },
       ],
+      pageInfo: {
+        hasNextPage: false,
+      },
     }
 
     const mockIssue = createMockIssue({
@@ -183,6 +189,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-01T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -244,6 +251,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-01T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -315,6 +323,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-01T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -391,6 +400,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-02T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -457,6 +467,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-02T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -528,6 +539,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-02T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -589,6 +601,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-01T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -650,6 +663,7 @@ describe('syncIssueFromLinear', () => {
           createdAt: new Date('2024-01-01T00:00:00Z'),
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -724,6 +738,7 @@ describe('syncIssueFromLinear', () => {
           parentId: 'comment-1', // replies to @mention
         },
       ],
+      pageInfo: { hasNextPage: false },
     }
 
     const mockIssue = createMockIssue({
@@ -805,7 +820,10 @@ describe('syncIssueFromLinear', () => {
     }
 
     const mockIssue = createMockIssue({
-      comments: vi.fn().mockResolvedValue({ nodes: [] }),
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
       attachments: vi.fn().mockResolvedValue(mockAttachments),
     })
 
@@ -866,7 +884,10 @@ describe('syncIssueFromLinear', () => {
     }
 
     const mockIssue = createMockIssue({
-      comments: vi.fn().mockResolvedValue({ nodes: [] }),
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
       attachments: vi.fn().mockResolvedValue(mockAttachments),
     })
 
@@ -927,7 +948,10 @@ describe('syncIssueFromLinear', () => {
     }
 
     const mockIssue = createMockIssue({
-      comments: vi.fn().mockResolvedValue({ nodes: [] }),
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
       attachments: vi.fn().mockResolvedValue(mockAttachments),
     })
 

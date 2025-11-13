@@ -334,11 +334,18 @@ describe('dispatchMissingAgents', () => {
     const mockUsers = vi.fn().mockResolvedValue({
       nodes: [{ id: 'user-1', displayName: 'cursor' }],
     })
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
           users: mockUsers,
           createComment: mockCreateComment,
+          issue: mockIssue,
         }) as never
     )
 
@@ -404,11 +411,18 @@ describe('dispatchMissingAgents', () => {
         { id: 'user-2', displayName: 'engine' },
       ],
     })
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
           users: mockUsers,
           createComment: mockCreateComment,
+          issue: mockIssue,
         }) as never
     )
 
@@ -469,11 +483,18 @@ describe('dispatchMissingAgents', () => {
     const mockUsers = vi.fn().mockResolvedValue({
       nodes: [{ id: 'user-1', displayName: 'cursor' }],
     })
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
           users: mockUsers,
           createComment: vi.fn(),
+          issue: mockIssue,
         }) as never
     )
 
@@ -538,11 +559,18 @@ describe('dispatchMissingAgents', () => {
         { id: 'user-2', displayName: 'engine' },
       ],
     })
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
           users: mockUsers,
           createComment: mockCreateComment,
+          issue: mockIssue,
         }) as never
     )
 
@@ -597,11 +625,18 @@ describe('dispatchMissingAgents', () => {
 
     const { LinearClient } = await import('@linear/sdk')
     const mockUsers = vi.fn().mockRejectedValue(new Error('Linear API error'))
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
           users: mockUsers,
           createComment: vi.fn(),
+          issue: mockIssue,
         }) as never
     )
 
@@ -648,11 +683,18 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(getAgentConfigs).mockResolvedValue([])
 
     const { LinearClient } = await import('@linear/sdk')
+    const mockIssue = vi.fn().mockResolvedValue({
+      comments: vi.fn().mockResolvedValue({
+        nodes: [],
+        pageInfo: { hasNextPage: false },
+      }),
+    })
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
           users: vi.fn(),
           createComment: vi.fn(),
+          issue: mockIssue,
         }) as never
     )
 

@@ -137,13 +137,45 @@ export async function dispatchMissingAgents(
   // 6. Create Linear client
   const client = new LinearClient({ apiKey })
 
-  // 7. Dispatch each missing agent
+  // 7. Defensive check: Fetch recent comments from Linear to verify agent hasn't been mentioned
+  // This prevents duplicates after database wipes or race conditions
+  const linearIssue = await client.issue(linearId)
+  const recentComments = await linearIssue.comments({ first: 100 })
+  const recentCommentBodies = recentComments.nodes
+    .map((c) => c.body?.toLowerCase() ?? '')
+    .join(' ')
+
+  // Filter out agents that are already mentioned in recent Linear comments
+  const trulyMissingAgents = missingAgents.filter((agentName) => {
+    const mentioned =
+      recentCommentBodies.includes(`@${agentName.toLowerCase()}`) ||
+      recentCommentBodies.includes(`@[${agentName.toLowerCase()}]`)
+    if (mentioned) {
+      console.log(
+        `Agent ${agentName} already mentioned in Linear comments for ${issue.linearKey}, skipping dispatch`
+      )
+    }
+    return !mentioned
+  })
+
+  if (trulyMissingAgents.length === 0) {
+    console.log(
+      `All agents already mentioned in Linear for ${issue.linearKey}, nothing to dispatch`
+    )
+    return 0
+  }
+
+  console.log(
+    `Verified ${trulyMissingAgents.length} agents need dispatch: ${trulyMissingAgents.join(', ')}`
+  )
+
+  // 8. Dispatch each truly missing agent
   let dispatchedCount = 0
 
   // Get all agent configs once
   const allAgentConfigs = await getAgentConfigs()
 
-  for (const agentName of missingAgents) {
+  for (const agentName of trulyMissingAgents) {
     const agentConfig = allAgentConfigs.find((a) => a.name === agentName)
     if (!agentConfig) {
       console.warn(`Agent config not found for: ${agentName}`)

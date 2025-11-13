@@ -43,7 +43,22 @@ export async function syncIssueFromLinear(
   // 2. Fetch from Linear API
   const client = new LinearClient({ apiKey })
   const issue = await client.issue(linearIssueId)
-  const comments = await issue.comments()
+
+  // Fetch ALL comments (handle pagination)
+  let commentsPage = await issue.comments()
+  let allComments = [...commentsPage.nodes]
+
+  // Keep fetching until we have all comments
+  while (commentsPage.pageInfo.hasNextPage) {
+    const nextPage = await commentsPage.fetchNext()
+    if (nextPage) {
+      allComments = [...allComments, ...nextPage.nodes]
+      commentsPage = nextPage
+    } else {
+      break
+    }
+  }
+
   const attachments = await issue.attachments()
   const labels = await issue.labels()
   const assignee = await issue.assignee
@@ -120,7 +135,7 @@ export async function syncIssueFromLinear(
   await db.update(issues).set(metadata).where(eq(issues.id, issueId))
 
   // 4. Sync comments → agent mentions
-  await syncComments(issueId, comments.nodes)
+  await syncComments(issueId, allComments)
 
   // 5. Sync attachments → attempts
   await syncAttachments(issueId, attachments.nodes)
