@@ -154,10 +154,10 @@ describe('AgentAvatarGroup', () => {
       expect(secondZ).toBeGreaterThan(thirdZ)
     })
 
-    it('should use small size avatars', () => {
+    it('should use extra small size avatars', () => {
       const agents = [{ agentName: 'cursor', status: 'submitted' as const }]
       const { container } = render(<AgentAvatarGroup agents={agents} />)
-      const avatar = container.querySelector('.h-6')
+      const avatar = container.querySelector('.h-5')
       expect(avatar).toBeInTheDocument()
     })
   })

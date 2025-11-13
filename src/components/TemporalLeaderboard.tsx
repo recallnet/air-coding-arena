@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import { AgentAvatar } from '@/components/AgentAvatar'
 import {
   Card,
   CardContent,
@@ -175,6 +176,23 @@ export function TemporalLeaderboard({
   // Group stats for easier lookup
   const groupedStats = groupStatsByDate(stats)
 
+  // Get agent metadata (avatarUrl, displayName) from first occurrence
+  const agentMetadata = new Map<
+    string,
+    {
+      avatarUrl?: string | null | undefined
+      displayName?: string | null | undefined
+    }
+  >()
+  for (const stat of stats) {
+    if (!agentMetadata.has(stat.agentName)) {
+      agentMetadata.set(stat.agentName, {
+        avatarUrl: stat.avatarUrl,
+        displayName: stat.displayName,
+      })
+    }
+  }
+
   // Calculate max value for Y-axis scaling
   const maxValue = Math.max(
     ...stats.map((s) =>
@@ -237,14 +255,20 @@ export function TemporalLeaderboard({
           <div className="flex flex-wrap justify-center gap-4 text-sm">
             {agents.map((agent, index) => {
               const colors = getAgentColors(index)
+              const metadata = agentMetadata.get(agent)
               return (
                 <div key={agent} className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <div
-                      className="h-3 w-3 rounded"
-                      style={{ backgroundColor: colors.attempts }}
+                    <AgentAvatar
+                      name={agent}
+                      status="accepted"
+                      size="sm"
+                      avatarUrl={metadata?.avatarUrl}
+                      displayName={metadata?.displayName}
                     />
-                    <span className="font-medium">{agent}</span>
+                    <span className="font-medium">
+                      {metadata?.displayName ?? agent}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-foreground-secondary">
                     <div

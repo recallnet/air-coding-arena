@@ -251,10 +251,9 @@ describe('reconcileLinearIssues', () => {
 
     // Mock db.update chain for deletion marking
     const mockWhere = vi.fn().mockReturnThis()
-    const mockReturning = vi.fn().mockResolvedValue([
-      { linearKey: 'ENG-100' },
-      { linearKey: 'ENG-200' },
-    ])
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValue([{ linearKey: 'ENG-100' }, { linearKey: 'ENG-200' }])
     const mockSet = vi.fn().mockReturnThis()
     vi.mocked(db.update).mockReturnValue({
       set: mockSet,

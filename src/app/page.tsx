@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import { AgentAvatar } from '@/components/AgentAvatar'
 import { IssueActivityTable } from '@/components/IssueActivityTable'
 import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
 import { Badge } from '@/components/ui/Badge'
@@ -96,7 +97,14 @@ export default async function Home(): Promise<React.JSX.Element> {
                     <TableRow key={stat.agentName}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          {stat.agentName}
+                          <AgentAvatar
+                            name={stat.agentName}
+                            status="accepted"
+                            size="sm"
+                            avatarUrl={stat.avatarUrl}
+                            displayName={stat.displayName}
+                          />
+                          {stat.displayName ?? stat.agentName}
                           {topPerformer !== null &&
                             stat.agentName === topPerformer.agentName && (
                               <Badge variant="success">Top Performer</Badge>

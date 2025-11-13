@@ -47,28 +47,31 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     vi.clearAllMocks()
 
     // Spy on openskill functions with default implementations
-    vi.spyOn(openskillModule, 'updateRatingsForCompletedIssue').mockImplementation(
-      (currentRatings, ranking) => {
-        // Mock implementation: winners get higher mu, losers get lower mu
-        const result: Record<string, { mu: number; sigma: number }> = {}
-        for (const [index, agentName] of ranking.entries()) {
-          const currentRating = currentRatings[agentName]
-          if (currentRating) {
-            // Winner gets +2 mu, losers get -2 mu / rank
-            const muChange = index === 0 ? 2 : -2 / (index + 1)
-            result[agentName] = {
-              mu: currentRating.mu + muChange,
-              sigma: currentRating.sigma - 0.5, // Reduce uncertainty
-            }
+    vi.spyOn(
+      openskillModule,
+      'updateRatingsForCompletedIssue'
+    ).mockImplementation((currentRatings, ranking) => {
+      // Mock implementation: winners get higher mu, losers get lower mu
+      const result: Record<string, { mu: number; sigma: number }> = {}
+      for (const [index, agentName] of ranking.entries()) {
+        const currentRating = currentRatings[agentName]
+        if (currentRating) {
+          // Winner gets +2 mu, losers get -2 mu / rank
+          const muChange = index === 0 ? 2 : -2 / (index + 1)
+          result[agentName] = {
+            mu: currentRating.mu + muChange,
+            sigma: currentRating.sigma - 0.5, // Reduce uncertainty
           }
         }
-        return result
+      }
+      return result
+    })
+
+    vi.spyOn(openskillModule, 'calculateOrdinal').mockImplementation(
+      (rating) => {
+        return 1500 + (rating.mu - 3 * rating.sigma)
       }
     )
-
-    vi.spyOn(openskillModule, 'calculateOrdinal').mockImplementation((rating) => {
-      return 1500 + (rating.mu - 3 * rating.sigma)
-    })
 
     vi.spyOn(openskillModule, 'initializeAgentRating').mockReturnValue({
       mu: 25,
@@ -129,9 +132,9 @@ describe('updateRatingsForIssue - Unit Tests', () => {
 
     mockDb.select.mockReturnValue(mockSelect as never)
 
-    await expect(
-      updateRatingsForIssue('nonexistent-issue-id')
-    ).rejects.toThrow('Issue nonexistent-issue-id not found')
+    await expect(updateRatingsForIssue('nonexistent-issue-id')).rejects.toThrow(
+      'Issue nonexistent-issue-id not found'
+    )
   })
 
   it('should handle issue with no attempts', async () => {
@@ -904,7 +907,13 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     // Verify all 5 in ranking
     expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
       expect.any(Object),
-      [MOCK_AGENT_CURSOR, MOCK_AGENT_ENGINE, MOCK_AGENT_CYRUS, 'aider', 'windsurf']
+      [
+        MOCK_AGENT_CURSOR,
+        MOCK_AGENT_ENGINE,
+        MOCK_AGENT_CYRUS,
+        'aider',
+        'windsurf',
+      ]
     )
   })
 

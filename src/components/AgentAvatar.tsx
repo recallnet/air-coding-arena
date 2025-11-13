@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import Image from 'next/image'
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
@@ -35,7 +36,15 @@ export type AgentAvatarProps = {
    * Size variant for the avatar.
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  /**
+   * Optional avatar URL for displaying agent photo.
+   */
+  avatarUrl?: string | null | undefined
+  /**
+   * Optional display name for better alt text.
+   */
+  displayName?: string | null | undefined
 }
 
 /**
@@ -65,14 +74,35 @@ function getStatusColorClass(status: AgentStatus): string {
  * @param size - Size variant
  * @returns Tailwind class string for sizing
  */
-function getSizeClass(size: 'sm' | 'md' | 'lg'): string {
+function getSizeClass(size: 'xs' | 'sm' | 'md' | 'lg'): string {
   switch (size) {
+    case 'xs':
+      return 'h-5 w-5 text-[10px]'
     case 'sm':
       return 'h-6 w-6 text-xs'
     case 'md':
       return 'h-8 w-8 text-sm'
     case 'lg':
       return 'h-10 w-10 text-base'
+  }
+}
+
+/**
+ * Gets the pixel size based on size variant for Image component.
+ *
+ * @param size - Size variant
+ * @returns Pixel size number
+ */
+function getPixelSize(size: 'xs' | 'sm' | 'md' | 'lg'): number {
+  switch (size) {
+    case 'xs':
+      return 20
+    case 'sm':
+      return 24
+    case 'md':
+      return 32
+    case 'lg':
+      return 40
   }
 }
 
@@ -88,7 +118,7 @@ function formatStatus(status: AgentStatus): string {
 
 /**
  * Agent Avatar component.
- * Displays a colored circle with the agent's initial letter.
+ * Displays a colored circle with the agent's initial letter or avatar image.
  * Color indicates the current status of the agent's work.
  *
  * @param props - Component props
@@ -98,11 +128,50 @@ export function AgentAvatar({
   name,
   status,
   size = 'md',
+  avatarUrl,
+  displayName,
 }: AgentAvatarProps): React.ReactElement {
   const initial = name.charAt(0).toUpperCase()
   const colorClass = getStatusColorClass(status)
   const sizeClass = getSizeClass(size)
+  const pixelSize = getPixelSize(size)
+  const label = `${displayName ?? name} - ${formatStatus(status)}`
 
+  // If avatarUrl is provided, render image with status ring
+  if (avatarUrl) {
+    const ringColorClass =
+      status === 'accepted'
+        ? 'ring-green-500'
+        : status === 'submitted'
+          ? 'ring-blue-500'
+          : status === 'rejected'
+            ? 'ring-red-500'
+            : 'ring-gray-600'
+
+    return (
+      <div
+        className={cn(
+          'relative flex items-center justify-center rounded-full ring-2',
+          'transition-transform hover:scale-110',
+          ringColorClass,
+          sizeClass
+        )}
+        role="img"
+        aria-label={label}
+        title={label}
+      >
+        <Image
+          src={avatarUrl}
+          alt={label}
+          width={pixelSize}
+          height={pixelSize}
+          className="rounded-full"
+        />
+      </div>
+    )
+  }
+
+  // Fallback to colored circle with initial
   return (
     <div
       className={cn(
@@ -113,8 +182,8 @@ export function AgentAvatar({
         sizeClass
       )}
       role="img"
-      aria-label={`${name} - ${formatStatus(status)}`}
-      title={`${name} - ${formatStatus(status)}`}
+      aria-label={label}
+      title={label}
     >
       {initial}
     </div>

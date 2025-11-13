@@ -97,6 +97,8 @@ export type AgentStats = {
   acceptancePct: number
   ordinal: number
   gamesPlayed: number
+  avatarUrl?: string | null
+  displayName?: string | null
 }
 
 /**

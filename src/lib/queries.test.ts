@@ -72,6 +72,8 @@ describe('getAgentStats', () => {
           acceptance_pct: 80.0,
           ordinal: 1500,
           games_played: 5,
+          avatar_url: null,
+          display_name: null,
         },
         {
           agent_name: 'engine',
@@ -80,6 +82,8 @@ describe('getAgentStats', () => {
           acceptance_pct: 60.0,
           ordinal: 1400,
           games_played: 3,
+          avatar_url: null,
+          display_name: null,
         },
       ]
 
@@ -95,6 +99,8 @@ describe('getAgentStats', () => {
           acceptancePct: 80.0,
           ordinal: 1500,
           gamesPlayed: 5,
+          avatarUrl: null,
+          displayName: null,
         },
         {
           agentName: 'engine',
@@ -103,6 +109,8 @@ describe('getAgentStats', () => {
           acceptancePct: 60.0,
           ordinal: 1400,
           gamesPlayed: 3,
+          avatarUrl: null,
+          displayName: null,
         },
       ])
 
@@ -333,15 +341,11 @@ describe('getIssueById', () => {
         orderBy: vi.fn().mockResolvedValue(mockAttempts),
       }
 
-      const mockAgentsSelect = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([]),
-      }
-
       mockDb.select
         .mockReturnValueOnce(mockIssueSelect as never)
         .mockReturnValueOnce(mockAttemptsSelect as never)
-        .mockReturnValueOnce(mockAgentsSelect as never)
+
+      mockDb.execute.mockResolvedValueOnce([] as never)
 
       const result = await getIssueById('1')
 
@@ -376,15 +380,11 @@ describe('getIssueById', () => {
         orderBy: vi.fn().mockResolvedValue([]),
       }
 
-      const mockAgentsSelect = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([]),
-      }
-
       mockDb.select
         .mockReturnValueOnce(mockIssueSelect as never)
         .mockReturnValueOnce(mockAttemptsSelect as never)
-        .mockReturnValueOnce(mockAgentsSelect as never)
+
+      mockDb.execute.mockResolvedValueOnce([] as never)
 
       const result = await getIssueById('1')
 
@@ -883,6 +883,8 @@ describe('getAgentTemporalStats', () => {
           cumulative_wins: 8,
           cumulative_failures: 2,
           ordinal: 1500,
+          avatar_url: null,
+          display_name: null,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -891,6 +893,8 @@ describe('getAgentTemporalStats', () => {
           cumulative_wins: 3,
           cumulative_failures: 2,
           ordinal: 1400,
+          avatar_url: null,
+          display_name: null,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -899,6 +903,8 @@ describe('getAgentTemporalStats', () => {
           cumulative_wins: 4,
           cumulative_failures: 1,
           ordinal: 1450,
+          avatar_url: null,
+          display_name: null,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -907,6 +913,8 @@ describe('getAgentTemporalStats', () => {
           cumulative_wins: 2,
           cumulative_failures: 1,
           ordinal: 1380,
+          avatar_url: null,
+          display_name: null,
         },
       ]
 
@@ -922,6 +930,8 @@ describe('getAgentTemporalStats', () => {
           cumulativeWins: 8,
           cumulativeFailures: 2,
           ordinal: 1500,
+          avatarUrl: null,
+          displayName: null,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -930,6 +940,8 @@ describe('getAgentTemporalStats', () => {
           cumulativeWins: 3,
           cumulativeFailures: 2,
           ordinal: 1400,
+          avatarUrl: null,
+          displayName: null,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -938,6 +950,8 @@ describe('getAgentTemporalStats', () => {
           cumulativeWins: 4,
           cumulativeFailures: 1,
           ordinal: 1450,
+          avatarUrl: null,
+          displayName: null,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -946,6 +960,8 @@ describe('getAgentTemporalStats', () => {
           cumulativeWins: 2,
           cumulativeFailures: 1,
           ordinal: 1380,
+          avatarUrl: null,
+          displayName: null,
         },
       ])
 
@@ -961,6 +977,8 @@ describe('getAgentTemporalStats', () => {
           cumulative_wins: 10,
           cumulative_failures: 5,
           ordinal: 1550,
+          avatar_url: null,
+          display_name: null,
         },
       ]
 
@@ -976,6 +994,8 @@ describe('getAgentTemporalStats', () => {
           cumulativeWins: 10,
           cumulativeFailures: 5,
           ordinal: 1550,
+          avatarUrl: null,
+          displayName: null,
         },
       ])
 

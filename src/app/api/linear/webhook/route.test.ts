@@ -815,7 +815,9 @@ describe('/api/linear/webhook', () => {
               selectCallCount++
               // First call returns empty (no recent events)
               // Second call returns event (recent event found)
-              return selectCallCount === 1 ? [] : [{ id: 1, createdAt: new Date() }]
+              return selectCallCount === 1
+                ? []
+                : [{ id: 1, createdAt: new Date() }]
             }),
           }),
         }),
@@ -1030,7 +1032,9 @@ describe('/api/linear/webhook', () => {
               selectCallCount++
               // First call returns empty (no recent events)
               // All subsequent calls return event (recent event found)
-              return selectCallCount === 1 ? [] : [{ id: 1, createdAt: new Date() }]
+              return selectCallCount === 1
+                ? []
+                : [{ id: 1, createdAt: new Date() }]
             }),
           }),
         }),
@@ -1055,7 +1059,10 @@ describe('/api/linear/webhook', () => {
         })
 
         const res = await POST(req)
-        const body = (await res.json()) as { success?: boolean; status?: string }
+        const body = (await res.json()) as {
+          success?: boolean
+          status?: string
+        }
 
         if (body.success) {
           processedCount++

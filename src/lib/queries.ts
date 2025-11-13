@@ -8,13 +8,7 @@
 import { desc, eq, sql, and } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import {
-  attempts,
-  issues,
-  issueAgents,
-  agentScores,
-  agentScoreHistory,
-} from '@/db/schema'
+import { attempts, issues, agentScores, agentScoreHistory } from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
@@ -47,6 +41,8 @@ export async function getAgentStats(): Promise<AgentStats[]> {
     acceptance_pct: number
     ordinal: number
     games_played: number
+    avatar_url: string | null
+    display_name: string | null
   }>(sql`
     SELECT
       a.agent_name,
@@ -54,9 +50,12 @@ export async function getAgentStats(): Promise<AgentStats[]> {
       a.wins,
       a.acceptance_pct,
       COALESCE(s.ordinal, 0) as ordinal,
-      COALESCE(s.games_played, 0) as games_played
+      COALESCE(s.games_played, 0) as games_played,
+      ag.avatar_url,
+      ag.display_name
     FROM agent_stats a
     LEFT JOIN agent_scores s ON a.agent_name = s.agent_name
+    LEFT JOIN agents ag ON a.agent_name = ag.name
     ORDER BY s.ordinal DESC NULLS LAST, a.acceptance_pct DESC
   `)
 
@@ -67,6 +66,8 @@ export async function getAgentStats(): Promise<AgentStats[]> {
     acceptancePct: Number(row.acceptance_pct),
     ordinal: Number(row.ordinal),
     gamesPlayed: Number(row.games_played),
+    avatarUrl: row.avatar_url,
+    displayName: row.display_name,
   }))
 }
 
@@ -204,15 +205,26 @@ export async function getIssueById(
     .where(eq(attempts.issueId, id))
     .orderBy(desc(attempts.openedAt))
 
-  const agents = await db
-    .select()
-    .from(issueAgents)
-    .where(eq(issueAgents.issueId, id))
+  const agentsResult = await db.execute<{
+    agent_name: string
+    status: string
+    avatar_url: string | null
+    display_name: string | null
+  }>(sql`
+    SELECT
+      ia.agent_name,
+      ia.status,
+      ag.avatar_url,
+      ag.display_name
+    FROM issue_agents ia
+    LEFT JOIN agents ag ON ia.agent_name = ag.name
+    WHERE ia.issue_id = ${id}
+  `)
 
   return {
     ...issue,
     attempts: issueAttempts,
-    agents: agents.map((agent) => {
+    agents: agentsResult.map((agent) => {
       const status = agent.status as
         | 'pending'
         | 'submitted'
@@ -229,8 +241,10 @@ export async function getIssueById(
         throw new Error(`Invalid agent status: ${status}`)
       }
       return {
-        agentName: agent.agentName,
+        agentName: agent.agent_name,
         status,
+        avatarUrl: agent.avatar_url,
+        displayName: agent.display_name,
       }
     }),
   }
@@ -438,6 +452,8 @@ export type AgentTemporalStat = {
   cumulativeWins: number
   cumulativeFailures: number
   ordinal: number
+  avatarUrl?: string | null
+  displayName?: string | null
 }
 
 /**
@@ -463,6 +479,8 @@ export async function getAgentTemporalStats(
     cumulative_wins: number
     cumulative_failures: number
     ordinal: number
+    avatar_url: string | null
+    display_name: string | null
   }>(sql`
     WITH date_series AS (
       SELECT generate_series(
@@ -471,14 +489,14 @@ export async function getAgentTemporalStats(
         '1 day'::interval
       )::date AS date
     ),
-    agents AS (
+    agent_names AS (
       SELECT DISTINCT agent_name
       FROM attempts
     ),
     agent_dates AS (
       SELECT ds.date, a.agent_name
       FROM date_series ds
-      CROSS JOIN agents a
+      CROSS JOIN agent_names a
     ),
     daily_attempts AS (
       SELECT
@@ -533,9 +551,12 @@ export async function getAgentTemporalStats(
       cs.cumulative_attempts::int AS cumulative_attempts,
       cs.cumulative_wins::int AS cumulative_wins,
       cs.cumulative_failures::int AS cumulative_failures,
-      COALESCE(sc.ordinal, 0) as ordinal
+      COALESCE(sc.ordinal, 0) as ordinal,
+      ag.avatar_url,
+      ag.display_name
     FROM cumulative_stats cs
     LEFT JOIN latest_daily_scores sc ON cs.date = sc.date AND cs.agent_name = sc.agent_name
+    LEFT JOIN agents ag ON cs.agent_name = ag.name
     ORDER BY cs.date DESC, cs.agent_name
   `)
 
@@ -546,6 +567,8 @@ export async function getAgentTemporalStats(
     cumulativeWins: Number(row.cumulative_wins),
     cumulativeFailures: Number(row.cumulative_failures),
     ordinal: Number(row.ordinal),
+    avatarUrl: row.avatar_url,
+    displayName: row.display_name,
   }))
 }
 
@@ -570,6 +593,8 @@ export type RecentActivity = {
 export type IssueAgent = {
   agentName: string
   status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
+  avatarUrl?: string | null
+  displayName?: string | null
 }
 
 /**
@@ -689,6 +714,8 @@ export async function getIssuesWithAgents(
     agents: Array<{
       agent_name: string
       status: string
+      avatar_url: string | null
+      display_name: string | null
     }>
   }>(sql`
     WITH issue_pr_counts AS (
@@ -725,10 +752,13 @@ export async function getIssuesWithAgents(
               AND a.status = 'closed'
           ) THEN 'rejected'
           ELSE 'pending'
-        END AS status
+        END AS status,
+        ag.avatar_url,
+        ag.display_name
       FROM issue_agents ia
       INNER JOIN issues i ON i.id = ia.issue_id
       LEFT JOIN attempts wa ON wa.id = i.winner_attempt_id
+      LEFT JOIN agents ag ON ia.agent_name = ag.name
     ),
     issue_agents_agg AS (
       SELECT
@@ -736,7 +766,9 @@ export async function getIssuesWithAgents(
         jsonb_agg(
           jsonb_build_object(
             'agent_name', agent_name,
-            'status', status
+            'status', status,
+            'avatar_url', avatar_url,
+            'display_name', display_name
           )
           ORDER BY
             CASE status
@@ -773,7 +805,12 @@ export async function getIssuesWithAgents(
   return result.map((row) => {
     const agents = Array.isArray(row.agents)
       ? row.agents.map(
-          (agent: { agent_name: string; status: string }): IssueAgent => {
+          (agent: {
+            agent_name: string
+            status: string
+            avatar_url: string | null
+            display_name: string | null
+          }): IssueAgent => {
             const agentStatus = agent.status
             if (
               agentStatus !== 'pending' &&
@@ -787,6 +824,8 @@ export async function getIssuesWithAgents(
             return {
               agentName: agent.agent_name,
               status: agentStatus,
+              avatarUrl: agent.avatar_url,
+              displayName: agent.display_name,
             }
           }
         )

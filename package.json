@@ -25,6 +25,7 @@
     "validate": "npm run type-check && npm run lint && npm run test && npm run format:check",
     "// === BUILD - RUNS VALIDATION FIRST ===": "",
     "build": "npm run validate && next build",
+    "vercel-build": "npm run db:migrate && npm run db:migrate:manual && next build",
     "// === DOCS GENERATION ===": "",
     "docs": "typedoc",
     "docs:serve": "npm run docs && npx serve docs/api",

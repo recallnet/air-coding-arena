@@ -38,7 +38,9 @@ describe('GET /api/linear/reconcile', () => {
     expect(response.status).toBe(200)
     expect(data).toEqual({ success: true, count: mockCount })
     expect(linearReconcile.reconcileLinearIssues).toHaveBeenCalledTimes(1)
-    expect(console.log).toHaveBeenCalledWith('[Reconcile] Starting reconciliation...')
+    expect(console.log).toHaveBeenCalledWith(
+      '[Reconcile] Starting reconciliation...'
+    )
     expect(console.log).toHaveBeenCalledWith('[Reconcile] Complete: 5 issues')
   })
 
@@ -140,7 +142,10 @@ describe('GET /api/linear/reconcile', () => {
 
     expect(response.status).toBe(500)
     expect(data).toEqual({ error: INTERNAL_SERVER_ERROR })
-    expect(console.error).toHaveBeenCalledWith('Reconciliation error:', 'Unknown error')
+    expect(console.error).toHaveBeenCalledWith(
+      'Reconciliation error:',
+      'Unknown error'
+    )
   })
 
   it('should log reconciliation start and completion', async () => {

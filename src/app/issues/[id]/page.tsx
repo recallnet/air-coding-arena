@@ -8,6 +8,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { AgentAvatar } from '@/components/AgentAvatar'
 import { Badge } from '@/components/ui/Badge'
 import {
   Card,
@@ -257,11 +258,18 @@ export default async function IssuePage({
                   key={agent.agentName}
                   className="bg-background-subtle flex items-center gap-2 rounded-lg border border-border px-4 py-2"
                 >
+                  <AgentAvatar
+                    name={agent.agentName}
+                    status={agent.status}
+                    size="sm"
+                    avatarUrl={agent.avatarUrl}
+                    displayName={agent.displayName}
+                  />
                   <Link
                     href={`/agents/${agent.agentName}`}
                     className="font-medium text-blue-900 transition-colors hover:underline"
                   >
-                    {agent.agentName}
+                    {agent.displayName ?? agent.agentName}
                   </Link>
                   <Badge
                     variant={

@@ -19,6 +19,8 @@ export type AgentAvatarGroupProps = {
   agents: Array<{
     agentName: string
     status: AgentStatus
+    avatarUrl?: string | null
+    displayName?: string | null
   }>
   /**
    * Maximum number of avatars to show before displaying +N indicator.
@@ -55,12 +57,18 @@ export function AgentAvatarGroup({
           key={agent.agentName}
           style={{ zIndex: visibleAgents.length - index }}
         >
-          <AgentAvatar name={agent.agentName} status={agent.status} size="sm" />
+          <AgentAvatar
+            name={agent.agentName}
+            status={agent.status}
+            size="xs"
+            avatarUrl={agent.avatarUrl}
+            displayName={agent.displayName}
+          />
         </div>
       ))}
       {remainingCount > 0 && (
         <div
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-xs font-semibold text-white ring-2 ring-background"
+          className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-[10px] font-semibold text-white ring-2 ring-background"
           style={{ zIndex: 0 }}
           title={`+${remainingCount} more`}
         >
