@@ -1111,7 +1111,6 @@ describe('updateWinner - race condition protection', () => {
   it('should handle concurrent winner selection with transaction', async () => {
     const issueId = 'test-issue-id'
     const attemptA = 'attempt-a-id'
-    const attemptB = 'attempt-b-id'
 
     // Mock transaction
     const mockTx = {
