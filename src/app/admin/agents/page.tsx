@@ -6,7 +6,7 @@
  */
 
 import { AgentConfigPlaceholder } from '@/components/AgentConfigPlaceholder'
-import { AgentDiscovery } from '@/components/AgentDiscovery'
+import { AgentRefreshButton } from '@/components/AgentRefreshButton'
 import { AgentsTable } from '@/components/AgentsTable'
 import {
   Card,
@@ -30,13 +30,6 @@ export type Agent = {
   isEnabled: boolean
   discoveredAt: string
   lastSeenAt: string
-}
-
-/**
- * API response type
- */
-type AgentsResponse = {
-  agents: Agent[]
 }
 
 /**
@@ -65,7 +58,12 @@ async function getAgents(): Promise<Agent[]> {
     .from(agents)
     .orderBy(asc(agents.name))
 
-  return allAgents
+  // Convert Date objects to ISO strings
+  return allAgents.map((agent) => ({
+    ...agent,
+    discoveredAt: agent.discoveredAt.toISOString(),
+    lastSeenAt: agent.lastSeenAt.toISOString(),
+  }))
 }
 
 /**
@@ -88,16 +86,18 @@ export default async function AdminAgentsPage(): Promise<React.JSX.Element> {
         </p>
       </div>
 
-      {/* Discovery Status Section */}
-      <AgentDiscovery />
-
       {/* Agents Table Section */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Agents</CardTitle>
-          <CardDescription>
-            All discovered agents with their status and configuration
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Agents</CardTitle>
+              <CardDescription>
+                All discovered agents with their status and configuration
+              </CardDescription>
+            </div>
+            <AgentRefreshButton />
+          </div>
         </CardHeader>
         <CardContent>
           <AgentsTable initialAgents={agents} />

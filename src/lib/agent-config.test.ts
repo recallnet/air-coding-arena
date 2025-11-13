@@ -10,14 +10,32 @@ import { agents } from '@/db/schema'
 
 import { getAgentConfigs, getAgentHandles, getAgentNames } from './agent-config'
 
+/**
+ * Check if we're using a real database for integration tests.
+ * Skip these tests if we're using the dummy test URL.
+ */
+const isRealDatabase = process.env['IS_TEST_DB_URL'] !== 'true'
+
+// Test constants
+const DISABLED_AGENT_NAME = 'disabled'
+const DISABLED_AGENT_DISPLAY_NAME = 'Disabled'
+const EMPTY_AGENTS_TEST_DESC = 'should return empty array if no enabled agents'
+const SKIP_MESSAGE = 'Skipping: dummy database'
+
 describe('agent-config', () => {
   beforeEach(async () => {
+    if (!isRealDatabase) return
     // Clear agents table before each test
     await db.delete(agents)
   })
 
   describe('getAgentConfigs', () => {
     it('should return enabled agents from database', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       // Insert test agents
       await db.insert(agents).values([
         {
@@ -35,8 +53,8 @@ describe('agent-config', () => {
           isActive: true,
         },
         {
-          name: 'disabled',
-          displayName: 'Disabled',
+          name: DISABLED_AGENT_NAME,
+          displayName: DISABLED_AGENT_DISPLAY_NAME,
           linearUserId: 'user-3',
           isEnabled: false,
           isActive: true,
@@ -52,12 +70,17 @@ describe('agent-config', () => {
       ])
     })
 
-    it('should return empty array if no enabled agents', async () => {
+    it(EMPTY_AGENTS_TEST_DESC, async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       // Insert only disabled agent
       await db.insert(agents).values([
         {
-          name: 'disabled',
-          displayName: 'Disabled',
+          name: DISABLED_AGENT_NAME,
+          displayName: DISABLED_AGENT_DISPLAY_NAME,
           linearUserId: 'user-1',
           isEnabled: false,
           isActive: true,
@@ -69,6 +92,11 @@ describe('agent-config', () => {
     })
 
     it('should order agents by name', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       await db.insert(agents).values([
         {
           name: 'zzz',
@@ -98,6 +126,11 @@ describe('agent-config', () => {
     })
 
     it('should use display name for handle', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       await db.insert(agents).values([
         {
           name: 'cursor-agent',
@@ -115,6 +148,11 @@ describe('agent-config', () => {
 
   describe('getAgentHandles', () => {
     it('should return array of handles', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       await db.insert(agents).values([
         {
           name: 'cursor',
@@ -136,7 +174,12 @@ describe('agent-config', () => {
       expect(handles).toEqual(['@Cursor', '@Engine'])
     })
 
-    it('should return empty array if no enabled agents', async () => {
+    it(EMPTY_AGENTS_TEST_DESC, async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       const handles = await getAgentHandles()
       expect(handles).toEqual([])
     })
@@ -144,6 +187,11 @@ describe('agent-config', () => {
 
   describe('getAgentNames', () => {
     it('should return array of names', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       await db.insert(agents).values([
         {
           name: 'cursor',
@@ -165,10 +213,14 @@ describe('agent-config', () => {
       expect(names).toEqual(['cursor', 'engine'])
     })
 
-    it('should return empty array if no enabled agents', async () => {
+    it(EMPTY_AGENTS_TEST_DESC, async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
       const names = await getAgentNames()
       expect(names).toEqual([])
     })
   })
-
 })

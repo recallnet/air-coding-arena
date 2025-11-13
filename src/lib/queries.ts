@@ -967,6 +967,8 @@ export async function getAgentAttempts(
   return db
     .select()
     .from(attempts)
-    .where(and(eq(attempts.issueId, issueId), eq(attempts.agentName, agentName)))
+    .where(
+      and(eq(attempts.issueId, issueId), eq(attempts.agentName, agentName))
+    )
     .orderBy(desc(attempts.openedAt))
 }

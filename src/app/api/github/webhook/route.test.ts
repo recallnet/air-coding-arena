@@ -868,7 +868,9 @@ describe('/api/github/webhook', () => {
       const mockSet1 = vi.fn().mockReturnValue({ where: mockWhere1 })
       vi.mocked(db.update).mockReturnValue({ set: mockSet1 } as never)
 
-      const response1 = await POST(createAuthenticatedRequest(synchronizePayload))
+      const response1 = await POST(
+        createAuthenticatedRequest(synchronizePayload)
+      )
       expect(response1.status).toBe(200)
 
       // Verify CI status reset to pending
@@ -906,7 +908,9 @@ describe('/api/github/webhook', () => {
       const mockSet2 = vi.fn().mockReturnValue({ where: mockWhere2 })
       vi.mocked(db.update).mockReturnValue({ set: mockSet2 } as never)
 
-      const response2 = await POST(createAuthenticatedRequest(checkSuitePayload))
+      const response2 = await POST(
+        createAuthenticatedRequest(checkSuitePayload)
+      )
       expect(response2.status).toBe(200)
 
       // Verify CI status updated to failure

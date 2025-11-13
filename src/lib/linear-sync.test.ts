@@ -103,7 +103,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -141,7 +149,15 @@ describe('syncIssueFromLinear', () => {
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
     const mockLimit = vi.fn().mockResolvedValue([]) // No issue found
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -185,7 +201,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -238,7 +262,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -301,7 +333,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -369,7 +409,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -427,7 +475,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -490,7 +546,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -543,7 +607,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -596,7 +668,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -662,7 +742,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -732,7 +820,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -785,7 +881,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -838,7 +942,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
@@ -920,7 +1032,15 @@ describe('syncIssueFromLinear', () => {
       .mockResolvedValue([
         { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
       ])
-    const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit })
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 

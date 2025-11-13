@@ -333,11 +333,7 @@ async function handlePullRequestClosed(
 
     // Update agent status (rejected)
     // Critical business logic - fail loudly if this breaks
-    await updateAgentStatusOnPRClose(
-      attempt.issueId,
-      attempt.agentName,
-      false
-    )
+    await updateAgentStatusOnPRClose(attempt.issueId, attempt.agentName, false)
     console.log(
       `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
     )

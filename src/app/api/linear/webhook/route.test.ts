@@ -41,6 +41,7 @@ const TEST_ISSUE_URL = 'https://linear.app/test/issue/ENG-123'
 const TEST_TIMESTAMP = '2024-01-01T00:00:00Z'
 const TEST_DB_ISSUE_ID = 'db-issue-id'
 const TEST_ATTACHMENT_ID = 'attach-123'
+const TEST_ATTACHMENT_SUBTITLE = 'org/repo #42 • open'
 
 /**
  * Creates a mock Next.js request with Linear webhook signature.
@@ -471,7 +472,7 @@ describe('/api/linear/webhook', () => {
           id: TEST_ATTACHMENT_ID,
           url: TEST_PR_URL,
           title: 'Add feature X (agent-cursor)',
-          subtitle: 'org/repo #42 • open',
+          subtitle: TEST_ATTACHMENT_SUBTITLE,
           metadata: {
             branch: 'eng-123--feature-x--agent-cursor',
           },
@@ -527,7 +528,7 @@ describe('/api/linear/webhook', () => {
             id: `attach-${testCase.branch}`,
             url: TEST_PR_URL,
             title: 'Test PR',
-            subtitle: 'org/repo #42 • open',
+            subtitle: TEST_ATTACHMENT_SUBTITLE,
             metadata: { branch: testCase.branch },
             issue: { id: TEST_ISSUE_ID },
           },
@@ -566,7 +567,7 @@ describe('/api/linear/webhook', () => {
           id: 'attach-no-agent',
           url: TEST_PR_URL,
           title: 'Test PR',
-          subtitle: 'org/repo #42 • open',
+          subtitle: TEST_ATTACHMENT_SUBTITLE,
           metadata: { branch: 'eng-126--other' },
           issue: { id: TEST_ISSUE_ID },
         },

@@ -54,4 +54,3 @@ export async function getAgentNames(): Promise<string[]> {
   const configs = await getAgentConfigs()
   return configs.map((agent) => agent.name)
 }
-

@@ -340,4 +340,3 @@ async function syncAttachments(
     continue
   }
 }
-

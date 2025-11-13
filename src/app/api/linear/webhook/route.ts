@@ -314,7 +314,6 @@ async function handleAttachmentEvent(
   console.log(`Attempt created/updated: ${repo}#${prNumber} (${status})`)
 }
 
-
 /**
  * Updates winner for an issue.
  * Selects first merged attempt and closes others.
