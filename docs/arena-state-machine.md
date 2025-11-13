@@ -407,6 +407,27 @@ WHERE ia.status = 'pending'
 ORDER BY ia.triggered_at;
 ```
 
+## Race Condition Protection
+
+### Winner Selection
+
+Winner selection uses PostgreSQL transactions with row-level locking to prevent race conditions:
+
+1. **Row Lock**: `FOR UPDATE` on issues table prevents concurrent winner updates
+2. **Idempotency**: Check if winner already set before proceeding
+3. **Atomic Update**: Winner selection and rating updates in single transaction
+
+See `docs/WEBHOOK_RACE_CONDITIONS.md` for implementation details.
+
+### Agent Provenance
+
+Agent attribution uses a two-phase approach:
+
+1. **Fast Path**: If attachment metadata contains valid branch name with agent suffix, create attempt immediately
+2. **Deferred Path**: If branch lacks agent info, skip attempt creation and let comment sync handle it via @mention thread walking
+
+This prevents 500 errors on non-standard branch names while ensuring correct agent attribution from Linear comments.
+
 ## Implementation Checklist
 
 ### Phase 1: Core State Machine
