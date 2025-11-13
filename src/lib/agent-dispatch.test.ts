@@ -326,14 +326,16 @@ describe('dispatchMissingAgents', () => {
     const { getAgentNames, getAgentConfigs } = await import('./agent-config')
     vi.mocked(getAgentNames).mockResolvedValue(['cursor'])
     vi.mocked(getAgentConfigs).mockResolvedValue([
-      { name: 'cursor', handle: '@Cursor' },
+      {
+        name: 'cursor',
+        handle: '@Cursor',
+        displayName: 'Cursor',
+        linearUserId: 'user-1',
+      },
     ])
 
     const { LinearClient } = await import('@linear/sdk')
     const mockCreateComment = vi.fn().mockResolvedValue({})
-    const mockUsers = vi.fn().mockResolvedValue({
-      nodes: [{ id: 'user-1', displayName: 'cursor' }],
-    })
     const mockIssue = vi.fn().mockResolvedValue({
       comments: vi.fn().mockResolvedValue({
         nodes: [],
@@ -343,7 +345,6 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
-          users: mockUsers,
           createComment: mockCreateComment,
           issue: mockIssue,
         }) as never
@@ -354,7 +355,7 @@ describe('dispatchMissingAgents', () => {
     expect(count).toBe(1)
     expect(mockCreateComment).toHaveBeenCalledWith({
       issueId: 'linear-123',
-      body: '@[cursor](user-1) please work on this issue.',
+      body: '@[Cursor](user-1) please work on this issue.',
     })
     expect(mockInsert).toHaveBeenCalled()
   })
@@ -399,18 +400,22 @@ describe('dispatchMissingAgents', () => {
     const { getAgentNames, getAgentConfigs } = await import('./agent-config')
     vi.mocked(getAgentNames).mockResolvedValue(['cursor', 'engine'])
     vi.mocked(getAgentConfigs).mockResolvedValue([
-      { name: 'cursor', handle: '@Cursor' },
-      { name: 'engine', handle: '@Engine' },
+      {
+        name: 'cursor',
+        handle: '@Cursor',
+        displayName: 'Cursor',
+        linearUserId: 'user-1',
+      },
+      {
+        name: 'engine',
+        handle: '@Engine',
+        displayName: 'Engine',
+        linearUserId: 'user-2',
+      },
     ])
 
     const { LinearClient } = await import('@linear/sdk')
     const mockCreateComment = vi.fn().mockResolvedValue({})
-    const mockUsers = vi.fn().mockResolvedValue({
-      nodes: [
-        { id: 'user-1', displayName: 'cursor' },
-        { id: 'user-2', displayName: 'engine' },
-      ],
-    })
     const mockIssue = vi.fn().mockResolvedValue({
       comments: vi.fn().mockResolvedValue({
         nodes: [],
@@ -420,7 +425,6 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
-          users: mockUsers,
           createComment: mockCreateComment,
           issue: mockIssue,
         }) as never
@@ -432,11 +436,11 @@ describe('dispatchMissingAgents', () => {
     expect(mockCreateComment).toHaveBeenCalledTimes(1)
     expect(mockCreateComment).toHaveBeenCalledWith({
       issueId: 'linear-123',
-      body: '@[engine](user-2) please work on this issue.',
+      body: '@[Engine](user-2) please work on this issue.',
     })
   })
 
-  it('should handle Linear user not found by marking dispatch_failed', async () => {
+  it('should dispatch agent successfully with linearUserId from config', async () => {
     const { db } = await import('@/db/client')
     let selectCallCount = 0
     const mockSelect = vi.fn().mockImplementation(() => {
@@ -476,13 +480,16 @@ describe('dispatchMissingAgents', () => {
     const { getAgentNames, getAgentConfigs } = await import('./agent-config')
     vi.mocked(getAgentNames).mockResolvedValue(['unknown'])
     vi.mocked(getAgentConfigs).mockResolvedValue([
-      { name: 'unknown', handle: '@Unknown' },
+      {
+        name: 'unknown',
+        handle: '@Unknown',
+        displayName: 'Unknown',
+        linearUserId: 'user-unknown',
+      },
     ])
 
     const { LinearClient } = await import('@linear/sdk')
-    const mockUsers = vi.fn().mockResolvedValue({
-      nodes: [{ id: 'user-1', displayName: 'cursor' }],
-    })
+    const mockCreateComment = vi.fn().mockResolvedValue({})
     const mockIssue = vi.fn().mockResolvedValue({
       comments: vi.fn().mockResolvedValue({
         nodes: [],
@@ -492,15 +499,18 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
-          users: mockUsers,
-          createComment: vi.fn(),
+          createComment: mockCreateComment,
           issue: mockIssue,
         }) as never
     )
 
     const count = await dispatchMissingAgents('test-id')
 
-    expect(count).toBe(0)
+    expect(count).toBe(1)
+    expect(mockCreateComment).toHaveBeenCalledWith({
+      issueId: 'linear-123',
+      body: '@[Unknown](user-unknown) please work on this issue.',
+    })
     expect(mockInsert).toHaveBeenCalledWith('issue_agents')
   })
 
@@ -544,8 +554,18 @@ describe('dispatchMissingAgents', () => {
     const { getAgentNames, getAgentConfigs } = await import('./agent-config')
     vi.mocked(getAgentNames).mockResolvedValue(['cursor', 'engine'])
     vi.mocked(getAgentConfigs).mockResolvedValue([
-      { name: 'cursor', handle: '@Cursor' },
-      { name: 'engine', handle: '@Engine' },
+      {
+        name: 'cursor',
+        handle: '@Cursor',
+        displayName: 'Cursor',
+        linearUserId: 'user-1',
+      },
+      {
+        name: 'engine',
+        handle: '@Engine',
+        displayName: 'Engine',
+        linearUserId: 'user-2',
+      },
     ])
 
     const { LinearClient } = await import('@linear/sdk')
@@ -553,12 +573,6 @@ describe('dispatchMissingAgents', () => {
       .fn()
       .mockRejectedValueOnce(new Error('API error'))
       .mockResolvedValueOnce({})
-    const mockUsers = vi.fn().mockResolvedValue({
-      nodes: [
-        { id: 'user-1', displayName: 'cursor' },
-        { id: 'user-2', displayName: 'engine' },
-      ],
-    })
     const mockIssue = vi.fn().mockResolvedValue({
       comments: vi.fn().mockResolvedValue({
         nodes: [],
@@ -568,7 +582,6 @@ describe('dispatchMissingAgents', () => {
     vi.mocked(LinearClient).mockImplementation(
       () =>
         ({
-          users: mockUsers,
           createComment: mockCreateComment,
           issue: mockIssue,
         }) as never
@@ -578,72 +591,6 @@ describe('dispatchMissingAgents', () => {
 
     expect(count).toBe(1)
     expect(mockCreateComment).toHaveBeenCalledTimes(2)
-  })
-
-  it('should handle Linear users() API error gracefully', async () => {
-    const { db } = await import('@/db/client')
-    let selectCallCount = 0
-    const mockSelect = vi.fn().mockImplementation(() => {
-      selectCallCount++
-      if (selectCallCount === 1) {
-        return {
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([
-                {
-                  id: 'test-id',
-                  linearId: 'linear-123',
-                  linearKey: 'ENG-123',
-                  title: 'Test',
-                  url: 'https://test.com',
-                  status: 'In Progress',
-                },
-              ]),
-            }),
-          }),
-        }
-      } else {
-        return {
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([]),
-          }),
-        }
-      }
-    })
-    vi.mocked(db).select = mockSelect
-
-    const mockInsert = vi.fn().mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
-    })
-    vi.mocked(db).insert = mockInsert
-
-    const { getAgentNames, getAgentConfigs } = await import('./agent-config')
-    vi.mocked(getAgentNames).mockResolvedValue(['cursor'])
-    vi.mocked(getAgentConfigs).mockResolvedValue([
-      { name: 'cursor', handle: '@Cursor' },
-    ])
-
-    const { LinearClient } = await import('@linear/sdk')
-    const mockUsers = vi.fn().mockRejectedValue(new Error('Linear API error'))
-    const mockIssue = vi.fn().mockResolvedValue({
-      comments: vi.fn().mockResolvedValue({
-        nodes: [],
-        pageInfo: { hasNextPage: false },
-      }),
-    })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          users: mockUsers,
-          createComment: vi.fn(),
-          issue: mockIssue,
-        }) as never
-    )
-
-    const count = await dispatchMissingAgents('test-id')
-
-    expect(count).toBe(0)
-    expect(mockInsert).toHaveBeenCalledWith('issue_agents')
   })
 
   it('should skip agent when config not found', async () => {
@@ -792,8 +739,18 @@ describe('dispatchAgentsToIssue (legacy)', () => {
 
     const { getAgentConfigs } = await import('./agent-config')
     vi.mocked(getAgentConfigs).mockResolvedValue([
-      { name: 'cursor', handle: '@Cursor' },
-      { name: 'engine', handle: '@Engine' },
+      {
+        name: 'cursor',
+        handle: '@Cursor',
+        displayName: 'Cursor',
+        linearUserId: 'user-1',
+      },
+      {
+        name: 'engine',
+        handle: '@Engine',
+        displayName: 'Engine',
+        linearUserId: 'user-2',
+      },
     ])
 
     const { LinearClient } = await import('@linear/sdk')

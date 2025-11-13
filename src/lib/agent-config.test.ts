@@ -65,8 +65,18 @@ describe('agent-config', () => {
 
       expect(configs).toHaveLength(2)
       expect(configs).toEqual([
-        { name: 'cursor', handle: '@Cursor' },
-        { name: 'engine', handle: '@Engine' },
+        {
+          name: 'cursor',
+          handle: '@Cursor',
+          displayName: 'Cursor',
+          linearUserId: 'user-1',
+        },
+        {
+          name: 'engine',
+          handle: '@Engine',
+          displayName: 'Engine',
+          linearUserId: 'user-2',
+        },
       ])
     })
 
@@ -143,6 +153,8 @@ describe('agent-config', () => {
 
       const configs = await getAgentConfigs()
       expect(configs[0]?.handle).toBe('@Cursor AI')
+      expect(configs[0]?.displayName).toBe('Cursor AI')
+      expect(configs[0]?.linearUserId).toBe('user-1')
     })
   })
 

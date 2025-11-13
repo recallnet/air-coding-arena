@@ -12,32 +12,6 @@ import { issues, issueAgents } from '@/db/schema'
 import { getAgentConfigs, getAgentNames } from './agent-config'
 
 /**
- * Looks up a Linear user by display name (case-insensitive)
- *
- * @param client - Linear API client
- * @param displayName - User's display name (e.g., "factory", "cursor")
- * @returns User ID if found, null otherwise
- */
-async function findLinearUserByDisplayName(
-  client: LinearClient,
-  displayName: string
-): Promise<string | null> {
-  try {
-    const usersResponse = await client.users()
-    const users = usersResponse.nodes
-
-    const user = users.find(
-      (u) => u.displayName?.toLowerCase() === displayName.toLowerCase()
-    )
-
-    return user?.id ?? null
-  } catch (error) {
-    console.error(`Failed to look up user ${displayName}:`, error)
-    return null
-  }
-}
-
-/**
  * Generates a branch name following the pattern:
  * <ISSUE-KEY>--<title-slug>--agent-<agent-name>
  *
@@ -183,27 +157,11 @@ export async function dispatchMissingAgents(
     }
 
     try {
-      // Look up Linear user ID for proper @mention
-      const userId = await findLinearUserByDisplayName(client, agentName)
-
-      if (!userId) {
-        console.warn(
-          `Linear user not found for ${agentName}, marking as dispatch_failed`
-        )
-
-        // Record dispatch failure in database
-        await db.insert(issueAgents).values({
-          issueId: dbIssueId,
-          agentName,
-          status: 'dispatch_failed',
-          triggeredAt: new Date(),
-        })
-
-        continue
-      }
+      // Use Linear user ID directly from agent config
+      const userId = agentConfig.linearUserId
 
       // Create simple dispatch comment with proper @mention: @[displayName](userId)
-      const mention = `@[${agentName}](${userId})`
+      const mention = `@[${agentConfig.displayName}](${userId})`
       const commentBody = `${mention} please work on this issue.`
 
       await client.createComment({

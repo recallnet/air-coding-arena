@@ -14,6 +14,8 @@ import { agents } from '@/db/schema'
 export type AgentConfig = {
   name: string
   handle: string
+  displayName: string
+  linearUserId: string
 }
 
 /**
@@ -34,6 +36,8 @@ export async function getAgentConfigs(): Promise<AgentConfig[]> {
   return enabledAgents.map((agent) => ({
     name: agent.name,
     handle: `@${agent.displayName}`,
+    displayName: agent.displayName,
+    linearUserId: agent.linearUserId,
   }))
 }
 
