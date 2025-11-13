@@ -79,6 +79,15 @@ describe('/api/linear/webhook', () => {
       { name: 'cyrus', handle: '@Cyrus' },
       { name: 'factory', handle: '@Factory' },
     ])
+
+    // Mock db.select for time-window deduplication check (default: no recent events)
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as never)
   })
 
   describe('signature verification', () => {
@@ -434,10 +443,18 @@ describe('/api/linear/webhook', () => {
         createdAt: TEST_TIMESTAMP,
       }
 
+      // Mock db.select to handle both time-window check and issue lookup
+      let selectCallCount = 0
       const mockSelect = vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: TEST_DB_ISSUE_ID }]),
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call: time-window check (no recent events)
+              if (selectCallCount === 1) return []
+              // Second call: issue lookup (return issue)
+              return [{ id: TEST_DB_ISSUE_ID }]
+            }),
           }),
         }),
       })
@@ -575,10 +592,18 @@ describe('/api/linear/webhook', () => {
         createdAt: TEST_TIMESTAMP,
       }
 
+      // Mock db.select to handle both time-window check and issue lookup
+      let selectCallCount = 0
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: 'uuid' }]),
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call: time-window check (no recent events)
+              if (selectCallCount === 1) return []
+              // Second call: issue lookup (return issue)
+              return [{ id: 'uuid' }]
+            }),
           }),
         }),
       } as never)
@@ -617,10 +642,18 @@ describe('/api/linear/webhook', () => {
         createdAt: TEST_TIMESTAMP,
       }
 
+      // Mock db.select to handle time-window check, issue lookup, and winner query
+      let selectCallCount = 0
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: 'uuid' }]),
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call: time-window check (no recent events)
+              if (selectCallCount === 1) return []
+              // Second call: issue lookup (return issue)
+              return [{ id: 'uuid' }]
+            }),
             orderBy: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ id: 'winner-id' }]),
             }),
@@ -755,6 +788,9 @@ describe('/api/linear/webhook', () => {
     const WEBHOOK_URL_TEST = 'http://localhost:3000/api/linear/webhook'
 
     beforeEach(() => {
+      // Track how many times select has been called
+      let selectCallCount = 0
+
       // Mock database calls for deduplication tests
       const mockInsert = vi.fn().mockReturnValue({
         onConflictDoNothing: vi.fn().mockReturnValue({
@@ -769,11 +805,18 @@ describe('/api/linear/webhook', () => {
         values: mockInsert,
       } as never)
 
-      // Mock select for time-window check (no recent events found by default)
+      // Mock select for time-window check with stateful behavior
+      // First call: no recent events (first request)
+      // Second call: recent event found (second request in same window)
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call returns empty (no recent events)
+              // Second call returns event (recent event found)
+              return selectCallCount === 1 ? [] : [{ id: 1, createdAt: new Date() }]
+            }),
           }),
         }),
       } as never)
@@ -842,6 +885,15 @@ describe('/api/linear/webhook', () => {
     })
 
     it('should NOT deduplicate different actions within time window', async () => {
+      // Reset mock to return empty for both calls (different actions don't match)
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      } as never)
+
       // First event: Issue update
       const time1 = new Date().toISOString()
       const payload1 = {
@@ -897,6 +949,15 @@ describe('/api/linear/webhook', () => {
     })
 
     it('should process events after 5 second window expires', async () => {
+      // Reset mock to return empty for both calls (outside time window)
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      } as never)
+
       vi.useFakeTimers()
       const startTime = Date.now()
 

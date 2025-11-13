@@ -8,7 +8,7 @@
 
 import crypto from 'node:crypto'
 
-import { eq, and, asc } from 'drizzle-orm'
+import { eq, and, asc, gt, sql } from 'drizzle-orm'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -75,10 +75,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       `[Webhook] Received: type=${payload.type}, action=${payload.action}`
     )
 
-    // 2. Check idempotency
+    // 2. Time-window deduplication (checks for recent same-action events)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dataId = payload.data['id'] as any as string
+    const baseKey = `linear:${payload.type}:${dataId}:${payload.action}`
 
+    // Check for recent events with same base key (within 5 seconds)
+    const DEDUP_WINDOW_MS = 5000
+    const windowStart = new Date(Date.now() - DEDUP_WINDOW_MS)
+
+    const recentEvents = await db
+      .select()
+      .from(events)
+      .where(
+        and(
+          eq(events.source, 'linear'),
+          sql`${events.key} LIKE ${baseKey + '%'}`,
+          gt(events.createdAt, windowStart)
+        )
+      )
+      .limit(1)
+
+    if (recentEvents.length > 0) {
+      console.log(`[Webhook] Deduplicated (5s window): ${baseKey}`)
+      return NextResponse.json({ status: 'deduplicated' })
+    }
+
+    // 3. Exact-match idempotency check (safety net for exact duplicates)
     const eventKey = `linear:${payload.type}:${dataId}:${payload.updatedAt}`
 
     const existing = await db
@@ -97,7 +120,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ status: 'duplicate' })
     }
 
-    // 3. Route by type
+    // 4. Route by type
     if (payload.type === 'Issue') {
       await handleIssueEvent(payload)
     } else if (payload.type === 'Attachment') {
