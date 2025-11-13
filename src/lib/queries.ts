@@ -424,11 +424,12 @@ export type AgentTemporalStat = {
   cumulativeAttempts: number
   cumulativeWins: number
   cumulativeFailures: number
+  ordinal: number
 }
 
 /**
  * Fetches cumulative temporal statistics per agent.
- * Returns daily cumulative metrics for each agent's attempts, wins, and failures.
+ * Returns daily cumulative metrics for each agent's attempts, wins, failures, and ordinal rating.
  *
  * @param days - Number of days to include in the result (default: 30)
  * @returns Promise resolving to array of daily cumulative statistics per agent, ordered by date DESC
@@ -436,7 +437,7 @@ export type AgentTemporalStat = {
  * @example
  * ```ts
  * const stats = await getAgentTemporalStats(30)
- * // [{ date: '2024-01-15', agentName: 'cursor', cumulativeAttempts: 10, cumulativeWins: 8, cumulativeFailures: 2 }, ...]
+ * // [{ date: '2024-01-15', agentName: 'cursor', cumulativeAttempts: 10, cumulativeWins: 8, cumulativeFailures: 2, ordinal: 1500 }, ...]
  * ```
  */
 export async function getAgentTemporalStats(
@@ -448,6 +449,7 @@ export async function getAgentTemporalStats(
     cumulative_attempts: number
     cumulative_wins: number
     cumulative_failures: number
+    ordinal: number
   }>(sql`
     WITH date_series AS (
       SELECT generate_series(
@@ -476,6 +478,20 @@ export async function getAgentTemporalStats(
       WHERE opened_at >= CURRENT_DATE - ${days - 1}::integer
       GROUP BY DATE(opened_at), agent_name
     ),
+    daily_scores AS (
+      SELECT
+        DATE(completed_at) as date,
+        agent_name,
+        ordinal,
+        ROW_NUMBER() OVER (PARTITION BY agent_name, DATE(completed_at) ORDER BY completed_at DESC) as rn
+      FROM agent_score_history
+      WHERE completed_at >= CURRENT_DATE - ${days - 1}::integer
+    ),
+    latest_daily_scores AS (
+      SELECT date, agent_name, ordinal
+      FROM daily_scores
+      WHERE rn = 1
+    ),
     cumulative_stats AS (
       SELECT
         ad.date,
@@ -499,13 +515,15 @@ export async function getAgentTemporalStats(
       LEFT JOIN daily_attempts da ON ad.date = da.date AND ad.agent_name = da.agent_name
     )
     SELECT
-      TO_CHAR(date, 'YYYY-MM-DD') AS date,
-      agent_name,
-      cumulative_attempts::int AS cumulative_attempts,
-      cumulative_wins::int AS cumulative_wins,
-      cumulative_failures::int AS cumulative_failures
-    FROM cumulative_stats
-    ORDER BY date DESC, agent_name
+      TO_CHAR(cs.date, 'YYYY-MM-DD') AS date,
+      cs.agent_name,
+      cs.cumulative_attempts::int AS cumulative_attempts,
+      cs.cumulative_wins::int AS cumulative_wins,
+      cs.cumulative_failures::int AS cumulative_failures,
+      COALESCE(sc.ordinal, 0) as ordinal
+    FROM cumulative_stats cs
+    LEFT JOIN latest_daily_scores sc ON cs.date = sc.date AND cs.agent_name = sc.agent_name
+    ORDER BY cs.date DESC, cs.agent_name
   `)
 
   return result.map((row) => ({
@@ -514,6 +532,7 @@ export async function getAgentTemporalStats(
     cumulativeAttempts: Number(row.cumulative_attempts),
     cumulativeWins: Number(row.cumulative_wins),
     cumulativeFailures: Number(row.cumulative_failures),
+    ordinal: Number(row.ordinal),
   }))
 }
 

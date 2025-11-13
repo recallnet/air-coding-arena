@@ -178,7 +178,12 @@ export function TemporalLeaderboard({
   // Calculate max value for Y-axis scaling
   const maxValue = Math.max(
     ...stats.map((s) =>
-      Math.max(s.cumulativeAttempts, s.cumulativeWins, s.cumulativeFailures)
+      Math.max(
+        s.cumulativeAttempts,
+        s.cumulativeWins,
+        s.cumulativeFailures,
+        s.ordinal
+      )
     ),
     1
   )
@@ -199,7 +204,7 @@ export function TemporalLeaderboard({
   // Generate line path for a metric
   const generateLinePath = (
     agentName: string,
-    metric: 'attempts' | 'wins' | 'failures'
+    metric: 'attempts' | 'wins' | 'failures' | 'ordinal'
   ): string => {
     const points = dates.map((date, index) => {
       const stat = groupedStats[date]?.[agentName]
@@ -208,7 +213,9 @@ export function TemporalLeaderboard({
           ? stat.cumulativeAttempts
           : metric === 'wins'
             ? stat.cumulativeWins
-            : stat.cumulativeFailures
+            : metric === 'failures'
+              ? stat.cumulativeFailures
+              : stat.ordinal
         : 0
       return `${xScale(index)},${yScale(value)}`
     })
@@ -240,6 +247,12 @@ export function TemporalLeaderboard({
                     <span className="font-medium">{agent}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-foreground-secondary">
+                    <div
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: colors.base }}
+                    />
+                    <span className="font-semibold">Rating</span>
+                    <span>|</span>
                     <span>Attempts</span>
                     <div
                       className="h-2 w-2 rounded-full"
@@ -334,6 +347,16 @@ export function TemporalLeaderboard({
                     const colors = getAgentColors(agentIndex)
                     return (
                       <g key={agent}>
+                        {/* Ordinal line (primary metric, thicker and prominent) */}
+                        <path
+                          d={generateLinePath(agent, 'ordinal')}
+                          fill="none"
+                          stroke={colors.base}
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          opacity="0.9"
+                        />
                         {/* Attempts line */}
                         <path
                           d={generateLinePath(agent, 'attempts')}

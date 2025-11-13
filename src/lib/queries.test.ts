@@ -870,6 +870,7 @@ describe('getAgentTemporalStats', () => {
           cumulative_attempts: 10,
           cumulative_wins: 8,
           cumulative_failures: 2,
+          ordinal: 1500,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -877,6 +878,7 @@ describe('getAgentTemporalStats', () => {
           cumulative_attempts: 5,
           cumulative_wins: 3,
           cumulative_failures: 2,
+          ordinal: 1400,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -884,6 +886,7 @@ describe('getAgentTemporalStats', () => {
           cumulative_attempts: 5,
           cumulative_wins: 4,
           cumulative_failures: 1,
+          ordinal: 1450,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -891,6 +894,7 @@ describe('getAgentTemporalStats', () => {
           cumulative_attempts: 3,
           cumulative_wins: 2,
           cumulative_failures: 1,
+          ordinal: 1380,
         },
       ]
 
@@ -905,6 +909,7 @@ describe('getAgentTemporalStats', () => {
           cumulativeAttempts: 10,
           cumulativeWins: 8,
           cumulativeFailures: 2,
+          ordinal: 1500,
         },
         {
           date: MOCK_DATE_2024_01_03,
@@ -912,6 +917,7 @@ describe('getAgentTemporalStats', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 3,
           cumulativeFailures: 2,
+          ordinal: 1400,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -919,6 +925,7 @@ describe('getAgentTemporalStats', () => {
           cumulativeAttempts: 5,
           cumulativeWins: 4,
           cumulativeFailures: 1,
+          ordinal: 1450,
         },
         {
           date: MOCK_DATE_2024_01_02,
@@ -926,6 +933,7 @@ describe('getAgentTemporalStats', () => {
           cumulativeAttempts: 3,
           cumulativeWins: 2,
           cumulativeFailures: 1,
+          ordinal: 1380,
         },
       ])
 
@@ -940,6 +948,7 @@ describe('getAgentTemporalStats', () => {
           cumulative_attempts: 15,
           cumulative_wins: 10,
           cumulative_failures: 5,
+          ordinal: 1550,
         },
       ]
 
@@ -954,6 +963,7 @@ describe('getAgentTemporalStats', () => {
           cumulativeAttempts: 15,
           cumulativeWins: 10,
           cumulativeFailures: 5,
+          ordinal: 1550,
         },
       ])
 
