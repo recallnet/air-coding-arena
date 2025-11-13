@@ -170,8 +170,9 @@ describe('RootLayout', () => {
         </RootLayout>
       )
 
-      // Find the top-level div in the component (first div rendered)
-      const layoutDiv = container.firstChild as HTMLElement
+      // Find the flex container div
+      const layoutDiv = container.querySelector('.flex.min-h-screen.flex-col')
+      expect(layoutDiv).toBeTruthy()
       expect(layoutDiv?.className).toContain('flex')
       expect(layoutDiv?.className).toContain('min-h-screen')
       expect(layoutDiv?.className).toContain('flex-col')
