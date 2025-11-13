@@ -130,6 +130,37 @@ export const ciMetrics = pgTable('ci_metrics', {
 })
 
 /**
+ * Agent scores table - stores current OpenSkill ratings per agent.
+ * Contains the latest mu, sigma, and ordinal score for each agent.
+ */
+export const agentScores = pgTable('agent_scores', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agentName: text('agent_name').notNull().unique(),
+  mu: real('mu').notNull().default(25.0),
+  sigma: real('sigma').notNull().default(8.333),
+  ordinal: real('ordinal').notNull().default(0.0),
+  gamesPlayed: integer('games_played').notNull().default(0),
+  lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/**
+ * Agent score history table - tracks rating changes over time.
+ * Records mu, sigma, ordinal after each completed issue for analytics.
+ */
+export const agentScoreHistory = pgTable('agent_score_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agentName: text('agent_name').notNull(),
+  issueId: uuid('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  mu: real('mu').notNull(),
+  sigma: real('sigma').notNull(),
+  ordinal: real('ordinal').notNull(),
+  rank: integer('rank').notNull(), // 1 = winner, 2 = second place, etc.
+  completedAt: timestamp('completed_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/**
  * Events table - Idempotency and audit log.
  */
 export const events = pgTable(

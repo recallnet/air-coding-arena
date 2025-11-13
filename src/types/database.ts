@@ -5,7 +5,14 @@
  * @packageDocumentation
  */
 
-import type { issues, attempts, issueAgents, ciMetrics } from '@/db/schema'
+import type {
+  issues,
+  attempts,
+  issueAgents,
+  ciMetrics,
+  agentScores,
+  agentScoreHistory,
+} from '@/db/schema'
 
 /**
  * Issue entity from database.
@@ -98,3 +105,23 @@ export type IssueWithAttemptData = Issue & {
   attemptCount: number
   winnerAgentName: string | null
 }
+
+/**
+ * Agent score from database.
+ */
+export type AgentScore = typeof agentScores.$inferSelect
+
+/**
+ * New agent score for insertion.
+ */
+export type NewAgentScore = typeof agentScores.$inferInsert
+
+/**
+ * Agent score history entry from database.
+ */
+export type AgentScoreHistory = typeof agentScoreHistory.$inferSelect
+
+/**
+ * New agent score history entry for insertion.
+ */
+export type NewAgentScoreHistory = typeof agentScoreHistory.$inferInsert
