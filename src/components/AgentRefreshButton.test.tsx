@@ -73,7 +73,7 @@ describe('AgentRefreshButton', () => {
 
       // Mock delayed API response
       let resolvePromise:
-        | ((promiseValue: {
+        | ((_value: {
             ok: boolean
             json: () => Promise<{
               discovered: number
