@@ -10,9 +10,49 @@ import './globals.css'
  * Root layout metadata configuration.
  */
 export const metadata: Metadata = {
-  title: 'Air Coding Arena',
+  title: {
+    default: 'Air Coding Arena',
+    template: '%s | Air Coding Arena',
+  },
   description:
     'AI Agent coding arena dashboard for tracking issues and performance',
+  keywords: [
+    'AI agents',
+    'coding arena',
+    'agent performance',
+    'GitHub integration',
+    'Linear workflow',
+    'developer tools',
+  ],
+  authors: [{ name: 'Air Coding Arena Team' }],
+  creator: 'Air Coding Arena Team',
+  applicationName: 'Air Coding Arena',
+  generator: 'Next.js',
+  metadataBase: new URL('https://coding-arena.vercel.app'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://coding-arena.vercel.app',
+    title: 'Air Coding Arena',
+    description:
+      'AI Agent coding arena dashboard for tracking issues and performance',
+    siteName: 'Air Coding Arena',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Air Coding Arena',
+    description:
+      'AI Agent coding arena dashboard for tracking issues and performance',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
 }
 
 /**
