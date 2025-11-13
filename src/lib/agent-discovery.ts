@@ -4,7 +4,7 @@
  */
 
 import { LinearClient } from '@linear/sdk'
-import { eq, notInArray, sql } from 'drizzle-orm'
+import { notInArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import { agents, agentConfig } from '@/db/schema'

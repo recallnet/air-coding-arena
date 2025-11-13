@@ -28,6 +28,7 @@
     "// === DOCS GENERATION ===": "",
     "docs": "typedoc",
     "docs:serve": "npm run docs && npx serve docs/api",
+    "generate-diagrams": "tsx scripts/generate-state-diagrams.ts",
     "// === DATABASE SCRIPTS ===": "",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -98,6 +99,7 @@
     "tsx": "^4.20.6",
     "type-coverage": "^2.29.1",
     "typedoc": "^0.28.14",
+    "typedoc-plugin-mermaid": "^1.12.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.3",
     "vitest-mock-extended": "^2.0.2"

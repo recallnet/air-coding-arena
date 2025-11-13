@@ -14,6 +14,17 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/vitest-setup.ts'],
 
+    // === WORKER POOL CONFIGURATION ===
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        maxThreads: 8,
+        minThreads: 1,
+      },
+    },
+    testTimeout: 10000, // 10s max per test
+    teardownTimeout: 5000, // 5s to cleanup workers
+
     // === COVERAGE THRESHOLDS - DO NOT LOWER ===
     coverage: {
       provider: 'v8',

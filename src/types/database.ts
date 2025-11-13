@@ -95,6 +95,8 @@ export type AgentStats = {
   attempts: number
   wins: number
   acceptancePct: number
+  ordinal: number
+  gamesPlayed: number
 }
 
 /**

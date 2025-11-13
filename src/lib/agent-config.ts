@@ -1,7 +1,12 @@
 /**
- * Agent configuration from environment variables
+ * Agent configuration from database
  * @packageDocumentation
  */
+
+import { eq } from 'drizzle-orm'
+
+import { db } from '@/db/client'
+import { agents } from '@/db/schema'
 
 /**
  * Agent configuration object
@@ -31,16 +36,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Parses agent list from AGENTS_CONFIG_JSON env var
- * Format: [{"name":"cursor","handle":"@Cursor"},{"name":"engine","handle":"@Engine"}]
+ * Legacy function to parse agent list from AGENTS_CONFIG_JSON env var
+ * @deprecated Use getAgentConfigs() instead, which queries the database
  * @returns Array of agent configs
  */
-export function getAgentConfigs(): AgentConfig[] {
+function getAgentConfigsFromEnv(): AgentConfig[] {
   const configJson = process.env['AGENTS_CONFIG_JSON']
 
   if (!configJson) {
-    // Fallback to default agents for backward compatibility
-    return DEFAULT_AGENTS
+    return []
   }
 
   try {
@@ -98,19 +102,70 @@ export function getAgentConfigs(): AgentConfig[] {
 }
 
 /**
+ * Gets agent configs from database
+ * Queries agents table for enabled and active agents
+ * Falls back to AGENTS_CONFIG_JSON env var if database query fails
+ * Falls back to DEFAULT_AGENTS if both fail
+ * @returns Array of agent configs
+ */
+export async function getAgentConfigs(): Promise<AgentConfig[]> {
+  try {
+    // Query database for enabled and active agents
+    const enabledAgents = await db
+      .select()
+      .from(agents)
+      .where(eq(agents.isEnabled, true))
+      .orderBy(agents.name)
+
+    if (enabledAgents.length > 0) {
+      return enabledAgents.map((agent) => ({
+        name: agent.name,
+        handle: `@${agent.displayName}`,
+      }))
+    }
+
+    // Fallback to env var if no enabled agents in database
+    const envConfigs = getAgentConfigsFromEnv()
+    if (envConfigs.length > 0) {
+      return envConfigs
+    }
+
+    // Final fallback to default agents
+    return DEFAULT_AGENTS
+  } catch (error) {
+    globalThis.console.error('Failed to query agents from database:', error)
+
+    // Fallback to env var on database error
+    try {
+      const envConfigs = getAgentConfigsFromEnv()
+      if (envConfigs.length > 0) {
+        return envConfigs
+      }
+    } catch {
+      // Ignore env parsing errors
+    }
+
+    // Final fallback to default agents
+    return DEFAULT_AGENTS
+  }
+}
+
+/**
  * Gets list of agent handles for mention detection
  * @returns Array of handles like ['@Cursor', '@Engine']
  */
-export function getAgentHandles(): string[] {
-  return getAgentConfigs().map((agent) => agent.handle)
+export async function getAgentHandles(): Promise<string[]> {
+  const configs = await getAgentConfigs()
+  return configs.map((agent) => agent.handle)
 }
 
 /**
  * Gets list of agent names for database queries
  * @returns Array of names like ['cursor', 'engine']
  */
-export function getAgentNames(): string[] {
-  return getAgentConfigs().map((agent) => agent.name)
+export async function getAgentNames(): Promise<string[]> {
+  const configs = await getAgentConfigs()
+  return configs.map((agent) => agent.name)
 }
 
 /**
@@ -119,10 +174,11 @@ export function getAgentNames(): string[] {
  * @param text - Text to search (title, branch, subtitle)
  * @returns Agent name or 'unknown'
  */
-export function guessAgentFromText(text: string): string {
+export async function guessAgentFromText(text: string): Promise<string> {
   const lowerText = text.toLowerCase()
+  const configs = await getAgentConfigs()
 
-  for (const agent of getAgentConfigs()) {
+  for (const agent of configs) {
     if (lowerText.includes(agent.name.toLowerCase())) {
       return agent.name
     }

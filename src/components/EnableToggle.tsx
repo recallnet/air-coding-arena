@@ -18,7 +18,7 @@ export type EnableToggleProps = {
   /** Current enabled state */
   enabled: boolean
   /** Callback when toggle changes successfully */
-  onToggle?: (enabled: boolean) => void
+  onToggle?: (enabled: boolean) => void // eslint-disable-line no-unused-vars
 }
 
 /**
@@ -41,19 +41,19 @@ export function EnableToggle({
    * Handles toggle change
    */
   async function handleToggle() {
-    const newEnabled = !enabled
+    const newEnabledValue = !enabled
 
     // Optimistic update
-    setEnabled(newEnabled)
+    setEnabled(newEnabledValue)
     setError(null)
 
     try {
-      const response = await fetch(`/api/agents/${agentId}`, {
+      const response = await globalThis.fetch(`/api/agents/${agentId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ isEnabled: newEnabled }),
+        body: JSON.stringify({ isEnabled: newEnabledValue }),
       })
 
       if (!response.ok) {
@@ -61,7 +61,7 @@ export function EnableToggle({
       }
 
       // Call success callback
-      onToggle?.(newEnabled)
+      onToggle?.(newEnabledValue)
     } catch (err) {
       // Revert on error
       setEnabled(enabled)
@@ -80,11 +80,9 @@ export function EnableToggle({
         />
         <div className="peer h-6 w-11 rounded-full bg-gray-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300"></div>
       </label>
-      {error && (
-        <span className="text-xs text-red-600" title={error}>
+      {error ? <span className="text-xs text-red-600" title={error}>
           Error
-        </span>
-      )}
+        </span> : null}
     </div>
   )
 }

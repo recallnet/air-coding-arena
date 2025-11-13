@@ -5,11 +5,13 @@
  * @packageDocumentation
  */
 
-import { db } from '@/db/client'
-import { issues, attempts, agentScores, agentScoreHistory } from '@/db/schema'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { rating } from 'openskill'
 import type { Rating } from 'openskill'
+
+import { db } from '@/db/client'
+import { issues, attempts, agentScores, agentScoreHistory } from '@/db/schema'
+
 import {
   updateRatingsForCompletedIssue,
   calculateOrdinal,
@@ -95,7 +97,7 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
     .where(eq(attempts.issueId, issueId))
 
   if (issueAttempts.length === 0) {
-    console.log(`No attempts for issue ${issue.linearKey}, skipping rating update`)
+    globalThis.console.log(`No attempts for issue ${issue.linearKey}, skipping rating update`)
     return
   }
 
@@ -103,7 +105,7 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
   const ranking = determineRanking(issueAttempts)
 
   if (ranking.length === 0) {
-    console.log(`No finishers for issue ${issue.linearKey}, skipping rating update`)
+    globalThis.console.log(`No finishers for issue ${issue.linearKey}, skipping rating update`)
     return
   }
 
@@ -130,12 +132,15 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
 
   // Determine completedAt timestamp (use mergedAt of winner or latest closedAt)
   const winner = issueAttempts.find((a) => a.status === 'merged')
+  const closedAttempts = issueAttempts
+    .filter((a) => a.closedAt !== null)
+    .sort((a, b) => {
+      if (!a.closedAt || !b.closedAt) return 0
+      return b.closedAt.getTime() - a.closedAt.getTime()
+    })
   const completedAt =
     winner?.mergedAt ??
-    issueAttempts
-      .filter((a) => a.closedAt)
-      .sort((a, b) => b.closedAt!.getTime() - a.closedAt!.getTime())[0]
-      ?.closedAt ??
+    (closedAttempts[0]?.closedAt) ??
     new Date()
 
   // Update database: agent_scores and agent_score_history
@@ -182,7 +187,7 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
     })
   }
 
-  console.log(
+  globalThis.console.log(
     `Updated ratings for ${ranking.length} agents on issue ${issue.linearKey}`
   )
 }

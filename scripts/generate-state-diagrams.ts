@@ -1,7 +1,6 @@
 #!/usr/bin/env tsx
-import { writeFileSync, mkdirSync } from 'fs';
-import { agentMachine } from '../src/machines/agentMachine';
-import { issueMachine } from '../src/machines/issueMachine';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { resolve } from 'path';
 import type { AnyStateMachine } from 'xstate';
 
 /**
@@ -50,16 +49,31 @@ function toMermaid(machine: AnyStateMachine): string {
 /**
  * Main execution
  */
-function main() {
+async function main() {
   console.log('Generating state machine diagrams...\n');
+
+  // Check if state machines exist
+  const agentMachinePath = resolve('./src/machines/agentMachine.ts');
+  const issueMachinePath = resolve('./src/machines/issueMachine.ts');
+
+  const agentMachineExists = existsSync(agentMachinePath);
+  const issueMachineExists = existsSync(issueMachinePath);
+
+  if (!agentMachineExists && !issueMachineExists) {
+    console.log('⏭️  No state machines found. Skipping diagram generation.');
+    console.log('   (This is normal if state machines have not been implemented yet)\n');
+    return;
+  }
 
   // Create output directory
   mkdirSync('./docs/diagrams', { recursive: true });
 
-  // Generate Agent Machine diagram
-  const agentMermaid = toMermaid(agentMachine);
+  // Generate Agent Machine diagram if it exists
+  if (agentMachineExists) {
+    const { agentMachine } = await import('../src/machines/agentMachine');
+    const agentMermaid = toMermaid(agentMachine);
 
-  const agentDoc = `# Agent Lifecycle State Machine
+    const agentDoc = `# Agent Lifecycle State Machine
 
 **Generated from:** \`src/machines/agentMachine.ts\`
 **Last Updated:** ${new Date().toISOString()}
@@ -83,13 +97,16 @@ ${agentMermaid}
 - \`ISSUE_CLOSED\`: Issue closed before PR submitted
 `;
 
-  writeFileSync('./docs/diagrams/agent-state-machine.md', agentDoc);
-  console.log('✅ Generated: docs/diagrams/agent-state-machine.md');
+    writeFileSync('./docs/diagrams/agent-state-machine.md', agentDoc);
+    console.log('✅ Generated: docs/diagrams/agent-state-machine.md');
+  }
 
-  // Generate Issue Machine diagram
-  const issueMermaid = toMermaid(issueMachine);
+  // Generate Issue Machine diagram if it exists
+  if (issueMachineExists) {
+    const { issueMachine } = await import('../src/machines/issueMachine');
+    const issueMermaid = toMermaid(issueMachine);
 
-  const issueDoc = `# Issue Lifecycle State Machine
+    const issueDoc = `# Issue Lifecycle State Machine
 
 **Generated from:** \`src/machines/issueMachine.ts\`
 **Last Updated:** ${new Date().toISOString()}
@@ -111,10 +128,13 @@ ${issueMermaid}
 - \`ISSUE_CLOSED\`: Issue closed in Linear
 `;
 
-  writeFileSync('./docs/diagrams/issue-state-machine.md', issueDoc);
-  console.log('✅ Generated: docs/diagrams/issue-state-machine.md');
+    writeFileSync('./docs/diagrams/issue-state-machine.md', issueDoc);
+    console.log('✅ Generated: docs/diagrams/issue-state-machine.md');
+  }
 
-  console.log('\n🎉 State machine diagrams generated successfully!\n');
+  if (agentMachineExists || issueMachineExists) {
+    console.log('\n🎉 State machine diagrams generated successfully!\n');
+  }
 }
 
 main();

@@ -156,6 +156,27 @@ async function handlePullRequestSynchronize(
 /**
  * Maps GitHub check suite conclusion to our CI status values
  *
+ * ```mermaid
+ * stateDiagram-v2
+ *   [*] --> pending: Initial state
+ *   pending --> success: check_suite (conclusion=success)
+ *   pending --> failure: check_suite (conclusion=failure/timeout/cancelled)
+ *   pending --> error: check_suite (conclusion=action_required)
+ *   pending --> pending: check_suite (conclusion=neutral/skipped)
+ *   success --> success: check_suite updates (no auto-reset)
+ *   success --> failure: check_suite (new run fails)
+ *   success --> error: check_suite (requires action)
+ *   failure --> success: check_suite (fixed)
+ *   failure --> failure: check_suite updates
+ *   error --> success: check_suite (resolved)
+ *   error --> failure: check_suite (failed)
+ *
+ *   note right of pending
+ *     New commits (synchronize) do NOT reset CI status
+ *     Only check_suite events update status
+ *   end note
+ * ```
+ *
  * @param conclusion - GitHub check suite conclusion
  * @returns Normalized CI status
  */
@@ -217,6 +238,29 @@ async function handleCheckSuiteCompleted(
 
 /**
  * Handles PR closed events (merge or close)
+ *
+ * Updates attempt status based on whether PR was merged or closed without merge.
+ * On merge, triggers rating updates for all agents on the issue.
+ *
+ * ```mermaid
+ * stateDiagram-v2
+ *   [*] --> open: PR created
+ *   open --> open: synchronize (new commits)
+ *   open --> merged: closed (merged=true)
+ *   open --> closed: closed (merged=false)
+ *   merged --> [*]
+ *   closed --> [*]
+ *
+ *   note right of open
+ *     Tracks commits via synchronize events
+ *     CI status updated by check_suite events
+ *   end note
+ *
+ *   note right of merged
+ *     Triggers agent rating updates
+ *     Uses OpenSkill algorithm
+ *   end note
+ * ```
  *
  * @param payload - GitHub webhook payload
  */

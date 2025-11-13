@@ -5,6 +5,9 @@
  * @packageDocumentation
  */
 
+import { AgentConfigPlaceholder } from '@/components/AgentConfigPlaceholder'
+import { AgentDiscovery } from '@/components/AgentDiscovery'
+import { AgentsTable } from '@/components/AgentsTable'
 import {
   Card,
   CardContent,
@@ -12,9 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/Card'
-import { AgentConfigPlaceholder } from '@/components/AgentConfigPlaceholder'
-import { AgentDiscovery } from '@/components/AgentDiscovery'
-import { AgentsTable } from '@/components/AgentsTable'
 
 /**
  * Agent type from API response
@@ -45,8 +45,8 @@ type AgentsResponse = {
  * @returns Promise with agents data
  */
 async function getAgents(): Promise<Agent[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/agents`, {
+  const baseUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
+  const response = await globalThis.fetch(`${baseUrl}/api/agents`, {
     cache: 'no-store',
   })
 

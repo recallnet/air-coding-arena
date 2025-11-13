@@ -147,20 +147,20 @@ export async function syncIssueFromLinear(
  * @param commentParents - Map of comment IDs to parent comment IDs
  * @returns Agent name or "unknown"
  */
-function determineAgentOwnershipFromThread(
+async function determineAgentOwnershipFromThread(
   commentId: string,
   mentionedAgents: string[],
   body: string,
   commentAgents: Map<string, string[]>,
   commentParents: Map<string, string | null>
-): string {
+): Promise<string> {
   // First, check if agent is mentioned in this comment
   if (mentionedAgents.length > 0 && mentionedAgents[0]) {
     return mentionedAgents[0]
   }
 
   // Try to guess from the comment body itself (e.g., Cursor's comment format)
-  const guessedAgent = guessAgent(body, null)
+  const guessedAgent = await guessAgent(body, null)
   if (guessedAgent !== 'unknown') {
     return guessedAgent
   }
@@ -219,7 +219,7 @@ async function syncComments(
     commentParents.set(commentId, parentId)
 
     // Sync agent mentions
-    for (const handle of getAgentHandles()) {
+    for (const handle of await getAgentHandles()) {
       const agentName = handle.substring(1).toLowerCase() // Remove @ prefix: "@engine" -> "engine"
       const lowerBody = body.toLowerCase()
 
@@ -267,7 +267,7 @@ async function syncComments(
       const prUrl = `https://github.com/${org}/${repoName}/pull/${prNumber}`
 
       // Determine agent using parent relationship
-      const agentName = determineAgentOwnershipFromThread(
+      const agentName = await determineAgentOwnershipFromThread(
         commentId,
         mentionedAgents,
         body,
@@ -339,7 +339,7 @@ async function syncAttachments(
     if (!org || !repoName || !prNumber) continue
 
     const repo = `${org}/${repoName}`
-    const agentName = guessAgent(attachment.title ?? '', attachment.subtitle)
+    const agentName = await guessAgent(attachment.title ?? '', attachment.subtitle)
 
     let status = 'open'
     let mergedAt: Date | undefined
@@ -380,6 +380,6 @@ async function syncAttachments(
  * @param subtitle - Attachment subtitle
  * @returns Agent name
  */
-function guessAgent(title: string, subtitle?: string | null): string {
-  return guessAgentFromText(subtitle ?? title)
+async function guessAgent(title: string, subtitle?: string | null): Promise<string> {
+  return await guessAgentFromText(subtitle ?? title)
 }

@@ -34,10 +34,20 @@ export async function GET() {
       })
     }
 
+    const firstConfig = config[0]
+    if (!firstConfig) {
+      // Return default config if none exists
+      return NextResponse.json({
+        mode: 'all',
+        maxAgents: null,
+        lastDiscoveryAt: null,
+      })
+    }
+
     return NextResponse.json({
-      mode: config[0].mode,
-      maxAgents: config[0].maxAgents,
-      lastDiscoveryAt: config[0].lastDiscoveryAt,
+      mode: firstConfig.mode,
+      maxAgents: firstConfig.maxAgents,
+      lastDiscoveryAt: firstConfig.lastDiscoveryAt,
     })
   } catch (error) {
     const errorMessage =

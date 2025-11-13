@@ -90,7 +90,9 @@ describe('AgentsTable', () => {
 
       const avatar = screen.getByAltText('Cursor')
       expect(avatar).toBeInTheDocument()
-      expect(avatar).toHaveAttribute('src', 'https://example.com/avatar1.png')
+      // Next.js Image component transforms the src URL
+      expect(avatar).toHaveAttribute('src')
+      expect(avatar.getAttribute('src')).toContain('example.com')
     })
 
     it('should render fallback avatar when avatarUrl is null', () => {

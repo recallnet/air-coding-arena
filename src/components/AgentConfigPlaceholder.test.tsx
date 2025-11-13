@@ -65,9 +65,9 @@ describe('AgentConfigPlaceholder', () => {
 
       const radios = screen.getAllByRole('radio')
       expect(radios).toHaveLength(3)
-      radios.forEach((radio) => {
+      for (const radio of radios) {
         expect(radio).toBeDisabled()
-      })
+      }
     })
 
     it('should have max agents number input disabled', () => {

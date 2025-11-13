@@ -1,13 +1,16 @@
+import { eq } from 'drizzle-orm'
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
+
 import { db } from '@/db/client'
 import { issues, attempts, agentScores, agentScoreHistory } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+
 import { updateRatingsForIssue } from './update-ratings'
 
 describe.skipIf(
   !process.env['DATABASE_URL'] || process.env['IS_TEST_DB_URL'] === 'true'
 )('updateRatingsForIssue', () => {
   const testPrefix = 'test-ratings-' + Date.now()
+  const TEST_REPO = 'test/repo'
 
   afterAll(async () => {
     // Clean up all test data
@@ -43,11 +46,12 @@ describe.skipIf(
     }).returning()
 
     // Create attempts: cursor wins, engine loses, cyrus DNF
+    if (!issue) return
     await db.insert(attempts).values([
       {
-        issueId: issue!.id,
+        issueId: issue.id,
         agentName: 'cursor',
-        repo: 'test/repo',
+        repo: TEST_REPO,
         prNumber: 1,
         prUrl: 'https://github.com/test/repo/pull/1',
         openedAt: new Date(),
@@ -56,9 +60,9 @@ describe.skipIf(
         commitCount: 5,
       },
       {
-        issueId: issue!.id,
+        issueId: issue.id,
         agentName: 'engine',
-        repo: 'test/repo',
+        repo: TEST_REPO,
         prNumber: 2,
         prUrl: 'https://github.com/test/repo/pull/2',
         openedAt: new Date(),
@@ -67,9 +71,9 @@ describe.skipIf(
         commitCount: 3,
       },
       {
-        issueId: issue!.id,
+        issueId: issue.id,
         agentName: 'cyrus',
-        repo: 'test/repo',
+        repo: TEST_REPO,
         prNumber: 3,
         prUrl: 'https://github.com/test/repo/pull/3',
         openedAt: new Date(),
@@ -79,7 +83,7 @@ describe.skipIf(
       },
     ])
 
-    await updateRatingsForIssue(issue!.id)
+    await updateRatingsForIssue(issue.id)
 
     // Verify agent_scores updated
     const scores = await db.select().from(agentScores)
@@ -88,26 +92,36 @@ describe.skipIf(
     const cyrusScore = scores.find(s => s.agentName === 'cyrus')
 
     // Winner should have higher mu
-    expect(cursorScore!.mu).toBeGreaterThan(25)
-    expect(cursorScore!.gamesPlayed).toBe(1)
+    if (cursorScore) {
+      expect(cursorScore.mu).toBeGreaterThan(25)
+      expect(cursorScore.gamesPlayed).toBe(1)
+    }
 
     // Loser should have lower mu
-    expect(engineScore!.mu).toBeLessThan(25)
-    expect(engineScore!.gamesPlayed).toBe(1)
+    if (engineScore) {
+      expect(engineScore.mu).toBeLessThan(25)
+      expect(engineScore.gamesPlayed).toBe(1)
+    }
 
     // DNF should not change (no merged or valid attempt)
-    expect(cyrusScore!.mu).toBe(25)
-    expect(cyrusScore!.gamesPlayed).toBe(0)
+    if (cyrusScore) {
+      expect(cyrusScore.mu).toBe(25)
+      expect(cyrusScore.gamesPlayed).toBe(0)
+    }
 
     // Verify history entries created
     const history = await db.select().from(agentScoreHistory)
     expect(history).toHaveLength(2) // Only cursor and engine (not cyrus)
 
     const cursorHistory = history.find(h => h.agentName === 'cursor')
-    expect(cursorHistory!.rank).toBe(1) // Winner
+    if (cursorHistory) {
+      expect(cursorHistory.rank).toBe(1) // Winner
+    }
 
     const engineHistory = history.find(h => h.agentName === 'engine')
-    expect(engineHistory!.rank).toBe(2) // Second place
+    if (engineHistory) {
+      expect(engineHistory.rank).toBe(2) // Second place
+    }
   })
 
   it('should not update ratings if no attempts', async () => {
@@ -120,13 +134,16 @@ describe.skipIf(
       arenaReadyLabeledAt: new Date(),
     }).returning()
 
-    await updateRatingsForIssue(issue!.id)
+    if (!issue) return
+    await updateRatingsForIssue(issue.id)
 
     // No attempts = no rating changes
     const scores = await db.select().from(agentScores)
     const cursorScore = scores.find(s => s.agentName === 'cursor')
-    expect(cursorScore!.mu).toBe(25) // Unchanged
-    expect(cursorScore!.gamesPlayed).toBe(0)
+    if (cursorScore) {
+      expect(cursorScore.mu).toBe(25) // Unchanged
+      expect(cursorScore.gamesPlayed).toBe(0)
+    }
   })
 
   it('should handle issue with only one agent', async () => {
@@ -139,10 +156,11 @@ describe.skipIf(
       arenaReadyLabeledAt: new Date(),
     }).returning()
 
+    if (!issue) return
     await db.insert(attempts).values({
-      issueId: issue!.id,
+      issueId: issue.id,
       agentName: 'cursor',
-      repo: 'test/repo',
+      repo: TEST_REPO,
       prNumber: 10,
       prUrl: 'https://github.com/test/repo/pull/10',
       openedAt: new Date(),
@@ -151,12 +169,14 @@ describe.skipIf(
       commitCount: 5,
     })
 
-    await updateRatingsForIssue(issue!.id)
+    await updateRatingsForIssue(issue.id)
 
     // Single agent: rating should update but not dramatically
     const scores = await db.select().from(agentScores)
     const cursorScore = scores.find(s => s.agentName === 'cursor')
-    expect(cursorScore!.gamesPlayed).toBe(1)
-    expect(cursorScore!.mu).toBeGreaterThan(24) // Small increase
+    if (cursorScore) {
+      expect(cursorScore.gamesPlayed).toBe(1)
+      expect(cursorScore.mu).toBeGreaterThan(24) // Small increase
+    }
   })
 })

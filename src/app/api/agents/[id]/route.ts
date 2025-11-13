@@ -59,7 +59,7 @@ export async function PATCH(
       )
     }
 
-    if (typeof updateRequest.isEnabled !== 'boolean') {
+    if (typeof updateRequest['isEnabled'] !== 'boolean') {
       return NextResponse.json(
         { error: 'isEnabled must be a boolean' },
         { status: 400 }

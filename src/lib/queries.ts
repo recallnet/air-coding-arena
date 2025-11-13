@@ -39,14 +39,19 @@ export async function getAgentStats(): Promise<AgentStats[]> {
     attempts: number
     wins: number
     acceptance_pct: number
+    ordinal: number
+    games_played: number
   }>(sql`
     SELECT
-      agent_name,
-      attempts,
-      wins,
-      acceptance_pct
-    FROM agent_stats
-    ORDER BY acceptance_pct DESC
+      a.agent_name,
+      a.attempts,
+      a.wins,
+      a.acceptance_pct,
+      COALESCE(s.ordinal, 0) as ordinal,
+      COALESCE(s.games_played, 0) as games_played
+    FROM agent_stats a
+    LEFT JOIN agent_scores s ON a.agent_name = s.agent_name
+    ORDER BY s.ordinal DESC NULLS LAST, a.acceptance_pct DESC
   `)
 
   return result.map((row) => ({
@@ -54,6 +59,8 @@ export async function getAgentStats(): Promise<AgentStats[]> {
     attempts: Number(row.attempts),
     wins: Number(row.wins),
     acceptancePct: Number(row.acceptance_pct),
+    ordinal: Number(row.ordinal),
+    gamesPlayed: Number(row.games_played),
   }))
 }
 

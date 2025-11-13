@@ -4,13 +4,13 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EnableToggle } from './EnableToggle'
 
 // Mock fetch
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
 describe('EnableToggle', () => {
   beforeEach(() => {
@@ -166,8 +166,10 @@ describe('EnableToggle', () => {
   describe('Optimistic UI Updates', () => {
     it('should immediately show unchecked state before API response', async () => {
       const user = userEvent.setup()
-      let resolvePromise: (value: Response) => void
-      const promise = new Promise<Response>((resolve) => {
+      // eslint-disable-next-line no-unused-vars
+      type PromiseResolver = (value: Response) => void
+      let resolvePromise: PromiseResolver | undefined
+      const promise = new Promise<Response>((resolve: PromiseResolver) => {
         resolvePromise = resolve
       })
       mockFetch.mockReturnValueOnce(promise)
@@ -183,10 +185,12 @@ describe('EnableToggle', () => {
       expect(checkbox).not.toBeChecked()
 
       // Resolve the promise
-      resolvePromise!({
-        ok: true,
-        json: async () => ({ isEnabled: false }),
-      } as Response)
+      if (resolvePromise) {
+        resolvePromise({
+          ok: true,
+          json: async () => ({ isEnabled: false }),
+        } as Response)
+      }
 
       await waitFor(() => {
         expect(checkbox).not.toBeChecked()

@@ -10,6 +10,29 @@ import { issueAgents } from '@/db/schema'
 
 /**
  * Updates agent status to 'submitted' when PR is created
+ *
+ * Tracks agent lifecycle from mention to PR submission.
+ * Creates new tracking record if agent not yet mentioned.
+ *
+ * ```mermaid
+ * stateDiagram-v2
+ *   [*] --> pending: Agent mentioned in issue
+ *   pending --> submitted: PR created
+ *   pending --> ignored: Issue closed (no PR)
+ *   submitted --> [*]
+ *   ignored --> [*]
+ *
+ *   note right of pending
+ *     Created when agent mentioned in Linear issue
+ *     via agent-dispatch webhook
+ *   end note
+ *
+ *   note right of submitted
+ *     Set when PR attachment added to Linear issue
+ *     Does not track merge/close outcome
+ *   end note
+ * ```
+ *
  * @param issueId - Issue UUID
  * @param agentName - Agent name
  */

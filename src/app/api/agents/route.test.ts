@@ -11,6 +11,15 @@ import { agents } from '@/db/schema'
 
 import { GET } from './route'
 
+// Test constants
+const TEST_EMAIL_CURSOR = 'cursor@oauthapp.linear.app'
+const TEST_EMAIL_ENGINE = 'engine@oauthapp.linear.app'
+const TEST_AVATAR_URL = 'https://example.com/avatar1.png'
+const TEST_LINEAR_USER_1 = 'linear-user-1'
+const TEST_LINEAR_USER_2 = 'linear-user-2'
+const TEST_DATE_DISCOVERED = '2025-01-01T00:00:00Z'
+const TEST_DATE_LAST_SEEN = '2025-01-02T00:00:00Z'
+
 // Mock database
 vi.mock('@/db/client', () => ({
   db: {
@@ -48,24 +57,24 @@ describe('GET /api/agents', () => {
         id: 'agent-1',
         name: 'cursor',
         displayName: 'Cursor',
-        linearUserId: 'linear-user-1',
-        email: 'cursor@oauthapp.linear.app',
-        avatarUrl: 'https://example.com/avatar1.png',
+        linearUserId: TEST_LINEAR_USER_1,
+        email: TEST_EMAIL_CURSOR,
+        avatarUrl: TEST_AVATAR_URL,
         isActive: true,
         isEnabled: true,
-        discoveredAt: new Date('2025-01-01T00:00:00Z'),
-        lastSeenAt: new Date('2025-01-02T00:00:00Z'),
+        discoveredAt: new Date(TEST_DATE_DISCOVERED),
+        lastSeenAt: new Date(TEST_DATE_LAST_SEEN),
       },
       {
         id: 'agent-2',
         name: 'engine',
         displayName: 'Engine',
-        linearUserId: 'linear-user-2',
-        email: 'engine@oauthapp.linear.app',
+        linearUserId: TEST_LINEAR_USER_2,
+        email: TEST_EMAIL_ENGINE,
         avatarUrl: null,
         isActive: false,
         isEnabled: false,
-        discoveredAt: new Date('2025-01-01T00:00:00Z'),
+        discoveredAt: new Date(TEST_DATE_DISCOVERED),
         lastSeenAt: new Date('2025-01-01T12:00:00Z'),
       },
     ]
@@ -103,9 +112,9 @@ describe('GET /api/agents', () => {
     expect(agent1).toMatchObject({
       name: 'cursor',
       displayName: 'Cursor',
-      linearUserId: 'linear-user-1',
-      email: 'cursor@oauthapp.linear.app',
-      avatarUrl: 'https://example.com/avatar1.png',
+      linearUserId: TEST_LINEAR_USER_1,
+      email: TEST_EMAIL_CURSOR,
+      avatarUrl: TEST_AVATAR_URL,
       isActive: true,
       isEnabled: true,
     })
@@ -116,8 +125,8 @@ describe('GET /api/agents', () => {
     expect(agent2).toMatchObject({
       name: 'engine',
       displayName: 'Engine',
-      linearUserId: 'linear-user-2',
-      email: 'engine@oauthapp.linear.app',
+      linearUserId: TEST_LINEAR_USER_2,
+      email: TEST_EMAIL_ENGINE,
       avatarUrl: null,
       isActive: false,
       isEnabled: false,
@@ -148,23 +157,23 @@ describe.skipIf(
       {
         name: 'cursor',
         displayName: 'Cursor',
-        linearUserId: 'linear-user-1',
-        email: 'cursor@oauthapp.linear.app',
-        avatarUrl: 'https://example.com/avatar1.png',
+        linearUserId: TEST_LINEAR_USER_1,
+        email: TEST_EMAIL_CURSOR,
+        avatarUrl: TEST_AVATAR_URL,
         isActive: true,
         isEnabled: true,
-        discoveredAt: new Date('2025-01-01T00:00:00Z'),
-        lastSeenAt: new Date('2025-01-02T00:00:00Z'),
+        discoveredAt: new Date(TEST_DATE_DISCOVERED),
+        lastSeenAt: new Date(TEST_DATE_LAST_SEEN),
       },
       {
         name: 'engine',
         displayName: 'Engine',
-        linearUserId: 'linear-user-2',
-        email: 'engine@oauthapp.linear.app',
+        linearUserId: TEST_LINEAR_USER_2,
+        email: TEST_EMAIL_ENGINE,
         avatarUrl: null,
         isActive: false,
         isEnabled: false,
-        discoveredAt: new Date('2025-01-01T00:00:00Z'),
+        discoveredAt: new Date(TEST_DATE_DISCOVERED),
         lastSeenAt: new Date('2025-01-01T12:00:00Z'),
       },
     ])
@@ -194,9 +203,9 @@ describe.skipIf(
     expect(agent1).toMatchObject({
       name: 'cursor',
       displayName: 'Cursor',
-      linearUserId: 'linear-user-1',
-      email: 'cursor@oauthapp.linear.app',
-      avatarUrl: 'https://example.com/avatar1.png',
+      linearUserId: TEST_LINEAR_USER_1,
+      email: TEST_EMAIL_CURSOR,
+      avatarUrl: TEST_AVATAR_URL,
       isActive: true,
       isEnabled: true,
     })
@@ -210,8 +219,8 @@ describe.skipIf(
     expect(agent2).toMatchObject({
       name: 'engine',
       displayName: 'Engine',
-      linearUserId: 'linear-user-2',
-      email: 'engine@oauthapp.linear.app',
+      linearUserId: TEST_LINEAR_USER_2,
+      email: TEST_EMAIL_ENGINE,
       avatarUrl: null,
       isActive: false,
       isEnabled: false,

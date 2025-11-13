@@ -110,7 +110,7 @@ export async function dispatchMissingAgents(
   }
 
   // 3. Get configured agents
-  const configuredAgents = getAgentNames()
+  const configuredAgents = await getAgentNames()
 
   // 4. Get already-dispatched agents
   const dispatchedAgents = await db
@@ -140,8 +140,11 @@ export async function dispatchMissingAgents(
   // 7. Dispatch each missing agent
   let dispatchedCount = 0
 
+  // Get all agent configs once
+  const allAgentConfigs = await getAgentConfigs()
+
   for (const agentName of missingAgents) {
-    const agentConfig = getAgentConfigs().find((a) => a.name === agentName)
+    const agentConfig = allAgentConfigs.find((a) => a.name === agentName)
     if (!agentConfig) {
       console.warn(`Agent config not found for: ${agentName}`)
       continue
@@ -234,7 +237,7 @@ export async function dispatchAgentsToIssue(dbIssueId: string): Promise<void> {
   const client = new LinearClient({ apiKey })
 
   // 3. Get agent mentions
-  const agents = getAgentConfigs()
+  const agents = await getAgentConfigs()
   const mentionText = agents.map((agent) => agent.handle).join(' ')
 
   // 4. Create comment on the Linear issue using correct API

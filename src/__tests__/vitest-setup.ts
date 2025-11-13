@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import { afterAll, afterEach, vi } from 'vitest'
 
 /**
  * Set dummy DATABASE_URL for tests that import db client at module level.
@@ -32,4 +32,17 @@ vi.mock('geist/font/mono', () => ({
  */
 afterEach(() => {
   cleanup()
+})
+
+/**
+ * Close database connections when all tests finish.
+ * Prevents vitest workers from hanging due to open connection pools.
+ */
+afterAll(async () => {
+  try {
+    const { closeDb } = await import('@/db/client')
+    await closeDb()
+  } catch {
+    // DB not imported in this test suite, skip cleanup
+  }
 })

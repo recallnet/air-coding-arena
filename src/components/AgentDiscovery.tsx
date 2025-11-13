@@ -78,7 +78,7 @@ export function AgentDiscovery(): React.JSX.Element {
   useEffect(() => {
     async function fetchLastDiscovery() {
       try {
-        const response = await fetch('/api/agents/config')
+        const response = await globalThis.fetch('/api/agents/config')
         if (response.ok) {
           const data = (await response.json()) as {
             lastDiscoveryAt: string | null
@@ -86,7 +86,7 @@ export function AgentDiscovery(): React.JSX.Element {
           setLastDiscovery(data.lastDiscoveryAt)
         }
       } catch (err) {
-        console.error('Failed to fetch last discovery time:', err)
+        globalThis.console.error('Failed to fetch last discovery time:', err)
       }
     }
 
@@ -102,7 +102,7 @@ export function AgentDiscovery(): React.JSX.Element {
     setResults(null)
 
     try {
-      const response = await fetch('/api/agents/discover', {
+      const response = await globalThis.fetch('/api/agents/discover', {
         method: 'POST',
       })
 
@@ -115,8 +115,8 @@ export function AgentDiscovery(): React.JSX.Element {
       setLastDiscovery(new Date().toISOString())
 
       // Trigger page refresh after 1 second
-      setTimeout(() => {
-        window.location.reload()
+      globalThis.setTimeout(() => {
+        globalThis.location.reload()
       }, 1000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to discover agents')
@@ -136,17 +136,13 @@ export function AgentDiscovery(): React.JSX.Element {
       <CardContent>
         <div className="flex items-center justify-between">
           <div>
-            {results && (
-              <div className="text-sm text-foreground-secondary">
+            {results ? <div className="text-sm text-foreground-secondary">
                 <span className="font-medium text-foreground">
                   {results.discovered} discovered
                 </span>
                 , {results.updated} updated, {results.deactivated} deactivated
-              </div>
-            )}
-            {error && (
-              <div className="text-sm text-red-600">Error: {error}</div>
-            )}
+              </div> : null}
+            {error ? <div className="text-sm text-red-600">Error: {error}</div> : null}
           </div>
           <Button
             onClick={handleDiscover}

@@ -66,12 +66,16 @@ describe('getAgentStats', () => {
           attempts: 10,
           wins: 8,
           acceptance_pct: 80.0,
+          ordinal: 1500,
+          games_played: 5,
         },
         {
           agent_name: 'engine',
           attempts: 5,
           wins: 3,
           acceptance_pct: 60.0,
+          ordinal: 1400,
+          games_played: 3,
         },
       ]
 
@@ -85,12 +89,16 @@ describe('getAgentStats', () => {
           attempts: 10,
           wins: 8,
           acceptancePct: 80.0,
+          ordinal: 1500,
+          gamesPlayed: 5,
         },
         {
           agentName: 'engine',
           attempts: 5,
           wins: 3,
           acceptancePct: 60.0,
+          ordinal: 1400,
+          gamesPlayed: 3,
         },
       ])
 
@@ -1383,7 +1391,11 @@ describe('agent rating queries', () => {
       expect(result).toHaveLength(2)
       if (result.length > 1) {
         // Verify descending order by ordinal
-        expect(result[0]!.ordinal).toBeGreaterThanOrEqual(result[1]!.ordinal)
+        const firstScore = result[0]
+        const secondScore = result[1]
+        if (firstScore && secondScore) {
+          expect(firstScore.ordinal).toBeGreaterThanOrEqual(secondScore.ordinal)
+        }
       }
     })
 
@@ -1410,8 +1422,8 @@ describe('agent rating queries', () => {
 
       const result = await getAgentScores()
 
-      if (result.length > 0) {
-        const firstScore = result[0]!
+      const firstScore = result[0]
+      if (firstScore) {
         expect(firstScore).toHaveProperty('agentName')
         expect(firstScore).toHaveProperty('mu')
         expect(firstScore).toHaveProperty('sigma')
@@ -1519,9 +1531,13 @@ describe('agent rating queries', () => {
       expect(Array.isArray(result)).toBe(true)
       if (result.length > 1) {
         // Verify descending order by date
-        expect(result[0]!.completedAt.getTime()).toBeGreaterThanOrEqual(
-          result[1]!.completedAt.getTime()
-        )
+        const firstHistory = result[0]
+        const secondHistory = result[1]
+        if (firstHistory && secondHistory) {
+          expect(firstHistory.completedAt.getTime()).toBeGreaterThanOrEqual(
+            secondHistory.completedAt.getTime()
+          )
+        }
       }
     })
 

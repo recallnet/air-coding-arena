@@ -80,7 +80,11 @@ describe('GET /api/agents/config', () => {
 
       expect(response.status).toBe(200)
 
-      const data = await response.json()
+      const data = (await response.json()) as {
+        mode: string
+        maxAgents: number | null
+        lastDiscoveryAt: string | null
+      }
 
       expect(['all', 'max_n', 'manual']).toContain(data.mode)
     })
@@ -102,7 +106,11 @@ describe('GET /api/agents/config', () => {
 
       expect(response.status).toBe(200)
 
-      const data = await response.json()
+      const data = (await response.json()) as {
+        mode: string
+        maxAgents: number | null
+        lastDiscoveryAt: string | null
+      }
 
       // Should return default values
       expect(data.mode).toBe('all')
@@ -132,7 +140,9 @@ describe('GET /api/agents/config', () => {
 
       expect(response.status).toBe(500)
 
-      const data = await response.json()
+      const data = (await response.json()) as {
+        error: string
+      }
 
       expect(data).toHaveProperty('error')
       expect(data.error).toBe('Database error')
@@ -155,7 +165,9 @@ describe('GET /api/agents/config', () => {
 
       expect(response.status).toBe(500)
 
-      const data = await response.json()
+      const data = (await response.json()) as {
+        error: string
+      }
 
       expect(data).toHaveProperty('error')
       expect(data.error).toBe('Failed to fetch config')

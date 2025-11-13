@@ -20,3 +20,11 @@ const client = postgres(process.env['DATABASE_URL'], {
  * Singleton pattern - only one instance created.
  */
 export const db = drizzle(client)
+
+/**
+ * Close database connection pool.
+ * Used for cleanup in tests and graceful shutdown.
+ */
+export async function closeDb(): Promise<void> {
+  await client.end()
+}

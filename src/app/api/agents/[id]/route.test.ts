@@ -11,6 +11,12 @@ import { agents } from '@/db/schema'
 
 import { PATCH } from './route'
 
+// Test constants
+const TEST_REQUEST_URL = 'http://localhost/api/agents/agent-123'
+const TEST_AGENT_ID_404 = 'http://localhost/api/agents/agent-999'
+const TEST_DATE_DISCOVERED = '2025-01-01T00:00:00Z'
+const TEST_DATE_LAST_SEEN = '2025-01-02T00:00:00Z'
+
 // Mock database
 vi.mock('@/db/client', () => ({
   db: {
@@ -34,9 +40,9 @@ describe('PATCH /api/agents/[id]', () => {
       avatarUrl: null,
       isActive: true,
       isEnabled: false, // Updated to false
-      discoveredAt: new Date('2025-01-01T00:00:00Z'),
-      lastSeenAt: new Date('2025-01-02T00:00:00Z'),
-      createdAt: new Date('2025-01-01T00:00:00Z'),
+      discoveredAt: new Date(TEST_DATE_DISCOVERED),
+      lastSeenAt: new Date(TEST_DATE_LAST_SEEN),
+      createdAt: new Date(TEST_DATE_DISCOVERED),
       updatedAt: new Date(),
     }
 
@@ -53,7 +59,7 @@ describe('PATCH /api/agents/[id]', () => {
     } as never)
 
     // Create request with valid body
-    const request = new Request('http://localhost/api/agents/agent-123', {
+    const request = new Request(TEST_REQUEST_URL, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isEnabled: false }),
@@ -88,7 +94,7 @@ describe('PATCH /api/agents/[id]', () => {
   })
 
   it('should return 400 if isEnabled is missing', async () => {
-    const request = new Request('http://localhost/api/agents/agent-123', {
+    const request = new Request(TEST_REQUEST_URL, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
@@ -104,7 +110,7 @@ describe('PATCH /api/agents/[id]', () => {
   })
 
   it('should return 400 if isEnabled is not a boolean', async () => {
-    const request = new Request('http://localhost/api/agents/agent-123', {
+    const request = new Request(TEST_REQUEST_URL, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isEnabled: 'true' }),
@@ -132,7 +138,7 @@ describe('PATCH /api/agents/[id]', () => {
       set: mockSet,
     } as never)
 
-    const request = new Request('http://localhost/api/agents/agent-999', {
+    const request = new Request(TEST_AGENT_ID_404, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isEnabled: false }),
@@ -148,7 +154,7 @@ describe('PATCH /api/agents/[id]', () => {
   })
 
   it('should return 400 if body is invalid JSON', async () => {
-    const request = new Request('http://localhost/api/agents/agent-123', {
+    const request = new Request(TEST_REQUEST_URL, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: 'invalid json',
@@ -164,7 +170,7 @@ describe('PATCH /api/agents/[id]', () => {
   })
 
   it('should return 400 if body is null', async () => {
-    const request = new Request('http://localhost/api/agents/agent-123', {
+    const request = new Request(TEST_REQUEST_URL, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(null),
@@ -188,7 +194,7 @@ describe('PATCH /api/agents/[id]', () => {
       set: mockSet,
     } as never)
 
-    const request = new Request('http://localhost/api/agents/agent-123', {
+    const request = new Request(TEST_REQUEST_URL, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isEnabled: false }),
@@ -214,9 +220,9 @@ describe('PATCH /api/agents/[id]', () => {
       avatarUrl: null,
       isActive: true,
       isEnabled: true, // Updated to true
-      discoveredAt: new Date('2025-01-01T00:00:00Z'),
+      discoveredAt: new Date(TEST_DATE_DISCOVERED),
       lastSeenAt: new Date('2025-01-02T00:00:00Z'),
-      createdAt: new Date('2025-01-01T00:00:00Z'),
+      createdAt: new Date(TEST_DATE_DISCOVERED),
       updatedAt: new Date(),
     }
 

@@ -41,11 +41,11 @@ export default async function Home(): Promise<React.JSX.Element> {
   const agentTemporalStats = await getAgentTemporalStats()
   const recentIssues = await getIssuesWithAgents()
 
-  // Find the top performer (highest acceptance rate)
+  // Find the top performer (highest ordinal score)
   const topPerformer =
     agentStats.length > 0
       ? agentStats.reduce((top: AgentStats, current: AgentStats) =>
-          current.acceptancePct > top.acceptancePct ? current : top
+          current.ordinal > top.ordinal ? current : top
         )
       : null
 
@@ -82,6 +82,8 @@ export default async function Home(): Promise<React.JSX.Element> {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Agent Name</TableHead>
+                    <TableHead className="text-right">Rating</TableHead>
+                    <TableHead className="text-right">Games</TableHead>
                     <TableHead className="text-right">Attempts</TableHead>
                     <TableHead className="text-right">Wins</TableHead>
                     <TableHead className="text-right">
@@ -100,6 +102,12 @@ export default async function Home(): Promise<React.JSX.Element> {
                               <Badge variant="success">Top Performer</Badge>
                             )}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {stat.ordinal > 0 ? stat.ordinal.toFixed(0) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {stat.gamesPlayed}
                       </TableCell>
                       <TableCell className="text-right">
                         {stat.attempts}

@@ -261,7 +261,7 @@ async function handleAttachmentEvent(
   // Guess agent from branch or title
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const branch = (attachment.metadata?.['branch'] as any) ?? null
-  const agentName = guessAgent(attachment.title, branch ?? undefined)
+  const agentName = await guessAgent(attachment.title, branch ?? undefined)
 
   // Upsert attempt
   await db
@@ -308,8 +308,8 @@ async function handleAttachmentEvent(
  * @param branch - Branch name
  * @returns Agent name (cursor, engine, cyrus, factory, or unknown)
  */
-function guessAgent(title: string, branch?: string): string {
-  return guessAgentFromText(branch ?? title)
+async function guessAgent(title: string, branch?: string): Promise<string> {
+  return await guessAgentFromText(branch ?? title)
 }
 
 /**

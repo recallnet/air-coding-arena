@@ -4,17 +4,20 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AgentDiscovery } from './AgentDiscovery'
 
+// Test constants
+const API_AGENTS_CONFIG_URL = '/api/agents/config'
+
 // Mock fetch
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
 // Mock window.location.reload
 const mockReload = vi.fn()
-Object.defineProperty(window, 'location', {
+Object.defineProperty(globalThis, 'location', {
   value: { reload: mockReload },
   writable: true,
 })
@@ -38,7 +41,7 @@ describe('AgentDiscovery', () => {
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith('/api/agents/config')
+        expect(mockFetch).toHaveBeenCalledWith(API_AGENTS_CONFIG_URL)
       })
     })
 
@@ -56,7 +59,7 @@ describe('AgentDiscovery', () => {
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith('/api/agents/config')
+        expect(mockFetch).toHaveBeenCalledWith(API_AGENTS_CONFIG_URL)
       })
     })
 
@@ -206,10 +209,13 @@ describe('AgentDiscovery', () => {
           // Should show formatted date like "Jan 1" or "Dec 31, 2024"
           const text = screen.getByText(/Last discovered:/)
           expect(text).toBeInTheDocument()
-          expect(text.textContent).toMatch(/Last discovered: (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/)
         },
         { timeout: 2000 }
       )
+
+      // Additional check for date format in separate assertion
+      const text = screen.getByText(/Last discovered:/)
+      expect(text.textContent).toMatch(/Last discovered: (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/)
     })
   })
 
@@ -263,7 +269,7 @@ describe('AgentDiscovery', () => {
 
       // Wait for error to be handled
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith('/api/agents/config')
+        expect(mockFetch).toHaveBeenCalledWith(API_AGENTS_CONFIG_URL)
       })
     })
 

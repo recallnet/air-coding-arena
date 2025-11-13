@@ -15,7 +15,7 @@
   "excludeProtected": false,
   "excludeExternals": true,
   "readme": "none",
-  "plugin": [],
+  "plugin": ["typedoc-plugin-mermaid"],
   "validation": {
     "notExported": true,
     "invalidLink": true,

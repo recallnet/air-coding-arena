@@ -7,8 +7,10 @@
 
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 
+import { EnableToggle } from '@/components/EnableToggle'
 import { Badge } from '@/components/ui/Badge'
 import {
   Table,
@@ -18,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { EnableToggle } from '@/components/EnableToggle'
 
 /**
  * Agent type
@@ -113,9 +114,11 @@ export function AgentsTable({
             <TableCell>
               <div className="flex items-center gap-3">
                 {agent.avatarUrl ? (
-                  <img
+                  <Image
                     src={agent.avatarUrl}
                     alt={agent.displayName}
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full"
                   />
                 ) : (
@@ -134,7 +137,7 @@ export function AgentsTable({
               </div>
             </TableCell>
             <TableCell className="text-foreground-secondary">
-              {agent.email || '-'}
+              {agent.email ?? '-'}
             </TableCell>
             <TableCell>
               <Badge variant={agent.isActive ? 'success' : 'secondary'}>
