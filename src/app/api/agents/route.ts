@@ -22,6 +22,7 @@ export async function GET() {
     .select({
       id: agents.id,
       name: agents.name,
+      slug: agents.slug,
       displayName: agents.displayName,
       linearUserId: agents.linearUserId,
       email: agents.email,

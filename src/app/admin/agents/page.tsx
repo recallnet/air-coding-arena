@@ -79,7 +79,7 @@ export default async function AdminAgentsPage(): Promise<React.JSX.Element> {
   const agents = await getAgents()
 
   return (
-    <main className="container mx-auto p-6 md:p-8 lg:p-12">
+    <div>
       <div className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">
           Agent Management
@@ -109,6 +109,6 @@ export default async function AdminAgentsPage(): Promise<React.JSX.Element> {
 
       {/* Configuration Placeholder Section */}
       <AgentConfigPlaceholder />
-    </main>
+    </div>
   )
 }

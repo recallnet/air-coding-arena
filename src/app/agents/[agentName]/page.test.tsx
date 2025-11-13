@@ -9,6 +9,7 @@ import AgentPage from './page'
 
 // Mock the query functions
 vi.mock('@/lib/queries', () => ({
+  getAgentBySlugOrName: vi.fn(),
   getAttemptsByAgent: vi.fn(),
   getAgentStats: vi.fn(),
   getAgentScore: vi.fn(),
@@ -36,6 +37,7 @@ vi.mock('next/navigation', () => ({
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock
 import {
+  getAgentBySlugOrName,
   getAttemptsByAgent,
   getAgentStats,
   getAgentScore,
@@ -44,6 +46,7 @@ import {
 // eslint-disable-next-line import/order -- Must import after mock
 import { notFound } from 'next/navigation'
 
+const mockGetAgentBySlugOrName = vi.mocked(getAgentBySlugOrName)
 const mockGetAttemptsByAgent = vi.mocked(getAttemptsByAgent)
 const mockGetAgentStats = vi.mocked(getAgentStats)
 const mockGetAgentScore = vi.mocked(getAgentScore)
@@ -68,34 +71,66 @@ const MOCK_ATTEMPT_ID_1 = '456e4567-e89b-12d3-a456-426614174001'
 const MOCK_ATTEMPT_ID_2 = '456e4567-e89b-12d3-a456-426614174002'
 const UI_TEXT_TOP_PERFORMER = 'Top Performer'
 const UI_TEXT_ACTIVE = 'Active'
+const MOCK_DATE_DISCOVERED = '2025-01-01T00:00:00Z'
+const MOCK_DATE_LAST_SEEN = '2025-01-02T00:00:00Z'
+const MOCK_LINEAR_USER_ID = 'linear-user-1'
 
 describe('AgentPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Set default mock return values
+    mockGetAgentBySlugOrName.mockResolvedValue({
+      id: MOCK_ISSUE_ID,
+      name: MOCK_AGENT_CURSOR,
+      slug: MOCK_AGENT_CURSOR,
+      displayName: 'Cursor',
+      linearUserId: MOCK_LINEAR_USER_ID,
+      email: 'cursor@example.com',
+      avatarUrl: null,
+      isActive: true,
+      isEnabled: true,
+      discoveredAt: new Date(MOCK_DATE_DISCOVERED),
+      lastSeenAt: new Date(MOCK_DATE_LAST_SEEN),
+      createdAt: new Date(MOCK_DATE_DISCOVERED),
+      updatedAt: new Date(MOCK_DATE_LAST_SEEN),
+    })
     mockGetAgentScore.mockResolvedValue(null)
     mockGetAgentScoreHistory.mockResolvedValue([])
   })
 
   describe('when agent has no attempts', () => {
-    it('should call notFound() when attempts array is empty', async () => {
+    it('should call notFound() when agent does not exist', async () => {
+      mockGetAgentBySlugOrName.mockResolvedValue(null)
       mockGetAttemptsByAgent.mockResolvedValue([])
       mockGetAgentStats.mockResolvedValue([])
 
       await expect(async () => {
-        await AgentPage({ params: { agentName: MOCK_AGENT_CURSOR } })
+        await AgentPage({ params: { agentName: 'nonexistent' } })
       }).rejects.toThrow('notFound')
 
       expect(mockNotFound).toHaveBeenCalled()
     })
 
     it('should call getAttemptsByAgent with correct agent name', async () => {
+      mockGetAgentBySlugOrName.mockResolvedValue({
+        id: MOCK_ISSUE_ID,
+        name: MOCK_AGENT_ENGINE,
+        slug: MOCK_AGENT_ENGINE,
+        displayName: 'Engine',
+        linearUserId: 'linear-user-2',
+        email: 'engine@example.com',
+        avatarUrl: null,
+        isActive: true,
+        isEnabled: true,
+        discoveredAt: new Date(MOCK_DATE_DISCOVERED),
+        lastSeenAt: new Date(MOCK_DATE_LAST_SEEN),
+        createdAt: new Date(MOCK_DATE_DISCOVERED),
+        updatedAt: new Date(MOCK_DATE_LAST_SEEN),
+      })
       mockGetAttemptsByAgent.mockResolvedValue([])
       mockGetAgentStats.mockResolvedValue([])
 
-      await expect(async () => {
-        await AgentPage({ params: { agentName: MOCK_AGENT_ENGINE } })
-      }).rejects.toThrow('notFound')
+      await AgentPage({ params: { agentName: MOCK_AGENT_ENGINE } })
 
       expect(mockGetAttemptsByAgent).toHaveBeenCalledWith(MOCK_AGENT_ENGINE)
     })

@@ -56,6 +56,7 @@ describe('GET /api/agents', () => {
       {
         id: 'agent-1',
         name: 'cursor',
+        slug: 'cursor',
         displayName: 'Cursor',
         linearUserId: TEST_LINEAR_USER_1,
         email: TEST_EMAIL_CURSOR,
@@ -68,6 +69,7 @@ describe('GET /api/agents', () => {
       {
         id: 'agent-2',
         name: 'engine',
+        slug: 'engine',
         displayName: 'Engine',
         linearUserId: TEST_LINEAR_USER_2,
         email: TEST_EMAIL_ENGINE,
