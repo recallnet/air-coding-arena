@@ -8,12 +8,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '@/db/client'
 import { agents } from '@/db/schema'
 
-import {
-  getAgentConfigs,
-  getAgentHandles,
-  getAgentNames,
-  guessAgentFromText,
-} from './agent-config'
+import { getAgentConfigs, getAgentHandles, getAgentNames } from './agent-config'
 
 describe('agent-config', () => {
   beforeEach(async () => {
@@ -176,60 +171,4 @@ describe('agent-config', () => {
     })
   })
 
-  describe('guessAgentFromText', () => {
-    beforeEach(async () => {
-      await db.insert(agents).values([
-        {
-          name: 'cursor',
-          displayName: 'Cursor',
-          linearUserId: 'user-1',
-          isEnabled: true,
-          isActive: true,
-        },
-        {
-          name: 'engine',
-          displayName: 'Engine',
-          linearUserId: 'user-2',
-          isEnabled: true,
-          isActive: true,
-        },
-        {
-          name: 'factory',
-          displayName: 'Factory',
-          linearUserId: 'user-3',
-          isEnabled: true,
-          isActive: true,
-        },
-      ])
-    })
-
-    it('should detect agent in branch name', async () => {
-      expect(await guessAgentFromText('cursor/fix-bug')).toBe('cursor')
-      expect(await guessAgentFromText('engine-123-feature')).toBe('engine')
-      expect(await guessAgentFromText('factory-pr-branch')).toBe('factory')
-    })
-
-    it('should detect agent in PR title', async () => {
-      expect(await guessAgentFromText('feat: Add feature by Cursor')).toBe(
-        'cursor'
-      )
-      expect(await guessAgentFromText('Factory agent implementation')).toBe(
-        'factory'
-      )
-    })
-
-    it('should be case-insensitive for detection', async () => {
-      expect(await guessAgentFromText('CURSOR/fix')).toBe('cursor')
-      expect(await guessAgentFromText('Engine-PR')).toBe('engine')
-      expect(await guessAgentFromText('FACTORY-branch')).toBe('factory')
-    })
-
-    it('should return unknown if no agent found', async () => {
-      expect(await guessAgentFromText('random-branch-name')).toBe('unknown')
-    })
-
-    it('should return unknown if text is empty', async () => {
-      expect(await guessAgentFromText('')).toBe('unknown')
-    })
-  })
 })

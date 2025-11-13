@@ -9,7 +9,7 @@ import { eq, and } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { issues, issueAgents, attempts } from '@/db/schema'
 
-import { getAgentHandles, guessAgentFromText } from './agent-config'
+import { getAgentHandles } from './agent-config'
 import { extractIssueMetadata } from './linear-metadata'
 
 /**
@@ -159,13 +159,8 @@ async function determineAgentOwnershipFromThread(
     return mentionedAgents[0]
   }
 
-  // Try to guess from the comment body itself (e.g., Cursor's comment format)
-  const guessedAgent = await guessAgent(body, null)
-  if (guessedAgent !== 'unknown') {
-    return guessedAgent
-  }
-
   // Walk up the parent chain to find @mentions
+  // NO GUESSING - agent must be explicitly mentioned
   let currentId: string | null = commentId
   const visited = new Set<string>()
 
@@ -339,10 +334,10 @@ async function syncAttachments(
     if (!org || !repoName || !prNumber) continue
 
     const repo = `${org}/${repoName}`
-    const agentName = await guessAgent(
-      attachment.title ?? '',
-      attachment.subtitle
-    )
+
+    // Agent must be explicitly tracked - NO GUESSING
+    // Should be in the comment metadata or parent thread
+    const agentName = 'unknown' // TODO: Get from comment thread
 
     let status = 'open'
     let mergedAt: Date | undefined
@@ -377,15 +372,3 @@ async function syncAttachments(
   }
 }
 
-/**
- * Guesses agent name from PR title or subtitle
- * @param title - PR title
- * @param subtitle - Attachment subtitle
- * @returns Agent name
- */
-async function guessAgent(
-  title: string,
-  subtitle?: string | null
-): Promise<string> {
-  return await guessAgentFromText(subtitle ?? title)
-}

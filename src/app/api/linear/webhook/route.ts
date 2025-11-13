@@ -14,7 +14,6 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { issues, attempts, events } from '@/db/schema'
-import { guessAgentFromText } from '@/lib/agent-config'
 import { updateAgentStatusOnPR } from '@/lib/agent-status'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
 import type { LinearWebhookIssue } from '@/types/linear'
@@ -258,10 +257,10 @@ async function handleAttachmentEvent(
     status = 'closed'
   }
 
-  // Guess agent from branch or title
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const branch = (attachment.metadata?.['branch'] as any) ?? null
-  const agentName = await guessAgent(attachment.title, branch ?? undefined)
+  // Agent must be explicitly tracked in Linear - NO GUESSING
+  // The agent name should be in the PR comment that created this attachment
+  // If we don't have it, something is broken in our workflow
+  const agentName = 'unknown' // TODO: Get from Linear comment metadata
 
   // Upsert attempt
   await db
@@ -301,16 +300,6 @@ async function handleAttachmentEvent(
   console.log(`Attempt created/updated: ${repo}#${prNumber} (${status})`)
 }
 
-/**
- * Guesses agent name from PR title or branch name.
- *
- * @param title - PR title
- * @param branch - Branch name
- * @returns Agent name (cursor, engine, cyrus, factory, or unknown)
- */
-async function guessAgent(title: string, branch?: string): Promise<string> {
-  return await guessAgentFromText(branch ?? title)
-}
 
 /**
  * Updates winner for an issue.

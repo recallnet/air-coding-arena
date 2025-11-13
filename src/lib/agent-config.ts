@@ -55,21 +55,3 @@ export async function getAgentNames(): Promise<string[]> {
   return configs.map((agent) => agent.name)
 }
 
-/**
- * Guesses agent name from PR title or branch
- * Checks against configured agents
- * @param text - Text to search (title, branch, subtitle)
- * @returns Agent name or 'unknown'
- */
-export async function guessAgentFromText(text: string): Promise<string> {
-  const lowerText = text.toLowerCase()
-  const configs = await getAgentConfigs()
-
-  for (const agent of configs) {
-    if (lowerText.includes(agent.name.toLowerCase())) {
-      return agent.name
-    }
-  }
-
-  return 'unknown'
-}
