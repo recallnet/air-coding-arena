@@ -26,9 +26,20 @@ const MOCK_ISSUE_ID = 'issue-1'
 const MOCK_AGENT_CURSOR = 'cursor'
 const MOCK_AGENT_ENGINE = 'engine'
 const MOCK_AGENT_CYRUS = 'cyrus'
-const MOCK_FIX_TEST_BRANCH = 'fix/test'
-const MOCK_PR_URL_1 = 'https://github.com/test/repo/pull/1'
+const MOCK_PR_BASE_URL = 'https://github.com/test/repo/pull'
+const MOCK_FIX_BASE_BRANCH = 'fix/test'
+const MOCK_TIME_BASE = '2024-01-01T1'
+const MOCK_FIX_TEST_BRANCH = MOCK_FIX_BASE_BRANCH
+const MOCK_PR_URL_1 = `${MOCK_PR_BASE_URL}/1`
+const MOCK_PR_URL_2 = `${MOCK_PR_BASE_URL}/2`
+const MOCK_PR_URL_3 = `${MOCK_PR_BASE_URL}/3`
 const MOCK_COMMIT_SHA_ABC123 = 'abc123'
+const MOCK_COMMIT_SHA_DEF456 = 'def456'
+const MOCK_FIX_TEST_2_BRANCH = `${MOCK_FIX_BASE_BRANCH}-2`
+const MOCK_FIX_TEST_3_BRANCH = `${MOCK_FIX_BASE_BRANCH}-3`
+const MOCK_MERGED_TIME = `${MOCK_TIME_BASE}1:00:00Z`
+const MOCK_CLOSED_TIME = `${MOCK_TIME_BASE}2:00:00Z`
+const MOCK_CLOSED_TIME_2 = `${MOCK_TIME_BASE}3:00:00Z`
 
 describe('updateRatingsForIssue - Unit Tests', () => {
   beforeEach(() => {
@@ -206,8 +217,8 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should update ratings for completed issue with merged PR', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
-    const closedTime = new Date('2024-01-01T12:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
+    const closedTime = new Date(MOCK_CLOSED_TIME)
 
     const mockAttempts = [
       {
@@ -235,14 +246,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_ENGINE,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: closedTime,
         status: MOCK_STATUS_CLOSED,
         commitCount: 3,
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -302,8 +313,8 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should detect DNF for low-effort PRs (< 2 commits)', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
-    const closedTime = new Date('2024-01-01T12:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
+    const closedTime = new Date(MOCK_CLOSED_TIME)
 
     const mockAttempts = [
       {
@@ -331,14 +342,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_ENGINE,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: closedTime,
         status: MOCK_STATUS_CLOSED,
         commitCount: 1, // DNF: too few commits
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -393,7 +404,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should detect DNF for short lifespan PRs (< 5 minutes)', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
     const shortCloseTime = new Date('2024-01-01T10:03:00Z') // 3 minutes
 
     const mockAttempts = [
@@ -422,14 +433,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_CYRUS,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: shortCloseTime, // DNF: closed within 5 minutes
         status: MOCK_STATUS_CLOSED,
         commitCount: 5, // Even with good commits, short lifespan = DNF
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -482,9 +493,9 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should handle multiple agents with proper ranking', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
-    const closedTime1 = new Date('2024-01-01T12:00:00Z')
-    const closedTime2 = new Date('2024-01-01T13:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
+    const closedTime1 = new Date(MOCK_CLOSED_TIME)
+    const closedTime2 = new Date(MOCK_CLOSED_TIME_2)
 
     const mockAttempts = [
       {
@@ -512,14 +523,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_ENGINE,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: closedTime1,
         status: MOCK_STATUS_CLOSED,
         commitCount: 3,
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -531,8 +542,8 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_CYRUS,
         repo: MOCK_REPO,
         prNumber: 3,
-        prUrl: 'https://github.com/test/repo/pull/3',
-        branch: 'fix/test-3',
+        prUrl: MOCK_PR_URL_3,
+        branch: MOCK_FIX_TEST_3_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: closedTime2,
@@ -595,8 +606,8 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should handle new agent without existing score', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
-    const closedTime = new Date('2024-01-01T12:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
+    const closedTime = new Date(MOCK_CLOSED_TIME)
 
     const mockAttempts = [
       {
@@ -624,14 +635,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_CURSOR,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: closedTime,
         status: MOCK_STATUS_CLOSED,
         commitCount: 3,
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -684,7 +695,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should handle single agent (no competition)', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
 
     const mockAttempts = [
       {
@@ -781,14 +792,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_ENGINE,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: new Date('2024-01-01T12:00:00Z'),
         status: MOCK_STATUS_CLOSED,
         commitCount: 4,
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -800,8 +811,8 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_CYRUS,
         repo: MOCK_REPO,
         prNumber: 3,
-        prUrl: 'https://github.com/test/repo/pull/3',
-        branch: 'fix/test-3',
+        prUrl: MOCK_PR_URL_3,
+        branch: MOCK_FIX_TEST_3_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: new Date('2024-01-01T13:00:00Z'),
@@ -900,7 +911,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should use mergedAt for completedAt timestamp', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
 
     const mockAttempts = [
       {
@@ -968,7 +979,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should exclude open PRs that are not merged or closed', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
 
     const mockAttempts = [
       {
@@ -996,14 +1007,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_ENGINE,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: null,
         status: MOCK_STATUS_OPEN, // Open PR - should be excluded
         commitCount: 3,
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -1056,7 +1067,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
   it('should handle tie scenarios with same close time', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const mergedTime = new Date('2024-01-01T11:00:00Z')
+    const mergedTime = new Date(MOCK_MERGED_TIME)
     const sameCloseTime = new Date('2024-01-01T12:00:00Z')
 
     const mockAttempts = [
@@ -1085,14 +1096,14 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_ENGINE,
         repo: MOCK_REPO,
         prNumber: 2,
-        prUrl: 'https://github.com/test/repo/pull/2',
-        branch: 'fix/test-2',
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: sameCloseTime,
         status: MOCK_STATUS_CLOSED,
         commitCount: 3,
-        lastCommitSha: 'def456',
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
         sourceAttachmentId: null,
@@ -1104,8 +1115,8 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         agentName: MOCK_AGENT_CYRUS,
         repo: MOCK_REPO,
         prNumber: 3,
-        prUrl: 'https://github.com/test/repo/pull/3',
-        branch: 'fix/test-3',
+        prUrl: MOCK_PR_URL_3,
+        branch: MOCK_FIX_TEST_3_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
         closedAt: sameCloseTime,
