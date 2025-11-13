@@ -36,6 +36,13 @@
       "when": 1763013742873,
       "tag": "0004_busy_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763071327392,
+      "tag": "0005_elite_grandmaster",
+      "breakpoints": true
     }
   ]
 }

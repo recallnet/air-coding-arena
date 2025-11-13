@@ -295,6 +295,47 @@ export const agentConfig = pgTable(
 )
 
 /**
+ * GitHub App installations table - Tracks installed organizations.
+ * One row per organization where the GitHub App is installed.
+ */
+export const githubAppInstallations = pgTable(
+  'github_app_installations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    installationId: text('installation_id').notNull().unique(), // GitHub's installation ID
+    accountId: text('account_id').notNull(), // Organization/user ID
+    accountLogin: text('account_login').notNull(), // Organization/user login name
+    accountType: text('account_type').notNull(), // 'Organization' or 'User'
+    isActive: boolean('is_active').notNull().default(true),
+    installedAt: timestamp('installed_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    suspendedAt: timestamp('suspended_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    installationIdIdx: index('idx_gh_installation_id').on(table.installationId),
+    isActiveIdx: index('idx_gh_installation_active').on(table.isActive),
+  })
+)
+
+/**
+ * TypeScript types for GitHub App installations
+ */
+export type GitHubAppInstallation = typeof githubAppInstallations.$inferSelect
+
+/**
+ * TypeScript type for new GitHub App installation
+ */
+export type NewGitHubAppInstallation =
+  typeof githubAppInstallations.$inferInsert
+
+/**
  * Relations for type-safe joins.
  */
 export const issuesRelations = relations(issues, ({ one, many }) => ({

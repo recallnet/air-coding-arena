@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
-import { issues } from './schema'
+import { issues, githubAppInstallations } from './schema'
 
 describe('issues schema', () => {
   it('should have metadata columns', () => {
@@ -26,5 +26,17 @@ describe('issues schema', () => {
     expect(columns).toContain('linearCreatedAt')
     expect(columns).toContain('linearUpdatedAt')
     expect(columns).toContain('parentId')
+  })
+})
+
+describe('githubAppInstallations schema', () => {
+  test('should have correct structure', () => {
+    // Verify table exists and has expected columns
+    expect(githubAppInstallations).toBeDefined()
+    expect(githubAppInstallations.id).toBeDefined()
+    expect(githubAppInstallations.installationId).toBeDefined()
+    expect(githubAppInstallations.accountLogin).toBeDefined()
+    expect(githubAppInstallations.accountType).toBeDefined()
+    expect(githubAppInstallations.isActive).toBeDefined()
   })
 })
