@@ -19,6 +19,12 @@ type GitHubWebhookPayload = {
     number: number
     head: { sha: string }
   }
+  check_suite?: {
+    status?: string
+    conclusion: string | null
+    head_sha: string
+    pull_requests: Array<{ number: number }>
+  }
   repository?: {
     full_name: string
   }
@@ -144,6 +150,68 @@ async function handlePullRequestSynchronize(
   console.log(`[GitHub] Updated PR ${repo}#${prNumber}: ${commitCount} commits`)
 }
 
+/**
+ * Maps GitHub check suite conclusion to our CI status values
+ *
+ * @param conclusion - GitHub check suite conclusion
+ * @returns Normalized CI status
+ */
+function mapCIStatus(conclusion: string): string {
+  switch (conclusion) {
+    case 'success':
+      return 'success'
+    case 'failure':
+    case 'timed_out':
+    case 'cancelled':
+      return 'failure'
+    case 'action_required':
+      return 'error'
+    case 'neutral':
+    case 'skipped':
+      return 'pending'
+    default:
+      return 'pending'
+  }
+}
+
+/**
+ * Handles check suite completed events (CI status changes)
+ *
+ * @param payload - GitHub webhook payload
+ */
+async function handleCheckSuiteCompleted(
+  payload: GitHubWebhookPayload
+): Promise<void> {
+  const checkSuite = payload.check_suite
+  if (!checkSuite) return
+
+  const conclusion = checkSuite.conclusion
+  if (!conclusion) return // Still running
+
+  const repo = payload.repository?.full_name
+  if (!repo) return
+
+  const ciStatus = mapCIStatus(conclusion)
+  const pullRequests = checkSuite.pull_requests
+
+  if (!pullRequests || pullRequests.length === 0) return
+
+  // Update CI status for each PR in the check suite
+  for (const pr of pullRequests) {
+    await db
+      .update(attempts)
+      .set({
+        ciStatus,
+        ciLastCheckedAt: new Date(),
+      })
+      .where(and(eq(attempts.repo, repo), eq(attempts.prNumber, pr.number)))
+
+    console.log(
+      `[GitHub] Updated CI status for ${repo}#${pr.number}: ${ciStatus}`
+    )
+  }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // 1. Verify signature
@@ -181,6 +249,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 3. Route by event type
     if (payload.action === 'synchronize') {
       await handlePullRequestSynchronize(payload)
+    } else if (payload.action === 'completed' && payload.check_suite) {
+      await handleCheckSuiteCompleted(payload)
     } else {
       console.log(`[GitHub] ${payload.action} event received`)
     }

@@ -606,6 +606,370 @@ describe('/api/github/webhook', () => {
     })
   })
 
+  describe('check_suite.completed', () => {
+    beforeEach(() => {
+      vi.stubEnv('GITHUB_WEBHOOK_SECRET', TEST_SECRET)
+      vi.clearAllMocks()
+    })
+
+    it('should update CI status to success', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          status: 'completed',
+          conclusion: 'success',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Verify update was called with correct CI status
+      expect(db.update).toHaveBeenCalled()
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'success',
+          ciLastCheckedAt: expect.any(Date),
+        })
+      )
+    })
+
+    it('should update CI status to failure', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          status: 'completed',
+          conclusion: 'failure',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'failure',
+        })
+      )
+    })
+
+    it('should map timed_out to failure', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'timed_out',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      await POST(createAuthenticatedRequest(payload))
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'failure',
+        })
+      )
+    })
+
+    it('should map cancelled to failure', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'cancelled',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      await POST(createAuthenticatedRequest(payload))
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'failure',
+        })
+      )
+    })
+
+    it('should map action_required to error', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'action_required',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      await POST(createAuthenticatedRequest(payload))
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'error',
+        })
+      )
+    })
+
+    it('should map neutral to pending', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'neutral',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      await POST(createAuthenticatedRequest(payload))
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'pending',
+        })
+      )
+    })
+
+    it('should map skipped to pending', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'skipped',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      await POST(createAuthenticatedRequest(payload))
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ciStatus: 'pending',
+        })
+      )
+    })
+
+    it('should handle multiple PRs in one check suite', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'success',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: 1 }, { number: 2 }, { number: 3 }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should update all 3 PRs
+      expect(db.update).toHaveBeenCalledTimes(3)
+    })
+
+    it('should handle null conclusion (still running)', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: null,
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should not call update when conclusion is null
+      expect(db.update).not.toHaveBeenCalled()
+    })
+
+    it('should handle missing repository', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'success',
+          head_sha: TEST_SHA,
+          pull_requests: [{ number: TEST_PR_NUMBER }],
+        },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should not call update when repository is missing
+      expect(db.update).not.toHaveBeenCalled()
+    })
+
+    it('should handle empty pull_requests array', async () => {
+      const payload = {
+        action: 'completed',
+        check_suite: {
+          conclusion: 'success',
+          head_sha: TEST_SHA,
+          pull_requests: [],
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should not call update when no PRs
+      expect(db.update).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Error Handling', () => {
     const secret = 'test-secret-key'
 

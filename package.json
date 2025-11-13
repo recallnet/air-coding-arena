@@ -36,12 +36,7 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "tsx scripts/reset-db.ts",
     "export:linear": "tsx scripts/export-linear.ts",
-    "// === MIGRATION SCRIPTS ===": "",
-    "migrate:real-data": "tsx scripts/migrate-to-real-data.ts",
-    "fetch:eng320": "tsx scripts/fetch-eng320-details.ts",
-    "// === BACKFILL SCRIPTS ===": "",
     "backfill:metadata": "tsx scripts/backfill-metadata.ts",
     "// === HUSKY SETUP ===": "",
     "prepare": "husky"
