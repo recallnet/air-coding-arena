@@ -39,9 +39,7 @@ describe('AgentsTable', () => {
     it('should show empty state when no agents', () => {
       render(<AgentsTable initialAgents={[]} />)
 
-      expect(
-        screen.getByText(/No agents discovered yet/i)
-      ).toBeInTheDocument()
+      expect(screen.getByText(/No agents discovered yet/i)).toBeInTheDocument()
       expect(
         screen.getByText(/Click "Discover Agents" to find agents/i)
       ).toBeInTheDocument()

@@ -97,7 +97,9 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
     .where(eq(attempts.issueId, issueId))
 
   if (issueAttempts.length === 0) {
-    globalThis.console.log(`No attempts for issue ${issue.linearKey}, skipping rating update`)
+    globalThis.console.log(
+      `No attempts for issue ${issue.linearKey}, skipping rating update`
+    )
     return
   }
 
@@ -105,7 +107,9 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
   const ranking = determineRanking(issueAttempts)
 
   if (ranking.length === 0) {
-    globalThis.console.log(`No finishers for issue ${issue.linearKey}, skipping rating update`)
+    globalThis.console.log(
+      `No finishers for issue ${issue.linearKey}, skipping rating update`
+    )
     return
   }
 
@@ -139,9 +143,7 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
       return b.closedAt.getTime() - a.closedAt.getTime()
     })
   const completedAt =
-    winner?.mergedAt ??
-    (closedAttempts[0]?.closedAt) ??
-    new Date()
+    winner?.mergedAt ?? closedAttempts[0]?.closedAt ?? new Date()
 
   // Update database: agent_scores and agent_score_history
   for (let i = 0; i < ranking.length; i++) {

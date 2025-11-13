@@ -8,7 +8,13 @@
 import { desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { attempts, issues, issueAgents, agentScores, agentScoreHistory } from '@/db/schema'
+import {
+  attempts,
+  issues,
+  issueAgents,
+  agentScores,
+  agentScoreHistory,
+} from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
@@ -815,10 +821,7 @@ export async function getIssuesWithAgents(
  * @returns Array of agent scores
  */
 export async function getAgentScores(): Promise<AgentScore[]> {
-  return db
-    .select()
-    .from(agentScores)
-    .orderBy(desc(agentScores.ordinal))
+  return db.select().from(agentScores).orderBy(desc(agentScores.ordinal))
 }
 
 /**
@@ -827,7 +830,9 @@ export async function getAgentScores(): Promise<AgentScore[]> {
  * @param agentName - Agent identifier
  * @returns Agent score or null if not found
  */
-export async function getAgentScore(agentName: string): Promise<AgentScore | null> {
+export async function getAgentScore(
+  agentName: string
+): Promise<AgentScore | null> {
   const result = await db
     .select()
     .from(agentScores)

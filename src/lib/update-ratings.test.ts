@@ -36,14 +36,17 @@ describe.skipIf(
 
   it('should update ratings for completed issue with merged PR', async () => {
     // Create test issue
-    const [issue] = await db.insert(issues).values({
-      linearId: testPrefix + '-1',
-      linearKey: 'TEST-1',
-      title: 'Test Issue',
-      url: 'https://linear.app/test/1',
-      status: 'Done',
-      arenaReadyLabeledAt: new Date(),
-    }).returning()
+    const [issue] = await db
+      .insert(issues)
+      .values({
+        linearId: testPrefix + '-1',
+        linearKey: 'TEST-1',
+        title: 'Test Issue',
+        url: 'https://linear.app/test/1',
+        status: 'Done',
+        arenaReadyLabeledAt: new Date(),
+      })
+      .returning()
 
     // Create attempts: cursor wins, engine loses, cyrus DNF
     if (!issue) return
@@ -87,9 +90,9 @@ describe.skipIf(
 
     // Verify agent_scores updated
     const scores = await db.select().from(agentScores)
-    const cursorScore = scores.find(s => s.agentName === 'cursor')
-    const engineScore = scores.find(s => s.agentName === 'engine')
-    const cyrusScore = scores.find(s => s.agentName === 'cyrus')
+    const cursorScore = scores.find((s) => s.agentName === 'cursor')
+    const engineScore = scores.find((s) => s.agentName === 'engine')
+    const cyrusScore = scores.find((s) => s.agentName === 'cyrus')
 
     // Winner should have higher mu
     if (cursorScore) {
@@ -113,33 +116,36 @@ describe.skipIf(
     const history = await db.select().from(agentScoreHistory)
     expect(history).toHaveLength(2) // Only cursor and engine (not cyrus)
 
-    const cursorHistory = history.find(h => h.agentName === 'cursor')
+    const cursorHistory = history.find((h) => h.agentName === 'cursor')
     if (cursorHistory) {
       expect(cursorHistory.rank).toBe(1) // Winner
     }
 
-    const engineHistory = history.find(h => h.agentName === 'engine')
+    const engineHistory = history.find((h) => h.agentName === 'engine')
     if (engineHistory) {
       expect(engineHistory.rank).toBe(2) // Second place
     }
   })
 
   it('should not update ratings if no attempts', async () => {
-    const [issue] = await db.insert(issues).values({
-      linearId: testPrefix + '-2',
-      linearKey: 'TEST-2',
-      title: 'Test Issue No Attempts',
-      url: 'https://linear.app/test/2',
-      status: 'Done',
-      arenaReadyLabeledAt: new Date(),
-    }).returning()
+    const [issue] = await db
+      .insert(issues)
+      .values({
+        linearId: testPrefix + '-2',
+        linearKey: 'TEST-2',
+        title: 'Test Issue No Attempts',
+        url: 'https://linear.app/test/2',
+        status: 'Done',
+        arenaReadyLabeledAt: new Date(),
+      })
+      .returning()
 
     if (!issue) return
     await updateRatingsForIssue(issue.id)
 
     // No attempts = no rating changes
     const scores = await db.select().from(agentScores)
-    const cursorScore = scores.find(s => s.agentName === 'cursor')
+    const cursorScore = scores.find((s) => s.agentName === 'cursor')
     if (cursorScore) {
       expect(cursorScore.mu).toBe(25) // Unchanged
       expect(cursorScore.gamesPlayed).toBe(0)
@@ -147,14 +153,17 @@ describe.skipIf(
   })
 
   it('should handle issue with only one agent', async () => {
-    const [issue] = await db.insert(issues).values({
-      linearId: testPrefix + '-3',
-      linearKey: 'TEST-3',
-      title: 'Test Issue Single Agent',
-      url: 'https://linear.app/test/3',
-      status: 'Done',
-      arenaReadyLabeledAt: new Date(),
-    }).returning()
+    const [issue] = await db
+      .insert(issues)
+      .values({
+        linearId: testPrefix + '-3',
+        linearKey: 'TEST-3',
+        title: 'Test Issue Single Agent',
+        url: 'https://linear.app/test/3',
+        status: 'Done',
+        arenaReadyLabeledAt: new Date(),
+      })
+      .returning()
 
     if (!issue) return
     await db.insert(attempts).values({
@@ -173,7 +182,7 @@ describe.skipIf(
 
     // Single agent: rating should update but not dramatically
     const scores = await db.select().from(agentScores)
-    const cursorScore = scores.find(s => s.agentName === 'cursor')
+    const cursorScore = scores.find((s) => s.agentName === 'cursor')
     if (cursorScore) {
       expect(cursorScore.gamesPlayed).toBe(1)
       expect(cursorScore.mu).toBeGreaterThan(24) // Small increase

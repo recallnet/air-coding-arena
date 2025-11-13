@@ -1,7 +1,11 @@
 import { rating, ordinal } from 'openskill'
 import { describe, it, expect } from 'vitest'
 
-import { updateRatingsForCompletedIssue, initializeAgentRating, calculateOrdinal } from './openskill'
+import {
+  updateRatingsForCompletedIssue,
+  initializeAgentRating,
+  calculateOrdinal,
+} from './openskill'
 
 describe('openskill rating service', () => {
   describe('initializeAgentRating', () => {
@@ -41,7 +45,10 @@ describe('openskill rating service', () => {
 
       // Verify both use OpenSkill ordinal function
       expect(weakOrdinal).toBeCloseTo(1500 + ordinal(weakRating, { z: 3 }), 5)
-      expect(strongOrdinal).toBeCloseTo(1500 + ordinal(strongRating, { z: 3 }), 5)
+      expect(strongOrdinal).toBeCloseTo(
+        1500 + ordinal(strongRating, { z: 3 }),
+        5
+      )
     })
 
     it('should handle high uncertainty ratings with lower ordinal', () => {
@@ -71,7 +78,9 @@ describe('openskill rating service', () => {
       // Winner's mu should increase
       expect(result['cursor']?.mu).toBeGreaterThan(beforeRatings['cursor'].mu)
       // Winner's sigma should decrease (more certain)
-      expect(result['cursor']?.sigma).toBeLessThan(beforeRatings['cursor'].sigma)
+      expect(result['cursor']?.sigma).toBeLessThan(
+        beforeRatings['cursor'].sigma
+      )
 
       // Loser's mu should decrease
       expect(result['cyrus']?.mu).toBeLessThan(beforeRatings['cyrus'].mu)

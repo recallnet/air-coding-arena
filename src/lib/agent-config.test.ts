@@ -235,8 +235,12 @@ describe('agent-config', () => {
     })
 
     it('should detect agent in PR title', async () => {
-      expect(await guessAgentFromText('feat: Add feature by Cursor')).toBe('cursor')
-      expect(await guessAgentFromText('Factory agent implementation')).toBe('factory')
+      expect(await guessAgentFromText('feat: Add feature by Cursor')).toBe(
+        'cursor'
+      )
+      expect(await guessAgentFromText('Factory agent implementation')).toBe(
+        'factory'
+      )
     })
 
     it('should be case-insensitive for detection', async () => {

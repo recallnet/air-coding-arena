@@ -136,13 +136,17 @@ export function AgentDiscovery(): React.JSX.Element {
       <CardContent>
         <div className="flex items-center justify-between">
           <div>
-            {results ? <div className="text-sm text-foreground-secondary">
+            {results ? (
+              <div className="text-sm text-foreground-secondary">
                 <span className="font-medium text-foreground">
                   {results.discovered} discovered
                 </span>
                 , {results.updated} updated, {results.deactivated} deactivated
-              </div> : null}
-            {error ? <div className="text-sm text-red-600">Error: {error}</div> : null}
+              </div>
+            ) : null}
+            {error ? (
+              <div className="text-sm text-red-600">Error: {error}</div>
+            ) : null}
           </div>
           <Button
             onClick={handleDiscover}

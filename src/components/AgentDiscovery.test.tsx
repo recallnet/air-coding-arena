@@ -120,7 +120,9 @@ describe('AgentDiscovery', () => {
     })
 
     it('should show relative time for recent discovery (hours)', async () => {
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+      const twoHoursAgo = new Date(
+        Date.now() - 2 * 60 * 60 * 1000
+      ).toISOString()
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ lastDiscoveryAt: twoHoursAgo }),
@@ -158,7 +160,9 @@ describe('AgentDiscovery', () => {
     })
 
     it('should show relative time for recent discovery (days)', async () => {
-      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      const threeDaysAgo = new Date(
+        Date.now() - 3 * 24 * 60 * 60 * 1000
+      ).toISOString()
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ lastDiscoveryAt: threeDaysAgo }),
@@ -177,7 +181,9 @@ describe('AgentDiscovery', () => {
     })
 
     it('should show singular form for 1 day', async () => {
-      const oneDayAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      const oneDayAgo = new Date(
+        Date.now() - 1 * 24 * 60 * 60 * 1000
+      ).toISOString()
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ lastDiscoveryAt: oneDayAgo }),
@@ -196,7 +202,9 @@ describe('AgentDiscovery', () => {
     })
 
     it('should show formatted date for old discovery', async () => {
-      const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+      const twoWeeksAgo = new Date(
+        Date.now() - 14 * 24 * 60 * 60 * 1000
+      ).toISOString()
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ lastDiscoveryAt: twoWeeksAgo }),
@@ -215,7 +223,9 @@ describe('AgentDiscovery', () => {
 
       // Additional check for date format in separate assertion
       const text = screen.getByText(/Last discovered:/)
-      expect(text.textContent).toMatch(/Last discovered: (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/)
+      expect(text.textContent).toMatch(
+        /Last discovered: (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/
+      )
     })
   })
 

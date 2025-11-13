@@ -339,7 +339,10 @@ async function syncAttachments(
     if (!org || !repoName || !prNumber) continue
 
     const repo = `${org}/${repoName}`
-    const agentName = await guessAgent(attachment.title ?? '', attachment.subtitle)
+    const agentName = await guessAgent(
+      attachment.title ?? '',
+      attachment.subtitle
+    )
 
     let status = 'open'
     let mergedAt: Date | undefined
@@ -380,6 +383,9 @@ async function syncAttachments(
  * @param subtitle - Attachment subtitle
  * @returns Agent name
  */
-async function guessAgent(title: string, subtitle?: string | null): Promise<string> {
+async function guessAgent(
+  title: string,
+  subtitle?: string | null
+): Promise<string> {
   return await guessAgentFromText(subtitle ?? title)
 }

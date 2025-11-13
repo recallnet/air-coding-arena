@@ -140,8 +140,12 @@ export const agentScores = pgTable('agent_scores', {
   sigma: real('sigma').notNull().default(8.333),
   ordinal: real('ordinal').notNull().default(0.0),
   gamesPlayed: integer('games_played').notNull().default(0),
-  lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 })
 
 /**
@@ -151,13 +155,17 @@ export const agentScores = pgTable('agent_scores', {
 export const agentScoreHistory = pgTable('agent_score_history', {
   id: uuid('id').primaryKey().defaultRandom(),
   agentName: text('agent_name').notNull(),
-  issueId: uuid('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  issueId: uuid('issue_id')
+    .notNull()
+    .references(() => issues.id, { onDelete: 'cascade' }),
   mu: real('mu').notNull(),
   sigma: real('sigma').notNull(),
   ordinal: real('ordinal').notNull(),
   rank: integer('rank').notNull(), // 1 = winner, 2 = second place, etc.
   completedAt: timestamp('completed_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 })
 
 /**

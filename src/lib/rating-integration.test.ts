@@ -54,15 +54,17 @@ describe('Rating Integration E2E Tests', () => {
     await db.delete(issues).where(inArray(issues.id, issueIds))
 
     // Clean up test agents from agent_scores
-    await db.delete(agentScores).where(
-      inArray(agentScores.agentName, [
-        TEST_AGENT_1,
-        TEST_AGENT_2,
-        TEST_AGENT_3,
-        TEST_AGENT_4,
-        TEST_AGENT_5,
-      ])
-    )
+    await db
+      .delete(agentScores)
+      .where(
+        inArray(agentScores.agentName, [
+          TEST_AGENT_1,
+          TEST_AGENT_2,
+          TEST_AGENT_3,
+          TEST_AGENT_4,
+          TEST_AGENT_5,
+        ])
+      )
   }
 
   describe('Basic 1v1 scenario', () => {
@@ -140,9 +142,7 @@ describe('Rating Integration E2E Tests', () => {
       const scores = await db
         .select()
         .from(agentScores)
-        .where(
-          inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_2])
-        )
+        .where(inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_2]))
 
       expect(scores).toHaveLength(2)
 
@@ -550,9 +550,7 @@ describe('Rating Integration E2E Tests', () => {
       const scores = await db
         .select()
         .from(agentScores)
-        .where(
-          inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_4])
-        )
+        .where(inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_4]))
 
       expect(scores).toHaveLength(1)
       if (scores[0]) {
@@ -633,14 +631,16 @@ describe('Rating Integration E2E Tests', () => {
       const round1Scores = await db
         .select()
         .from(agentScores)
-        .where(
-          inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_2])
-        )
+        .where(inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_2]))
 
       expect(round1Scores).toHaveLength(2)
 
-      const agent1Round1 = round1Scores.find((s) => s.agentName === TEST_AGENT_1)
-      const agent2Round1 = round1Scores.find((s) => s.agentName === TEST_AGENT_2)
+      const agent1Round1 = round1Scores.find(
+        (s) => s.agentName === TEST_AGENT_1
+      )
+      const agent2Round1 = round1Scores.find(
+        (s) => s.agentName === TEST_AGENT_2
+      )
 
       expect(agent1Round1).toBeDefined()
       expect(agent2Round1).toBeDefined()
@@ -704,14 +704,16 @@ describe('Rating Integration E2E Tests', () => {
       const round2Scores = await db
         .select()
         .from(agentScores)
-        .where(
-          inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_2])
-        )
+        .where(inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_2]))
 
       expect(round2Scores).toHaveLength(2)
 
-      const agent1Round2 = round2Scores.find((s) => s.agentName === TEST_AGENT_1)
-      const agent2Round2 = round2Scores.find((s) => s.agentName === TEST_AGENT_2)
+      const agent1Round2 = round2Scores.find(
+        (s) => s.agentName === TEST_AGENT_1
+      )
+      const agent2Round2 = round2Scores.find(
+        (s) => s.agentName === TEST_AGENT_2
+      )
 
       expect(agent1Round2).toBeDefined()
       expect(agent2Round2).toBeDefined()
