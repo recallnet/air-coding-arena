@@ -343,9 +343,14 @@ async function handleAttachmentEvent(
  * Uses row-level locking to ensure only one webhook can set the winner.
  * Idempotent - safe to call multiple times.
  *
+ * Transaction handles atomic winner selection (steps 1-5).
+ * Rating updates happen after transaction completes (step 6) with separate error handling.
+ * This maintains transaction atomicity while allowing rating failures to not rollback winner selection.
+ *
  * @param issueId - Issue UUID
  */
 async function updateWinner(issueId: string): Promise<void> {
+  // Transaction scope: atomic winner selection only
   await db.transaction(async (tx) => {
     // 1. Lock the issue row (prevents concurrent winner updates)
     const issueResult = await tx
@@ -391,11 +396,18 @@ async function updateWinner(issueId: string): Promise<void> {
       .set({ status: 'closed', closedAt: new Date() })
       .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'open')))
 
-    // 6. Update ratings once per issue (inside transaction)
-    await updateRatingsForIssue(issueId)
-
     console.log(`Winner set for issue ${issueId}: ${winner.agentName}`)
   })
+
+  // 6. Calculate ratings after transaction (separate error boundary)
+  // Rating updates use global db instance, so must be outside transaction.
+  // If ratings fail, winner is already set correctly - no rollback needed.
+  try {
+    await updateRatingsForIssue(issueId)
+  } catch (error) {
+    console.error(`Failed to update ratings for issue ${issueId}:`, error)
+    // Don't throw - winner is already set correctly
+  }
 }
 
 /**
