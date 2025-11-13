@@ -24,7 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { getAgentStats, getAttemptsByAgent } from '@/lib/queries'
+import {
+  getAgentStats,
+  getAttemptsByAgent,
+  getAgentScore,
+  getAgentScoreHistory,
+} from '@/lib/queries'
 import type { AttemptStatus } from '@/types/database'
 
 /**
@@ -112,6 +117,10 @@ export default async function AgentPage({
   const allStats = await getAgentStats()
   const agentStats = allStats.find((stats) => stats.agentName === agentName)
 
+  // Fetch agent score and history
+  const agentScore = await getAgentScore(agentName)
+  const agentScoreHistory = await getAgentScoreHistory(agentName, 20)
+
   // Calculate stats (should always exist if attempts exist, but handle null safely)
   const totalAttempts = agentStats?.attempts ?? attempts.length
   const wins = agentStats?.wins ?? 0
@@ -171,6 +180,76 @@ export default async function AgentPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* OpenSkill Rating Card */}
+      {agentScore !== null && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>OpenSkill Rating</CardTitle>
+            <CardDescription>
+              Dynamic skill rating based on match outcomes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div>
+                <div className="text-sm text-foreground-secondary">
+                  Ordinal Score
+                </div>
+                <div className="text-2xl font-bold">
+                  {agentScore.ordinal.toFixed(0)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-foreground-secondary">
+                  Skill (μ)
+                </div>
+                <div className="text-2xl font-bold">
+                  {agentScore.mu.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-foreground-secondary">
+                  Uncertainty (σ)
+                </div>
+                <div className="text-2xl font-bold">
+                  {agentScore.sigma.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-foreground-secondary">
+                  Games Played
+                </div>
+                <div className="text-2xl font-bold">
+                  {agentScore.gamesPlayed}
+                </div>
+              </div>
+            </div>
+
+            {agentScoreHistory.length > 0 && (
+              <div className="mt-6">
+                <h3 className="mb-2 text-sm font-semibold">
+                  Recent Rating History
+                </h3>
+                <div className="space-y-2">
+                  {agentScoreHistory.slice(0, 5).map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between rounded-md bg-accent/50 px-3 py-2 text-sm"
+                    >
+                      <span>Rank #{entry.rank}</span>
+                      <span>{entry.ordinal.toFixed(0)}</span>
+                      <span className="text-xs text-foreground-secondary">
+                        {entry.completedAt.toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Attempts Card */}
       <Card>

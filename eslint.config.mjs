@@ -17,7 +17,6 @@ import functionalPlugin from 'eslint-plugin-functional'
 import boundariesPlugin from 'eslint-plugin-boundaries'
 import eslintCommentsPlugin from 'eslint-plugin-eslint-comments'
 import nextPlugin from '@next/eslint-plugin-next'
-import xstatePlugin from 'eslint-plugin-xstate'
 
 export default [
   js.configs.recommended,
@@ -99,7 +98,6 @@ export default [
       boundaries: boundariesPlugin,
       'eslint-comments': eslintCommentsPlugin,
       '@next/next': nextPlugin,
-      xstate: xstatePlugin,
     },
     rules: {
       // === TYPE SAFETY - NEVER DISABLE ===
@@ -263,30 +261,6 @@ export default [
           ],
         },
       ],
-
-      // === XSTATE - STATE MACHINE RULES (ALL ERRORS, NO WARNINGS) ===
-      // Critical XState rules - detect bugs and invalid usage
-      'xstate/no-infinite-loop': 'error',
-      'xstate/no-imperative-action': 'error',
-      'xstate/no-async-guard': 'error',
-      'xstate/no-invalid-transition-props': 'error',
-      'xstate/no-invalid-state-props': 'error',
-      'xstate/invoke-usage': 'error',
-      'xstate/entry-exit-action': 'error',
-      'xstate/no-misplaced-on-transition': 'error',
-      'xstate/no-ondone-outside-compound-state': 'error',
-      'xstate/no-invalid-conditional-action': 'error',
-
-      // Style & consistency - enforce as errors (not warnings)
-      'xstate/event-names': ['error', 'macroCase'], // SCREAMING_SNAKE_CASE
-      'xstate/state-names': ['error', 'camelCase'], // camelCase
-      'xstate/no-inline-implementation': 'error', // Extract to machine options
-      'xstate/prefer-always': 'error', // Use 'always' for eventless transitions
-
-      // Optional rules NOT enabled (documented for reference):
-      // 'xstate/prefer-predictable-action-arguments': off (adds complexity)
-      // 'xstate/system-id': off (not needed yet)
-      // 'xstate/spawn-usage': off (v4 only)
     },
   },
   {

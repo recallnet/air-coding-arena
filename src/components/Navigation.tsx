@@ -27,6 +27,7 @@ type NavLink = {
 const navLinks: readonly NavLink[] = [
   { label: 'Dashboard', href: '/' },
   { label: 'Issues', href: '/issues' },
+  { label: 'Admin', href: '/admin/agents' },
 ]
 
 /**

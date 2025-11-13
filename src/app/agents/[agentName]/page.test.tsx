@@ -11,6 +11,8 @@ import AgentPage from './page'
 vi.mock('@/lib/queries', () => ({
   getAttemptsByAgent: vi.fn(),
   getAgentStats: vi.fn(),
+  getAgentScore: vi.fn(),
+  getAgentScoreHistory: vi.fn(),
 }))
 
 // Mock Next.js Link component
@@ -33,12 +35,19 @@ vi.mock('next/navigation', () => ({
 
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock
-import { getAttemptsByAgent, getAgentStats } from '@/lib/queries'
+import {
+  getAttemptsByAgent,
+  getAgentStats,
+  getAgentScore,
+  getAgentScoreHistory,
+} from '@/lib/queries'
 // eslint-disable-next-line import/order -- Must import after mock
 import { notFound } from 'next/navigation'
 
 const mockGetAttemptsByAgent = vi.mocked(getAttemptsByAgent)
 const mockGetAgentStats = vi.mocked(getAgentStats)
+const mockGetAgentScore = vi.mocked(getAgentScore)
+const mockGetAgentScoreHistory = vi.mocked(getAgentScoreHistory)
 const mockNotFound = vi.mocked(notFound)
 
 // Test constants to avoid duplication
@@ -63,6 +72,9 @@ const UI_TEXT_ACTIVE = 'Active'
 describe('AgentPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set default mock return values
+    mockGetAgentScore.mockResolvedValue(null)
+    mockGetAgentScoreHistory.mockResolvedValue([])
   })
 
   describe('when agent has no attempts', () => {

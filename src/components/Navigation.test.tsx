@@ -33,15 +33,18 @@ describe('Navigation', () => {
 
       const dashboardLink = screen.getByRole('link', { name: /^dashboard$/i })
       const issuesLink = screen.getByRole('link', { name: /^issues$/i })
+      const adminLink = screen.getByRole('link', { name: /^admin$/i })
 
       expect(dashboardLink).toBeInTheDocument()
       expect(issuesLink).toBeInTheDocument()
+      expect(adminLink).toBeInTheDocument()
     })
   })
 
   describe('Link Attributes', () => {
     const DASHBOARD_LINK_REGEX = /^dashboard$/i
     const ISSUES_LINK_REGEX = /^issues$/i
+    const ADMIN_LINK_REGEX = /^admin$/i
 
     it('has correct href for Dashboard link', () => {
       vi.mocked(usePathname).mockReturnValue('/')
@@ -62,11 +65,21 @@ describe('Navigation', () => {
       const issuesLink = screen.getByRole('link', { name: ISSUES_LINK_REGEX })
       expect(issuesLink).toHaveAttribute('href', '/issues')
     })
+
+    it('has correct href for Admin link', () => {
+      vi.mocked(usePathname).mockReturnValue('/')
+
+      render(<Navigation />)
+
+      const adminLink = screen.getByRole('link', { name: ADMIN_LINK_REGEX })
+      expect(adminLink).toHaveAttribute('href', '/admin/agents')
+    })
   })
 
   describe('Active Link Styling', () => {
     const DASHBOARD_LINK_REGEX = /^dashboard$/i
     const ISSUES_LINK_REGEX = /^issues$/i
+    const ADMIN_LINK_REGEX = /^admin$/i
     const ACTIVE_CLASS = 'text-foreground'
     const INACTIVE_CLASS = 'text-foreground-secondary'
 
@@ -126,6 +139,22 @@ describe('Navigation', () => {
       // Neither should be highlighted when on /agents path
       expect(dashboardLink.className).toContain(INACTIVE_CLASS)
       expect(issuesLink.className).toContain(INACTIVE_CLASS)
+    })
+
+    it('highlights Admin link when on admin page', () => {
+      vi.mocked(usePathname).mockReturnValue('/admin/agents')
+
+      render(<Navigation />)
+
+      const dashboardLink = screen.getByRole('link', {
+        name: DASHBOARD_LINK_REGEX,
+      })
+      const issuesLink = screen.getByRole('link', { name: ISSUES_LINK_REGEX })
+      const adminLink = screen.getByRole('link', { name: ADMIN_LINK_REGEX })
+
+      expect(dashboardLink.className).toContain(INACTIVE_CLASS)
+      expect(issuesLink.className).toContain(INACTIVE_CLASS)
+      expect(adminLink.className).toContain(ACTIVE_CLASS)
     })
   })
 
