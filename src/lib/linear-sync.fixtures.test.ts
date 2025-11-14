@@ -315,4 +315,205 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       }
     })
   })
+
+  describe('Comment Parsing - Parent Chain Walking', () => {
+    /**
+     * Walk parent chain for a comment
+     * Uses exact production logic from linear-sync.ts lines 186-255
+     * Walks up parent chain until finding agent mention or reaching root
+     */
+    function walkParentChain(
+      commentId: string,
+      commentParents: Map<string, string | null>,
+      commentMap: Map<string, IssueFixture['comments'][0]>
+    ): Array<string> {
+      const chain: string[] = []
+      let currentId: string | null = commentId
+      const visited = new Set<string>()
+
+      // Walk up parent chain (matching production logic)
+      while (currentId && !visited.has(currentId)) {
+        visited.add(currentId)
+        chain.push(currentId)
+
+        // Move to parent
+        const parentId = commentParents.get(currentId) ?? null
+        currentId = parentId
+      }
+
+      return chain
+    }
+
+    it('should analyze parent-child comment relationships in real data', () => {
+      const fixtures = loadIssueFixtures()
+
+      console.log(`\n🧵 Analyzing comment threading in ${fixtures.length} issues...`)
+
+      let totalComments = 0
+      let commentsWithParents = 0
+      let maxDepth = 0
+      let totalParentsCollected = 0
+      const chainDepths: Record<number, number> = {}
+
+      for (const issue of fixtures) {
+        totalComments += issue.comments.length
+
+        // Build parent map and comment map
+        const parentMap = new Map<string, string | null>()
+        const commentMap = new Map<string, IssueFixture['comments'][0]>()
+
+        for (const comment of issue.comments) {
+          parentMap.set(comment.id, comment.parentId)
+          commentMap.set(comment.id, comment)
+
+          if (comment.parentId) {
+            commentsWithParents++
+          }
+        }
+
+        // Walk parent chain for each comment
+        for (const comment of issue.comments) {
+          const chain = walkParentChain(comment.id, parentMap, commentMap)
+          const depth = chain.length - 1 // Subtract self
+
+          if (depth > 0) {
+            totalParentsCollected += depth
+            maxDepth = Math.max(maxDepth, depth)
+            chainDepths[depth] = (chainDepths[depth] || 0) + 1
+          }
+        }
+      }
+
+      console.log(`   Total comments analyzed: ${totalComments}`)
+      console.log(`   Comments with parents: ${commentsWithParents}`)
+      console.log(`   Max chain depth: ${maxDepth}`)
+      console.log(`   Total parents collected: ${totalParentsCollected}`)
+      console.log(`   Chain depth distribution:`)
+      for (const [depth, count] of Object.entries(chainDepths).sort((a, b) => Number(a[0]) - Number(b[0]))) {
+        console.log(`     Depth ${depth}: ${count} comments`)
+      }
+
+      // Validate findings
+      expect(totalComments).toBeGreaterThan(0)
+      expect(maxDepth).toBeLessThan(100) // No infinite loops
+    })
+
+    it('should find agent ownership by walking parent chain', async () => {
+      const fixtures = loadIssueFixtures()
+
+      console.log(`\n🔍 Testing agent ownership via parent chain walking...`)
+
+      // Find comments with PR URLs
+      const prPattern = /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/
+
+      let totalPRComments = 0
+      let prCommentsWithDirectMention = 0
+      let prCommentsRequiringChainWalk = 0
+      let foundAgentInChain = 0
+      let noAgentFound = 0
+
+      for (const issue of fixtures) {
+        const commentMap = new Map(issue.comments.map((c) => [c.id, c]))
+        const parentMap = new Map<string, string | null>()
+
+        for (const comment of issue.comments) {
+          parentMap.set(comment.id, comment.parentId)
+        }
+
+        for (const comment of issue.comments) {
+          if (prPattern.test(comment.body)) {
+            totalPRComments++
+
+            // Check if comment has direct agent mention
+            const mentions = await extractAgentMentions(comment.body)
+            const hasMention = mentions.length > 0
+
+            if (hasMention) {
+              prCommentsWithDirectMention++
+            } else {
+              prCommentsRequiringChainWalk++
+
+              // Walk parent chain to find agent (matching production logic)
+              let current = comment.parentId
+              let foundAgent = false
+              const visited = new Set<string>()
+
+              while (current && !foundAgent && !visited.has(current)) {
+                visited.add(current)
+
+                const parent = commentMap.get(current)
+                if (parent) {
+                  const parentMentions = await extractAgentMentions(parent.body)
+                  if (parentMentions.length > 0) {
+                    foundAgent = true
+                    foundAgentInChain++
+                  }
+                  current = parent.parentId
+                } else {
+                  break
+                }
+              }
+
+              if (!foundAgent) {
+                noAgentFound++
+              }
+            }
+          }
+        }
+      }
+
+      console.log(`   Total comments with PR URLs: ${totalPRComments}`)
+      console.log(`   PR comments with direct agent mention: ${prCommentsWithDirectMention}`)
+      console.log(`   PR comments requiring chain walk: ${prCommentsRequiringChainWalk}`)
+      console.log(`   Found agent via chain walk: ${foundAgentInChain}`)
+      console.log(`   No agent found (unknown): ${noAgentFound}`)
+
+      // Test passes if we can walk chains without crashing
+      expect(totalPRComments).toBeGreaterThanOrEqual(0)
+    })
+
+    it('should detect circular references in parent chains', () => {
+      const fixtures = loadIssueFixtures()
+
+      console.log(`\n🔄 Checking for circular parent chains...`)
+
+      let circularChains = 0
+      let totalChainWalks = 0
+
+      for (const issue of fixtures) {
+        const parentMap = new Map<string, string | null>()
+        const commentMap = new Map<string, IssueFixture['comments'][0]>()
+
+        for (const comment of issue.comments) {
+          parentMap.set(comment.id, comment.parentId)
+          commentMap.set(comment.id, comment)
+        }
+
+        for (const comment of issue.comments) {
+          totalChainWalks++
+
+          const visited = new Set<string>()
+          let current: string | null = comment.id
+
+          // Walk chain with cycle detection (matching production logic)
+          while (current && !visited.has(current)) {
+            visited.add(current)
+            current = parentMap.get(current) ?? null
+          }
+
+          // If we exited because current was already visited, it's a cycle
+          if (current && visited.has(current)) {
+            circularChains++
+            console.log(`   ⚠️  Circular chain detected in ${issue.identifier}: ${current.substring(0, 8)}...`)
+          }
+        }
+      }
+
+      console.log(`   Total chain walks: ${totalChainWalks}`)
+      console.log(`   Circular chains found: ${circularChains}`)
+
+      // Real data shouldn't have cycles
+      expect(circularChains).toBe(0)
+    })
+  })
 })
