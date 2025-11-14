@@ -15,7 +15,10 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { issues, attempts, events } from '@/db/schema'
-import { updateAgentStatusOnPR } from '@/lib/agent-status'
+import {
+  updateAgentStatusOnPR,
+  markIgnoredOnIssueClosed,
+} from '@/lib/agent-status'
 import { syncIssueFromLinear } from '@/lib/linear-sync'
 import { updateRatingsForIssue } from '@/lib/update-ratings'
 import type { LinearWebhookIssue } from '@/types/linear'
@@ -415,10 +418,13 @@ async function updateWinner(issueId: string): Promise<void> {
     const winner = winnerResult[0]
     if (!winner) return
 
-    // 4. Set winner (atomic with lock)
+    // 4. Set winner and mark issue as completed (atomic with lock)
     await tx
       .update(issues)
-      .set({ winnerAttemptId: winner.id })
+      .set({
+        winnerAttemptId: winner.id,
+        status: 'completed',
+      })
       .where(eq(issues.id, issueId))
 
     // 5. Close losing attempts
@@ -429,6 +435,9 @@ async function updateWinner(issueId: string): Promise<void> {
 
     console.log(`Winner set for issue ${issueId}: ${winner.agentName}`)
   })
+
+  // 7. Mark agents who never submitted as ignored
+  await markIgnoredOnIssueClosed(issueId)
 
   // 6. Calculate ratings after transaction (separate error boundary)
   // Rating updates use global db instance, so must be outside transaction.

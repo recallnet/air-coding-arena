@@ -35,6 +35,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/agent-status', () => ({
   updateAgentStatusOnPR: vi.fn(),
+  markIgnoredOnIssueClosed: vi.fn(),
 }))
 
 vi.mock('@/lib/update-ratings', () => ({

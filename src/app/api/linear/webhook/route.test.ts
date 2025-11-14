@@ -51,6 +51,7 @@ const TEST_TIMESTAMP = '2024-01-01T00:00:00Z'
 const TEST_DB_ISSUE_ID = 'db-issue-id'
 const TEST_ATTACHMENT_ID = 'attach-123'
 const TEST_ATTACHMENT_SUBTITLE = 'org/repo #42 • open'
+const TEST_BRANCH_WITH_AGENT = 'eng-123--feature-x--agent-cursor'
 
 /**
  * Creates a mock Next.js request with Linear webhook signature.
@@ -500,7 +501,7 @@ describe('/api/linear/webhook', () => {
           title: 'Add feature X (agent-cursor)',
           subtitle: TEST_ATTACHMENT_SUBTITLE,
           metadata: {
-            branch: 'eng-123--feature-x--agent-cursor',
+            branch: TEST_BRANCH_WITH_AGENT,
           },
           issue: {
             id: TEST_ISSUE_ID,
@@ -767,7 +768,7 @@ describe('/api/linear/webhook', () => {
           title: 'Add feature X',
           subtitle: 'org/repo #42 • merged',
           metadata: {
-            branch: 'eng-123--feature-x--agent-cursor',
+            branch: TEST_BRANCH_WITH_AGENT,
           },
           issue: { id: TEST_ISSUE_ID },
         },
@@ -1241,6 +1242,201 @@ function createValidSignature(payload: unknown): string {
   const hmac = crypto.createHmac('sha256', secret)
   return hmac.update(body).digest('hex')
 }
+
+describe('updateWinner - issue completion and agent status', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env['LINEAR_WEBHOOK_SECRET'] = TEST_SECRET
+    process.env['ARENA_LABEL'] = ARENA_LABEL
+
+    // Mock db.select for time-window deduplication check (default: no recent events)
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as never)
+  })
+
+  it('should mark issue as completed when winner is set', async () => {
+    const payload = {
+      type: 'Attachment',
+      action: 'update',
+      data: {
+        id: TEST_ATTACHMENT_ID,
+        url: TEST_PR_URL,
+        title: 'Add feature X',
+        subtitle: 'org/repo #42 • merged',
+        metadata: {
+          branch: TEST_BRANCH_WITH_AGENT,
+        },
+        issue: { id: TEST_ISSUE_ID },
+      },
+      updatedAt: '2024-01-01T01:00:00Z',
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock db.select to handle time-window check and issue lookup
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (return issue)
+            return [{ id: 'uuid', linearKey: 'TEST-123' }]
+          }),
+        }),
+      }),
+    } as never)
+
+    // Mock for attempts insert
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+      }),
+    } as never)
+
+    // Mock transaction for updateWinner
+    const mockTx = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            for: vi.fn().mockReturnValue({
+              limit: vi
+                .fn()
+                .mockResolvedValue([{ id: 'uuid', winnerAttemptId: null }]),
+            }),
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi
+                .fn()
+                .mockResolvedValue([{ id: 'winner-id', agentName: 'cursor' }]),
+            }),
+          }),
+        }),
+      }),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    }
+
+    vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return callback(mockTx as any)
+    })
+
+    const req = createMockRequest(payload)
+    await POST(req)
+
+    expect(db.transaction).toHaveBeenCalled()
+
+    // Verify issue status was set to 'completed' in the update call
+    expect(mockTx.update).toHaveBeenCalled()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const updateCall = mockTx.update().set
+    expect(updateCall).toHaveBeenCalledWith(
+      expect.objectContaining({
+        winnerAttemptId: 'winner-id',
+        status: 'completed',
+      })
+    )
+  })
+
+  it('should mark non-submitting agents as ignored when winner is set', async () => {
+    const payload = {
+      type: 'Attachment',
+      action: 'update',
+      data: {
+        id: 'attach-789',
+        url: 'https://github.com/org/repo/pull/789',
+        title: 'Fix another bug',
+        subtitle: 'org/repo #789 • merged',
+        metadata: {
+          branch: 'eng-456--fix--agent-engine',
+        },
+        issue: { id: 'issue-456' },
+      },
+      updatedAt: '2024-01-01T02:00:00Z',
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock db.select to handle time-window check and issue lookup
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (return issue)
+            return [{ id: 'uuid2', linearKey: 'TEST-456' }]
+          }),
+        }),
+      }),
+    } as never)
+
+    // Mock for attempts insert
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+      }),
+    } as never)
+
+    // Mock transaction for updateWinner
+    const mockTx = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            for: vi.fn().mockReturnValue({
+              limit: vi
+                .fn()
+                .mockResolvedValue([{ id: 'uuid2', winnerAttemptId: null }]),
+            }),
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi
+                .fn()
+                .mockResolvedValue([
+                  { id: 'winner-id-2', agentName: 'engine' },
+                ]),
+            }),
+          }),
+        }),
+      }),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    }
+
+    vi.mocked(db.transaction).mockImplementation(async (callback) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return callback(mockTx as any)
+    })
+
+    // Mock markIgnoredOnIssueClosed
+    const { markIgnoredOnIssueClosed } = await import('@/lib/agent-status')
+    vi.mocked(markIgnoredOnIssueClosed).mockResolvedValue(undefined)
+
+    const req = createMockRequest(payload)
+    await POST(req)
+
+    // Verify markIgnoredOnIssueClosed was called
+    expect(markIgnoredOnIssueClosed).toHaveBeenCalledWith('uuid2')
+  })
+})
 
 describe('updateWinner - race condition protection', () => {
   it('should handle concurrent winner selection with transaction', async () => {
