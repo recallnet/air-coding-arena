@@ -77,6 +77,10 @@ GITHUB_WEBHOOK_SECRET=<your-webhook-secret>
 
 # For client-side (optional, for UI)
 NEXT_PUBLIC_GITHUB_APP_ID=<your-app-id>
+
+# GitHub App name for install URL (defaults to 'air-coding' for production)
+# Use 'air-coding-dev' for development environment
+NEXT_PUBLIC_GITHUB_APP_NAME=air-coding-dev
 ```
 
 **Important:** The private key must have literal `\n` characters for newlines, not actual newlines.

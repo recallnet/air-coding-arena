@@ -24,6 +24,7 @@ import {
   getAgentScoreHistory,
   getIssueParticipation,
   getAgentAttempts,
+  getGitHubAppInstallations,
 } from './queries'
 
 // Mock the db client before importing queries
@@ -42,6 +43,7 @@ const MOCK_STATUS_OPEN = 'open'
 const MOCK_STATUS_IN_PROGRESS = 'In Progress'
 const MOCK_DATE_1 = new Date('2024-01-01')
 const MOCK_DATE_2 = new Date('2024-01-02')
+const MOCK_DB_ERROR = 'Database connection failed'
 const MOCK_DATE_3 = new Date('2024-01-03')
 const MOCK_PR_URL = 'https://github.com/pr/1'
 const MOCK_PR_URL_2 = 'https://github.com/pr/2'
@@ -135,11 +137,10 @@ describe('getAgentStats', () => {
 
   describe(DB_QUERY_FAILS_DESCRIPTION, () => {
     it(PROPAGATE_ERROR_MESSAGE, async () => {
-      const errorMessage = 'Database connection failed'
-      const error = new Error(errorMessage)
+      const error = new Error(MOCK_DB_ERROR)
       mockDb.execute.mockRejectedValue(error)
 
-      await expect(getAgentStats()).rejects.toThrow(errorMessage)
+      await expect(getAgentStats()).rejects.toThrow(MOCK_DB_ERROR)
     })
   })
 })
@@ -1348,6 +1349,32 @@ describe('getIssuesWithAgents', () => {
       expect(result[0]?.linearKey).toBe('ISSUE-2')
       expect(result[1]?.linearKey).toBe('ISSUE-1')
     })
+
+    it('should handle arena_ready_labeled_at as string timestamp', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue with string date',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: '2024-01-01T00:00:00Z', // String instead of Date
+          last_activity_at: MOCK_DATE_1,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result[0]?.arenaReadyLabeledAt).toBeInstanceOf(Date)
+      expect(result[0]?.arenaReadyLabeledAt?.toISOString()).toBe(
+        '2024-01-01T00:00:00.000Z'
+      )
+    })
   })
 
   describe('when no issues exist', () => {
@@ -1782,6 +1809,81 @@ describe('agent rating queries', () => {
       const result = await getAgentScoreHistory('nonexistent')
 
       expect(result).toEqual([])
+    })
+  })
+})
+
+describe('getGitHubAppInstallations', () => {
+  beforeEach(() => {
+    mockReset(mockDb)
+  })
+
+  describe('when installations exist', () => {
+    it('should fetch and return installations ordered by installed date', async () => {
+      const mockInstallations = [
+        {
+          id: 'install-1',
+          installationId: '12345',
+          accountId: '67890',
+          accountLogin: 'test-org',
+          accountType: 'Organization',
+          isActive: true,
+          installedAt: MOCK_DATE_2,
+          suspendedAt: null,
+          createdAt: MOCK_DATE_1,
+          updatedAt: MOCK_DATE_2,
+        },
+        {
+          id: 'install-2',
+          installationId: '54321',
+          accountId: '09876',
+          accountLogin: 'another-org',
+          accountType: 'Organization',
+          isActive: false,
+          installedAt: MOCK_DATE_1,
+          suspendedAt: MOCK_DATE_3,
+          createdAt: MOCK_DATE_1,
+          updatedAt: MOCK_DATE_3,
+        },
+      ]
+
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue(mockInstallations),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getGitHubAppInstallations()
+
+      expect(result).toEqual(mockInstallations)
+      expect(mockDb.select).toHaveBeenCalled()
+      expect(mockSelect.orderBy).toHaveBeenCalled()
+    })
+
+    it(EMPTY_ARRAY_MESSAGE, async () => {
+      const mockSelect = {
+        from: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue([]),
+      }
+
+      mockDb.select.mockReturnValue(mockSelect as never)
+
+      const result = await getGitHubAppInstallations()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe(DB_QUERY_FAILS_DESCRIPTION, () => {
+    it(PROPAGATE_ERROR_MESSAGE, async () => {
+      const mockError = new Error(MOCK_DB_ERROR)
+
+      mockDb.select.mockImplementation(() => {
+        throw mockError
+      })
+
+      await expect(getGitHubAppInstallations()).rejects.toThrow(MOCK_DB_ERROR)
     })
   })
 })

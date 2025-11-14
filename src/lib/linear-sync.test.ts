@@ -1096,4 +1096,128 @@ describe('syncIssueFromLinear', () => {
       })
     )
   })
+
+  it('should handle agent dispatch error gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const mockComments = {
+      nodes: [],
+      pageInfo: { hasNextPage: false },
+    }
+
+    const mockIssue = createMockIssue({
+      comments: vi.fn().mockResolvedValue(mockComments),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
+    const mockOrderBy = vi.fn().mockResolvedValue([])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
+    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    // Mock agent-dispatch to throw error
+    const { dispatchMissingAgents } = await import('./agent-dispatch')
+    vi.mocked(dispatchMissingAgents).mockRejectedValue(
+      new Error('Dispatch failed')
+    )
+
+    // Should not throw, error should be caught and logged
+    await syncIssueFromLinear('linear-issue-id')
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Failed to dispatch missing agents:',
+      expect.any(Error)
+    )
+
+    consoleSpy.mockRestore()
+  })
+
+  it('should detect cycle in comment parent chain', async () => {
+    // Create comments with circular reference
+    const mockComments = {
+      nodes: [
+        {
+          id: 'comment-1',
+          body: 'https://github.com/org/repo/pull/999',
+          createdAt: new Date('2024-01-01T00:00:00Z'),
+          parent: Promise.resolve({ id: 'comment-2' }), // Points to comment-2
+        },
+        {
+          id: 'comment-2',
+          body: 'Working on it',
+          createdAt: new Date('2024-01-02T00:00:00Z'),
+          parent: Promise.resolve({ id: 'comment-1' }), // Circular: points back to comment-1
+        },
+      ],
+      pageInfo: { hasNextPage: false },
+    }
+
+    const mockIssue = createMockIssue({
+      comments: vi.fn().mockResolvedValue(mockComments),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
+    const mockOrderBy = vi
+      .fn()
+      .mockResolvedValue([
+        { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
+    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    const mockValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
+
+    const mockUpdateSet = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue(mockUpdateSet)
+    const mockUpdate = vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: mockUpdateWhere }),
+    })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-id')
+
+    // Should create attempt with unknown agent (cycle detected, no agent found)
+    expect(mockInsert).toHaveBeenCalled()
+  })
 })

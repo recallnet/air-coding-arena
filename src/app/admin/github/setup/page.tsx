@@ -1,7 +1,11 @@
-'use client'
+/**
+ * GitHub App setup page
+ * Server Component that displays GitHub App installation status.
+ *
+ * @packageDocumentation
+ */
 
-import { useSearchParams } from 'next/navigation'
-
+import { GitHubSetupMessages } from '@/components/GitHubSetupMessages'
 import {
   Card,
   CardContent,
@@ -9,20 +13,102 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/Card'
+import { getGitHubAppInstallations } from '@/lib/queries'
+import type { GitHubInstallation } from '@/lib/queries'
+
+// Force dynamic rendering - admin pages should always show fresh data
+export const dynamic = 'force-dynamic'
 
 /**
- * GitHub App setup page
+ * Formats a date to a readable string.
  *
- * @returns GitHub setup page component
+ * @param date - Date to format
+ * @returns Formatted date string
  */
-export default function GitHubSetupPage() {
-  const searchParams = useSearchParams()
-  const success = searchParams?.get('success')
-  const error = searchParams?.get('error')
-  const suspended = searchParams?.get('suspended')
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
 
-  // Use env var for GitHub App name, fallback to air-coding-dev
-  const appName = process.env['NEXT_PUBLIC_GITHUB_APP_NAME'] ?? 'air-coding-dev'
+/**
+ * Installation row component for displaying a single installation.
+ *
+ * @param props - Component props
+ * @param props.installation - GitHub installation data
+ * @returns Installation row
+ */
+function InstallationRow({
+  installation,
+}: {
+  installation: GitHubInstallation
+}) {
+  const isSuspended = !installation.isActive
+
+  return (
+    <div
+      className={`flex items-center justify-between rounded-geist border p-4 ${
+        isSuspended
+          ? 'border-yellow-300 bg-yellow-50'
+          : 'border-border bg-background'
+      }`}
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="font-medium text-foreground">
+              {installation.accountLogin}
+            </div>
+            <div className="text-sm text-foreground-secondary">
+              {installation.accountType}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-6">
+        <div className="text-right">
+          <div className="text-sm text-foreground-secondary">Installed</div>
+          <div className="text-sm text-foreground">
+            {formatDate(installation.installedAt)}
+          </div>
+        </div>
+
+        <div className="min-w-[100px] text-right">
+          {isSuspended ? (
+            <div className="flex flex-col items-end">
+              <span className="inline-block rounded-full bg-yellow-600 px-3 py-1 text-xs font-medium text-white">
+                Suspended
+              </span>
+              {installation.suspendedAt ? (
+                <span className="mt-1 text-xs text-foreground-secondary">
+                  {formatDate(installation.suspendedAt)}
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <span className="inline-block rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white">
+              Active
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * GitHub App setup page component.
+ * Displays installation instructions and current installation status.
+ *
+ * @returns GitHub setup page
+ */
+export default async function GitHubSetupPage(): Promise<React.JSX.Element> {
+  const installations = await getGitHubAppInstallations()
+
+  // Use env var for GitHub App name, fallback to production app (air-coding)
+  const appName = process.env['NEXT_PUBLIC_GITHUB_APP_NAME'] ?? 'air-coding'
   const installUrl = `https://github.com/apps/${appName}`
 
   return (
@@ -36,24 +122,7 @@ export default function GitHubSetupPage() {
         </p>
       </div>
 
-      {success ? (
-        <div className="mb-6 rounded-geist border border-green-600 bg-green-50 px-4 py-3 text-sm text-green-900">
-          Successfully connected to GitHub! Your organization can now receive
-          webhooks and the app can access repositories.
-        </div>
-      ) : null}
-
-      {suspended ? (
-        <div className="mb-6 rounded-geist border border-yellow-600 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
-          GitHub App installation suspended. Please reinstall to restore access.
-        </div>
-      ) : null}
-
-      {error ? (
-        <div className="mb-6 rounded-geist border border-red-600 bg-red-50 px-4 py-3 text-sm text-red-900">
-          Error: {decodeURIComponent(error)}
-        </div>
-      ) : null}
+      <GitHubSetupMessages />
 
       <Card className="mb-6">
         <CardHeader>
@@ -94,10 +163,20 @@ export default function GitHubSetupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-foreground-secondary">
-            {/* TODO: Fetch and display current installations from database */}
-            <p>No installations configured yet.</p>
-          </div>
+          {installations.length === 0 ? (
+            <div className="text-foreground-secondary">
+              <p>No installations configured yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {installations.map((installation) => (
+                <InstallationRow
+                  key={installation.id}
+                  installation={installation}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

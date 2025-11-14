@@ -14,6 +14,7 @@ import {
   agentScores,
   agentScoreHistory,
   agents,
+  githubAppInstallations,
 } from '@/db/schema'
 import type {
   AgentStats,
@@ -1047,4 +1048,40 @@ export async function getAgentAttempts(
       and(eq(attempts.issueId, issueId), eq(attempts.agentName, agentName))
     )
     .orderBy(desc(attempts.openedAt))
+}
+
+/**
+ * GitHub App installation from database.
+ */
+export type GitHubInstallation = {
+  id: string
+  installationId: string
+  accountLogin: string
+  accountType: string
+  isActive: boolean
+  installedAt: Date
+  suspendedAt: Date | null
+}
+
+/**
+ * Fetches all GitHub App installations.
+ * Returns installations ordered by installation date (most recent first).
+ *
+ * @returns Promise resolving to array of GitHub App installations
+ *
+ * @example
+ * ```ts
+ * const installations = await getGitHubAppInstallations()
+ * // [{ accountLogin: 'org-name', accountType: 'Organization', isActive: true, ... }, ...]
+ * ```
+ */
+export async function getGitHubAppInstallations(): Promise<
+  GitHubInstallation[]
+> {
+  const result = await db
+    .select()
+    .from(githubAppInstallations)
+    .orderBy(desc(githubAppInstallations.installedAt))
+
+  return result
 }

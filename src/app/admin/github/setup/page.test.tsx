@@ -4,6 +4,11 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 
 import GitHubSetupPage from './page'
 
+// Mock the queries module
+vi.mock('@/lib/queries', () => ({
+  getGitHubAppInstallations: vi.fn(),
+}))
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(),
@@ -36,16 +41,23 @@ function mockSearchParams(
   }
 }
 
+// Test constants
+const MOCK_DATE = '2024-01-01'
+
 describe('GitHub Setup Page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   test('should render installation button', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
     const { useSearchParams } = await import('next/navigation')
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue([])
     vi.mocked(useSearchParams).mockReturnValue(mockSearchParams({}))
 
-    render(<GitHubSetupPage />)
+    const Page = await GitHubSetupPage()
+    render(Page)
 
     expect(screen.getByText(/Connect GitHub Organization/i)).toBeInTheDocument()
     expect(screen.getByRole('link')).toHaveAttribute(
@@ -55,23 +67,31 @@ describe('GitHub Setup Page', () => {
   })
 
   test('should display success message from URL param', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
     const { useSearchParams } = await import('next/navigation')
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue([])
     vi.mocked(useSearchParams).mockReturnValue(
       mockSearchParams({ success: 'true' })
     )
 
-    render(<GitHubSetupPage />)
+    const Page = await GitHubSetupPage()
+    render(Page)
 
     expect(screen.getByText(/Successfully connected/i)).toBeInTheDocument()
   })
 
   test('should display error message from URL param', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
     const { useSearchParams } = await import('next/navigation')
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue([])
     vi.mocked(useSearchParams).mockReturnValue(
       mockSearchParams({ error: 'API%20connection%20failed' })
     )
 
-    render(<GitHubSetupPage />)
+    const Page = await GitHubSetupPage()
+    render(Page)
 
     expect(
       screen.getByText(/Error: API connection failed/i)
@@ -79,15 +99,93 @@ describe('GitHub Setup Page', () => {
   })
 
   test('should display suspended message from URL param', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
     const { useSearchParams } = await import('next/navigation')
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue([])
     vi.mocked(useSearchParams).mockReturnValue(
       mockSearchParams({ suspended: 'true' })
     )
 
-    render(<GitHubSetupPage />)
+    const Page = await GitHubSetupPage()
+    render(Page)
 
     expect(
       screen.getByText(/GitHub App installation suspended/i)
     ).toBeInTheDocument()
+  })
+
+  test('should display installations when they exist', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
+    const { useSearchParams } = await import('next/navigation')
+
+    const mockInstallations = [
+      {
+        id: 'install-1',
+        installationId: '12345',
+        accountId: '67890',
+        accountLogin: 'test-org',
+        accountType: 'Organization',
+        isActive: true,
+        installedAt: new Date(MOCK_DATE),
+        suspendedAt: null,
+        createdAt: new Date(MOCK_DATE),
+        updatedAt: new Date(MOCK_DATE),
+      },
+    ]
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue(mockInstallations)
+    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams({}))
+
+    const Page = await GitHubSetupPage()
+    render(Page)
+
+    expect(screen.getByText('test-org')).toBeInTheDocument()
+    expect(screen.getByText('Organization')).toBeInTheDocument()
+    expect(screen.getByText('Active')).toBeInTheDocument()
+  })
+
+  test('should display empty state when no installations', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
+    const { useSearchParams } = await import('next/navigation')
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue([])
+    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams({}))
+
+    const Page = await GitHubSetupPage()
+    render(Page)
+
+    expect(
+      screen.getByText('No installations configured yet.')
+    ).toBeInTheDocument()
+  })
+
+  test('should display suspended installations with warning styling', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
+    const { useSearchParams } = await import('next/navigation')
+
+    const mockInstallations = [
+      {
+        id: 'install-1',
+        installationId: '12345',
+        accountId: '67890',
+        accountLogin: 'suspended-org',
+        accountType: 'Organization',
+        isActive: false,
+        installedAt: new Date(MOCK_DATE),
+        suspendedAt: new Date('2024-01-05'),
+        createdAt: new Date(MOCK_DATE),
+        updatedAt: new Date('2024-01-05'),
+      },
+    ]
+
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue(mockInstallations)
+    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams({}))
+
+    const Page = await GitHubSetupPage()
+    render(Page)
+
+    expect(screen.getByText('suspended-org')).toBeInTheDocument()
+    expect(screen.getByText('Suspended')).toBeInTheDocument()
   })
 })

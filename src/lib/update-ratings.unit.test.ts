@@ -1188,4 +1188,97 @@ describe('updateRatingsForIssue - Unit Tests', () => {
       expect(rankingCall[1]).toContain(MOCK_AGENT_CYRUS)
     }
   })
+
+  it('should handle no winner, only closed PRs for completedAt', async () => {
+    const mockIssue = createMockIssue()
+    const baseTime = new Date(MOCK_BASE_TIME)
+    const closedTime1 = new Date(MOCK_CLOSED_TIME)
+    const closedTime2 = new Date(MOCK_CLOSED_TIME_2)
+
+    const mockAttempts = [
+      {
+        id: 'attempt-1',
+        issueId: MOCK_ISSUE_ID,
+        agentName: MOCK_AGENT_ENGINE,
+        repo: MOCK_REPO,
+        prNumber: 1,
+        prUrl: MOCK_PR_URL_1,
+        branch: MOCK_FIX_TEST_BRANCH,
+        openedAt: baseTime,
+        mergedAt: null,
+        closedAt: closedTime1,
+        status: MOCK_STATUS_CLOSED,
+        commitCount: 3,
+        lastCommitSha: MOCK_COMMIT_SHA_ABC123,
+        ciStatus: null,
+        ciLastCheckedAt: null,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
+      },
+      {
+        id: 'attempt-2',
+        issueId: MOCK_ISSUE_ID,
+        agentName: MOCK_AGENT_CYRUS,
+        repo: MOCK_REPO,
+        prNumber: 2,
+        prUrl: MOCK_PR_URL_2,
+        branch: MOCK_FIX_TEST_2_BRANCH,
+        openedAt: baseTime,
+        mergedAt: null,
+        closedAt: closedTime2,
+        status: MOCK_STATUS_CLOSED,
+        commitCount: 4,
+        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
+        ciStatus: null,
+        ciLastCheckedAt: null,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
+      },
+    ]
+
+    const mockCurrentScores = [
+      createMockScore(MOCK_AGENT_ENGINE),
+      createMockScore(MOCK_AGENT_CYRUS),
+    ]
+
+    const mockIssueSelect = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue([mockIssue]),
+    }
+
+    const mockAttemptsSelect = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(mockAttempts),
+    }
+
+    const mockScoresSelect = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(mockCurrentScores),
+    }
+
+    const mockInsert = {
+      values: vi.fn().mockReturnThis(),
+      onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+    }
+
+    mockDb.select
+      .mockReturnValueOnce(mockIssueSelect as never)
+      .mockReturnValueOnce(mockAttemptsSelect as never)
+      .mockReturnValueOnce(mockScoresSelect as never)
+
+    mockDb.insert.mockReturnValue(mockInsert as never)
+
+    await updateRatingsForIssue(MOCK_ISSUE_ID)
+
+    // Both agents should be updated
+    expect(mockDb.insert).toHaveBeenCalled()
+
+    // Verify completedAt uses latest closedAt (closedTime2)
+    expect(mockInsert.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        completedAt: closedTime2,
+      })
+    )
+  })
 })

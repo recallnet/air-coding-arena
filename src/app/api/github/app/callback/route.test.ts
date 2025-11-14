@@ -150,4 +150,44 @@ describe('/api/github/app/callback', () => {
       'http://localhost:3000/admin/github/setup?suspended=true'
     )
   })
+
+  test('should mark as suspended when suspended_at is present but action is not install/update', async () => {
+    // Set up database mock
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue([
+          {
+            id: 'test-id',
+            installationId: '12345',
+            accountLogin: 'recallnet',
+          },
+        ]),
+      }),
+    } as never)
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 12345,
+        account: {
+          id: 67890,
+          login: 'recallnet',
+          type: 'Organization',
+        },
+        suspended_at: '2024-01-01T00:00:00Z',
+      }),
+    })
+    global.fetch = mockFetch
+
+    const request = createMockRequest(
+      'http://localhost:3000/api/github/app/callback?installation_id=12345&setup_action=other'
+    )
+
+    const response = await GET(request)
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get('Location')).toBe(
+      'http://localhost:3000/admin/github/setup?suspended=true'
+    )
+  })
 })

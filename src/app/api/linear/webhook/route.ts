@@ -190,16 +190,19 @@ async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
   const arenaLabel = process.env['ARENA_LABEL'] ?? 'arena:ready'
   const hasArenaLabel = issue.labels?.some((label) => label.name === arenaLabel)
 
-  // If label was removed, mark as deleted
+  // If label was removed (on update), mark as deleted
+  // On create without label, just ignore it
   if (!hasArenaLabel) {
-    await db
-      .update(issues)
-      .set({ status: 'deleted' })
-      .where(eq(issues.linearId, issue.id))
+    if (payload.action === 'update') {
+      await db
+        .update(issues)
+        .set({ status: 'deleted' })
+        .where(eq(issues.linearId, issue.id))
 
-    console.log(
-      `Issue ${issue.identifier} arena label removed, marked as deleted`
-    )
+      console.log(
+        `Issue ${issue.identifier} arena label removed, marked as deleted`
+      )
+    }
     return
   }
 
