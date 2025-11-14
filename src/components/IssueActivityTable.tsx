@@ -145,7 +145,7 @@ export function IssueActivityTable({
  * - 'open' → ['Backlog', 'Todo']
  * - 'in_progress' → ['In Progress', 'In Review']
  * - 'completed' → ['Done']
- * - 'cancelled' → ['Canceled']
+ * - 'cancelled' → ['Canceled', 'deleted']
  *
  * @param issues - Array of issues to filter
  * @param filter - Filter to apply
@@ -167,7 +167,7 @@ function filterIssues(
       case 'completed':
         return status === 'done'
       case 'cancelled':
-        return status === 'canceled'
+        return status === 'canceled' || status === 'deleted'
       default:
         return true
     }
@@ -196,6 +196,7 @@ function getStatusBadgeVariant(
     case 'Backlog':
       return 'outline'
     case 'Canceled':
+    case 'deleted':
       return 'error'
     default:
       return 'outline'
@@ -233,7 +234,11 @@ function formatRelativeTime(date: Date): string {
 function isIssueOpen(status: string | null): boolean {
   if (!status) return true
   const lowerStatus = status.toLowerCase()
-  return lowerStatus !== 'done' && lowerStatus !== 'canceled'
+  return (
+    lowerStatus !== 'done' &&
+    lowerStatus !== 'canceled' &&
+    lowerStatus !== 'deleted'
+  )
 }
 
 /**
