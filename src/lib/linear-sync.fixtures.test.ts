@@ -7,7 +7,55 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { AgentConfig } from './agent-config'
+import { getAgentConfigs } from './agent-config'
+
+// Set up mock data with real agent configs
+const mockAgentConfigs: AgentConfig[] = [
+  {
+    name: 'cursor',
+    handle: '@Cursor',
+    displayName: 'Cursor',
+    linearUserId: 'mock-user-id',
+  },
+  {
+    name: 'engine',
+    handle: '@Engine',
+    displayName: 'Engine',
+    linearUserId: 'mock-user-id',
+  },
+  {
+    name: 'cyrus',
+    handle: '@Cyrus',
+    displayName: 'Cyrus',
+    linearUserId: 'mock-user-id',
+  },
+  {
+    name: 'claude',
+    handle: '@Claude',
+    displayName: 'Claude',
+    linearUserId: 'mock-user-id',
+  },
+  {
+    name: 'factory',
+    handle: '@Factory',
+    displayName: 'Factory',
+    linearUserId: 'mock-user-id',
+  },
+  {
+    name: 'githubcopilot',
+    handle: '@GitHubCopilot',
+    displayName: 'GitHubCopilot',
+    linearUserId: 'mock-user-id',
+  },
+]
+
+// Mock agent-config to avoid database calls
+vi.mock('./agent-config', () => ({
+  getAgentConfigs: vi.fn(),
+}))
 
 /**
  * Issue fixture structure from capture script
@@ -45,27 +93,38 @@ function loadIssueFixtures(): IssueFixture[] {
 
 /**
  * Extract agent mentions from comment body
- * Matches patterns like @cursor, @engine, @[agent](uuid)
+ * Uses exact production logic from linear-sync.ts lines 302-308
+ * Matches both @displayName and @[displayName] formats using .includes()
  */
-function extractAgentMentions(body: string): string[] {
-  const agentNames = ['cursor', 'engine', 'cyrus', 'claude', 'factory', 'githubcopilot']
+async function extractAgentMentions(body: string): Promise<string[]> {
+  const agentConfigs = await getAgentConfigs()
   const mentions: string[] = []
 
-  for (const agent of agentNames) {
-    // Match @agent or @[agent](uuid)
-    const pattern = new RegExp(`@(?:\\[)?(${agent})(?:\\]\\([^)]+\\))?`, 'gi')
-    const matches = body.match(pattern)
-    if (matches) {
-      mentions.push(agent.toLowerCase())
+  for (const agent of agentConfigs) {
+    const displayName = agent.displayName.toLowerCase()
+    const lowerBody = body.toLowerCase()
+
+    // Match both @displayName and @[displayName] formats
+    if (
+      lowerBody.includes(`@${displayName}`) ||
+      lowerBody.includes(`@[${displayName}]`)
+    ) {
+      // Use the actual agent name (not displayName) for results
+      mentions.push(agent.name)
     }
   }
 
-  return [...new Set(mentions)] // Deduplicate
+  return mentions
 }
 
 describe('Linear Sync - Fixture-Based Tests', () => {
+  beforeEach(() => {
+    // Configure mock to return agent configs
+    vi.mocked(getAgentConfigs).mockResolvedValue(mockAgentConfigs)
+  })
+
   describe('Comment Parsing - Agent Mentions', () => {
-    it('should detect agent mentions in all real comments', () => {
+    it('should detect agent mentions in all real comments', async () => {
       const fixtures = loadIssueFixtures()
 
       console.log(`\n🔍 Testing agent mention detection across ${fixtures.length} issues...`)
@@ -78,7 +137,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         totalComments += issue.comments.length
 
         for (const comment of issue.comments) {
-          const mentions = extractAgentMentions(comment.body)
+          const mentions = await extractAgentMentions(comment.body)
 
           if (mentions.length > 0) {
             commentsWithMentions++
