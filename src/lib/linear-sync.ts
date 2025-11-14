@@ -402,7 +402,7 @@ async function processPRURLs(
         })
         .onConflictDoUpdate({
           target: [attempts.issueId, attempts.agentName, attempts.prNumber],
-          set: { prUrl, status: 'open' },
+          set: { prUrl }, // Preserve status - GitHub webhook is source of truth
         })
 
       if (agentName !== 'unknown') {
