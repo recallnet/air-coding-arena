@@ -31,10 +31,11 @@ Visit: https://github.com/organizations/YOUR_ORG/settings/apps/new
 https://your-domain.com/api/github/app/callback
 ```
 
-**Setup URL (optional):**
+**Setup URL:**
 ```
-https://your-domain.com/admin/github/setup
+https://your-domain.com/api/github/app/callback
 ```
+> **Important:** The Setup URL must point to the callback endpoint, not the admin page. GitHub redirects here after installation with `installation_id` and `setup_action` parameters. The callback endpoint then processes the installation and redirects to the admin page.
 
 **Webhook:**
 - Active

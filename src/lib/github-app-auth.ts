@@ -16,17 +16,35 @@ import jwt from 'jsonwebtoken'
 export function generateAppJWT(): string {
   const appId = process.env['GITHUB_APP_ID']
   const privateKey = process.env['GITHUB_APP_PRIVATE_KEY']
+  const privateKeyBase64 = process.env['GITHUB_APP_PRIVATE_KEY_BASE64']
 
   if (!appId) {
     throw new Error('GITHUB_APP_ID not configured')
   }
 
-  if (!privateKey) {
+  if (!privateKey && !privateKeyBase64) {
     throw new Error('GITHUB_APP_PRIVATE_KEY not configured')
   }
 
-  // Replace literal \n with actual newlines (env vars store it escaped)
-  const formattedKey = privateKey.replace(/\\n/g, '\n')
+  // Handle base64-encoded key (for Vercel deployment)
+  let formattedKey: string
+  if (privateKeyBase64) {
+    formattedKey = Buffer.from(privateKeyBase64, 'base64').toString('utf-8')
+  } else if (privateKey) {
+    // Remove surrounding quotes if present (common mistake in env vars)
+    let cleanedKey = privateKey.trim()
+    if (
+      (cleanedKey.startsWith('"') && cleanedKey.endsWith('"')) ||
+      (cleanedKey.startsWith("'") && cleanedKey.endsWith("'"))
+    ) {
+      cleanedKey = cleanedKey.slice(1, -1)
+    }
+    // Replace literal \n with actual newlines (env vars store it escaped)
+    formattedKey = cleanedKey.replace(/\\n/g, '\n')
+  } else {
+    // This should never happen due to validation above
+    throw new Error('GITHUB_APP_PRIVATE_KEY not configured')
+  }
 
   const now = Math.floor(Date.now() / 1000)
 

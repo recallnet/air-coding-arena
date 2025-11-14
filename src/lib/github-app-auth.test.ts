@@ -62,6 +62,63 @@ describe('GitHub App Auth', () => {
       'GITHUB_APP_PRIVATE_KEY not configured'
     )
   })
+
+  test('generateAppJWT should handle base64-encoded private key', () => {
+    // Base64 encode the test private key
+    const base64Key = Buffer.from(TEST_PRIVATE_KEY).toString('base64')
+    process.env['GITHUB_APP_PRIVATE_KEY_BASE64'] = base64Key
+    delete process.env['GITHUB_APP_PRIVATE_KEY']
+
+    const token = generateAppJWT()
+
+    expect(token).toBeDefined()
+    expect(typeof token).toBe('string')
+
+    // Verify JWT structure
+    const decoded = jwt.decode(token, { complete: true })
+    expect(decoded).toBeDefined()
+    expect(decoded?.header.alg).toBe('RS256')
+  })
+
+  test('generateAppJWT should strip double quotes from private key', () => {
+    // Add quotes around the key (common mistake in env vars)
+    process.env['GITHUB_APP_PRIVATE_KEY'] = `"${TEST_PRIVATE_KEY}"`
+
+    const token = generateAppJWT()
+
+    expect(token).toBeDefined()
+    expect(typeof token).toBe('string')
+
+    // Verify JWT structure
+    const decoded = jwt.decode(token, { complete: true })
+    expect(decoded).toBeDefined()
+    expect(decoded?.header.alg).toBe('RS256')
+  })
+
+  test('generateAppJWT should strip single quotes from private key', () => {
+    // Add single quotes around the key
+    process.env['GITHUB_APP_PRIVATE_KEY'] = `'${TEST_PRIVATE_KEY}'`
+
+    const token = generateAppJWT()
+
+    expect(token).toBeDefined()
+    expect(typeof token).toBe('string')
+
+    // Verify JWT structure
+    const decoded = jwt.decode(token, { complete: true })
+    expect(decoded).toBeDefined()
+    expect(decoded?.header.alg).toBe('RS256')
+  })
+
+  test('generateAppJWT should throw if neither key format is available (defensive check)', () => {
+    // Delete both to trigger the else branch (though this should be caught by earlier validation)
+    delete process.env['GITHUB_APP_PRIVATE_KEY']
+    delete process.env['GITHUB_APP_PRIVATE_KEY_BASE64']
+
+    expect(() => generateAppJWT()).toThrow(
+      'GITHUB_APP_PRIVATE_KEY not configured'
+    )
+  })
 })
 
 describe('Installation Token Management', () => {
