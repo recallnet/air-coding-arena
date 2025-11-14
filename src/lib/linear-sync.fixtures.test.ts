@@ -160,7 +160,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should detect agent mentions in all real comments', async () => {
       const fixtures = loadIssueFixtures()
 
-      console.log(`\n🔍 Testing agent mention detection across ${fixtures.length} issues...`)
+      console.log(
+        `\n🔍 Testing agent mention detection across ${fixtures.length} issues...`
+      )
 
       let totalComments = 0
       let commentsWithMentions = 0
@@ -199,9 +201,16 @@ describe('Linear Sync - Fixture-Based Tests', () => {
      * @param body - Comment body text to search for PR URLs
      * @returns Array of PR URL information objects
      */
-    function extractPRURLs(body: string): Array<{ org: string; repo: string; prNumber: string; fullUrl: string }> {
+    function extractPRURLs(
+      body: string
+    ): Array<{ org: string; repo: string; prNumber: string; fullUrl: string }> {
       const prRegex = /github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/g
-      const results: Array<{ org: string; repo: string; prNumber: string; fullUrl: string }> = []
+      const results: Array<{
+        org: string
+        repo: string
+        prNumber: string
+        fullUrl: string
+      }> = []
       let prMatch: RegExpExecArray | null
 
       while ((prMatch = prRegex.exec(body)) !== null) {
@@ -223,7 +232,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should extract GitHub PR URLs from all real comments', () => {
       const fixtures = loadIssueFixtures()
 
-      console.log(`\n🔗 Testing PR URL extraction across ${fixtures.length} issues...`)
+      console.log(
+        `\n🔗 Testing PR URL extraction across ${fixtures.length} issues...`
+      )
 
       let totalUrls = 0
       let totalUrlsInAttachments = 0
@@ -275,8 +286,12 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       }
 
       console.log(`   Total PR URLs found in comments: ${totalUrls}`)
-      console.log(`   Total PR URLs found in attachments: ${totalUrlsInAttachments}`)
-      console.log(`   Issues with PR links: ${issuesWithPRs}/${fixtures.length}`)
+      console.log(
+        `   Total PR URLs found in attachments: ${totalUrlsInAttachments}`
+      )
+      console.log(
+        `   Issues with PR links: ${issuesWithPRs}/${fixtures.length}`
+      )
       console.log(`   Sample PRs found:`)
       for (const pr of foundPRs.slice(0, 5)) {
         console.log(`     - ${pr.issue}: ${pr.pr} (${pr.source})`)
@@ -294,9 +309,16 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
       const testCases = [
         { input: 'https://github.com/org/repo/pull/123', expected: 1 },
-        { input: '[PR Link](https://github.com/org/repo/pull/456)', expected: 1 },
+        {
+          input: '[PR Link](https://github.com/org/repo/pull/456)',
+          expected: 1,
+        },
         { input: 'Check out github.com/org/repo/pull/789', expected: 1 },
-        { input: 'Multiple: github.com/org/repo/pull/1 and github.com/org/repo/pull/2', expected: 2 },
+        {
+          input:
+            'Multiple: github.com/org/repo/pull/1 and github.com/org/repo/pull/2',
+          expected: 2,
+        },
         { input: 'No PR here', expected: 0 },
         { input: 'github.com/org/repo/issues/123', expected: 0 }, // Not a PR
       ]
@@ -304,16 +326,22 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       // Test extraction logic against known patterns
       for (const testCase of testCases) {
         const matches = extractPRURLs(testCase.input)
-        console.log(`   "${testCase.input.slice(0, 60)}${testCase.input.length > 60 ? '...' : ''}" → ${matches.length} PRs`)
+        console.log(
+          `   "${testCase.input.slice(0, 60)}${testCase.input.length > 60 ? '...' : ''}" → ${matches.length} PRs`
+        )
         expect(matches.length).toBe(testCase.expected)
       }
 
       // Validate against real fixture data
       const issuesWithPRLinks = fixtures.filter((issue) =>
-        issue.comments.some((c) => c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/'))
+        issue.comments.some(
+          (c) => c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
+        )
       )
 
-      console.log(`\n   Issues with PR links in comments: ${issuesWithPRLinks.length}/${fixtures.length}`)
+      console.log(
+        `\n   Issues with PR links in comments: ${issuesWithPRLinks.length}/${fixtures.length}`
+      )
       expect(issuesWithPRLinks.length).toBeGreaterThan(0)
     })
 
@@ -346,7 +374,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
       for (const test of shouldNotMatch) {
         const results = extractPRURLs(test)
-        console.log(`   ✓ Should NOT match: "${test}" → ${results.length} PR(s)`)
+        console.log(
+          `   ✓ Should NOT match: "${test}" → ${results.length} PR(s)`
+        )
         expect(results.length).toBe(0)
       }
     })
@@ -385,7 +415,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should analyze parent-child comment relationships in real data', () => {
       const fixtures = loadIssueFixtures()
 
-      console.log(`\n🧵 Analyzing comment threading in ${fixtures.length} issues...`)
+      console.log(
+        `\n🧵 Analyzing comment threading in ${fixtures.length} issues...`
+      )
 
       let totalComments = 0
       let commentsWithParents = 0
@@ -427,7 +459,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       console.log(`   Max chain depth: ${maxDepth}`)
       console.log(`   Total parents collected: ${totalParentsCollected}`)
       console.log(`   Chain depth distribution:`)
-      for (const [depth, count] of Object.entries(chainDepths).sort((a, b) => Number(a[0]) - Number(b[0]))) {
+      for (const [depth, count] of Object.entries(chainDepths).sort(
+        (a, b) => Number(a[0]) - Number(b[0])
+      )) {
         console.log(`     Depth ${depth}: ${count} comments`)
       }
 
@@ -502,8 +536,12 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       }
 
       console.log(`   Total comments with PR URLs: ${totalPRComments}`)
-      console.log(`   PR comments with direct agent mention: ${prCommentsWithDirectMention}`)
-      console.log(`   PR comments requiring chain walk: ${prCommentsRequiringChainWalk}`)
+      console.log(
+        `   PR comments with direct agent mention: ${prCommentsWithDirectMention}`
+      )
+      console.log(
+        `   PR comments requiring chain walk: ${prCommentsRequiringChainWalk}`
+      )
       console.log(`   Found agent via chain walk: ${foundAgentInChain}`)
       console.log(`   No agent found (unknown): ${noAgentFound}`)
 
@@ -543,7 +581,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
           // If we exited because current was already visited, it's a cycle
           if (current && visited.has(current)) {
             circularChains++
-            console.log(`   ⚠️  Circular chain detected in ${issue.identifier}: ${current.substring(0, 8)}...`)
+            console.log(
+              `   ⚠️  Circular chain detected in ${issue.identifier}: ${current.substring(0, 8)}...`
+            )
           }
         }
       }
@@ -607,7 +647,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should sync all 7 fixture issues through full integration flow', async () => {
       const fixtures = loadIssueFixtures()
 
-      console.log(`\n🔄 Testing full integration sync for ${fixtures.length} issues...`)
+      console.log(
+        `\n🔄 Testing full integration sync for ${fixtures.length} issues...`
+      )
 
       const stats = {
         issuesSynced: 0,
@@ -790,7 +832,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         project: Promise.resolve(null),
         cycle: Promise.resolve(null),
         parent: Promise.resolve(null),
-        team: Promise.resolve({ id: 'team-1', key: 'ENG', name: 'Engineering' }),
+        team: Promise.resolve({
+          id: 'team-1',
+          key: 'ENG',
+          name: 'Engineering',
+        }),
         state: Promise.resolve({
           id: 'state-1',
           name: 'In Progress',
@@ -839,8 +885,8 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       // Find an issue with PR URLs
       let testIssue: IssueFixture | null = null
       for (const fixture of fixtures) {
-        const hasPR = fixture.comments.some((c) =>
-          c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
+        const hasPR = fixture.comments.some(
+          (c) => c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
         )
         if (hasPR) {
           testIssue = fixture
@@ -849,9 +895,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       }
 
       if (!testIssue) {
-        console.log(
-          `\n   ⚠️  No fixture with PR URLs found, skipping PR test`
-        )
+        console.log(`\n   ⚠️  No fixture with PR URLs found, skipping PR test`)
         return
       }
 
@@ -891,7 +935,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         project: Promise.resolve(null),
         cycle: Promise.resolve(null),
         parent: Promise.resolve(null),
-        team: Promise.resolve({ id: 'team-1', key: 'ENG', name: 'Engineering' }),
+        team: Promise.resolve({
+          id: 'team-1',
+          key: 'ENG',
+          name: 'Engineering',
+        }),
         state: Promise.resolve({
           id: 'state-1',
           name: 'In Progress',
@@ -974,7 +1022,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         project: Promise.resolve(null),
         cycle: Promise.resolve(null),
         parent: Promise.resolve(null),
-        team: Promise.resolve({ id: 'team-1', key: 'ENG', name: 'Engineering' }),
+        team: Promise.resolve({
+          id: 'team-1',
+          key: 'ENG',
+          name: 'Engineering',
+        }),
         state: Promise.resolve({
           id: 'state-1',
           name: 'In Progress',
@@ -1024,7 +1076,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
           // Test extractAgentMentions with defensive handling
           const body = testCase.body ?? ''
           const mentions = await extractAgentMentions(body)
-          console.log(`   ✓ ${testCase.description}: ${mentions.length} mentions`)
+          console.log(
+            `   ✓ ${testCase.description}: ${mentions.length} mentions`
+          )
           expect(Array.isArray(mentions)).toBe(true)
           expect(mentions.length).toBe(0)
         } catch (error) {
@@ -1033,7 +1087,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         }
       }
 
-      console.log(`   ✓ All ${edgeCases.length} edge cases handled without crashing`)
+      console.log(
+        `   ✓ All ${edgeCases.length} edge cases handled without crashing`
+      )
     })
 
     it('should handle comments with null/missing parentId', () => {
@@ -1091,7 +1147,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         commentParents.set(comment.id, comment.parentId ?? null)
       }
 
-      console.log(`   ✓ Processed ${emptyIssue.comments.length} comments (empty array)`)
+      console.log(
+        `   ✓ Processed ${emptyIssue.comments.length} comments (empty array)`
+      )
       expect(commentAgents.size).toBe(0)
       expect(commentParents.size).toBe(0)
     })
@@ -1117,8 +1175,14 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
       // If no real fixtures have empty attachments, test synthetic case
       if (issuesWithoutAttachments.length === 0) {
-        console.log(`   ✓ No real fixtures without attachments - testing synthetic case`)
-        const emptyAttachments: Array<{ id: string; url: string; title: string }> = []
+        console.log(
+          `   ✓ No real fixtures without attachments - testing synthetic case`
+        )
+        const emptyAttachments: Array<{
+          id: string
+          url: string
+          title: string
+        }> = []
         expect(emptyAttachments.length).toBe(0)
       }
     })
@@ -1145,7 +1209,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       }
 
       console.log(`   Total comments: ${totalComments}`)
-      console.log(`   Comments without agent mentions: ${commentsWithoutMentions}`)
+      console.log(
+        `   Comments without agent mentions: ${commentsWithoutMentions}`
+      )
       console.log(
         `   Percentage without mentions: ${((commentsWithoutMentions / totalComments) * 100).toFixed(1)}%`
       )
@@ -1181,7 +1247,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         expect(matches.length).toBe(0)
       }
 
-      console.log(`   ✓ All ${invalidURLs.length} invalid URLs correctly rejected`)
+      console.log(
+        `   ✓ All ${invalidURLs.length} invalid URLs correctly rejected`
+      )
     })
 
     it('should handle attachments without issue field (the bug that was fixed)', () => {
@@ -1349,12 +1417,18 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
       console.log(`   Edge case statistics:`)
       console.log(`     Issues with empty title: ${stats.issuesWithEmptyTitle}`)
-      console.log(`     Comments with empty body: ${stats.commentsWithEmptyBody}`)
+      console.log(
+        `     Comments with empty body: ${stats.commentsWithEmptyBody}`
+      )
       console.log(
         `     Comments with very long body (>2000 chars): ${stats.commentsWithVeryLongBody}`
       )
-      console.log(`     Attachments with empty URL: ${stats.attachmentsWithEmptyUrl}`)
-      console.log(`     Orphaned comments (parent not found): ${stats.orphanedComments}`)
+      console.log(
+        `     Attachments with empty URL: ${stats.attachmentsWithEmptyUrl}`
+      )
+      console.log(
+        `     Orphaned comments (parent not found): ${stats.orphanedComments}`
+      )
 
       // All fixtures should be valid (no empty titles, URLs, etc.)
       expect(stats.issuesWithEmptyTitle).toBe(0)
@@ -1380,7 +1454,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should detect and handle circular parent chains', () => {
       const fixture = loadSyntheticFixture('circular-chain.json')
 
-      console.log(`\n🔄 Testing circular chain detection with synthetic fixture...`)
+      console.log(
+        `\n🔄 Testing circular chain detection with synthetic fixture...`
+      )
       console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
 
       // Build parent map
@@ -1422,7 +1498,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should handle deep nested threading (depth 5+)', async () => {
       const fixture = loadSyntheticFixture('deep-threading.json')
 
-      console.log(`\n🧵 Testing deep nested threading with synthetic fixture...`)
+      console.log(
+        `\n🧵 Testing deep nested threading with synthetic fixture...`
+      )
       console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
 
       // Build parent map
@@ -1462,7 +1540,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(visited.size).toBe(6)
 
       // Verify agent mention is found by walking up the chain
-      const prComment = fixture.comments.find((c) => c.body.includes(GITHUB_COM_PATH))
+      const prComment = fixture.comments.find((c) =>
+        c.body.includes(GITHUB_COM_PATH)
+      )
       if (prComment) {
         // Walk to find agent mention
         let currentId: string | null = prComment.id
@@ -1474,7 +1554,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
             const mentions = await extractAgentMentions(comment.body)
             if (mentions.length > 0) {
               foundAgent = true
-              console.log(`   ✓ Found agent @${mentions[0]} in chain for PR comment`)
+              console.log(
+                `   ✓ Found agent @${mentions[0]} in chain for PR comment`
+              )
             }
             currentId = comment.parentId
           } else {
@@ -1547,7 +1629,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(mentions).toContain('claude')
 
       // Verify each mentioned agent has a corresponding PR in thread
-      const prComments = fixture.comments.filter((c) => c.body.includes(GITHUB_COM_PATH))
+      const prComments = fixture.comments.filter((c) =>
+        c.body.includes(GITHUB_COM_PATH)
+      )
       console.log(`   Found ${prComments.length} comments with PR URLs`)
       expect(prComments.length).toBeGreaterThan(0)
     })
@@ -1556,7 +1640,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     it('should handle extreme case with 20+ comments in deep chain', async () => {
       const fixture = loadSyntheticFixture('extreme-long-chain.json')
 
-      console.log(`\n💪 Testing extreme case with long chain and many comments...`)
+      console.log(
+        `\n💪 Testing extreme case with long chain and many comments...`
+      )
       console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
       console.log(`   Total comments: ${fixture.comments.length}`)
 
@@ -1624,8 +1710,8 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(rootMentions.length).toBeGreaterThan(0)
 
       // Find PR in deep comment
-      const prComment = fixture.comments.find((c) =>
-        c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
+      const prComment = fixture.comments.find(
+        (c) => c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
       )
       expect(prComment).toBeTruthy()
 
@@ -1668,7 +1754,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
           expect(comment).toHaveProperty('userName')
         }
 
-        console.log(`     ✓ ${fixture.identifier}: ${fixture.comments.length} comments`)
+        console.log(
+          `     ✓ ${fixture.identifier}: ${fixture.comments.length} comments`
+        )
       }
 
       expect(syntheticFiles.length).toBe(5)

@@ -47,7 +47,7 @@ vi.mock('@/lib/github-app-auth', () => ({
 
 // Mock Next.js cache revalidation
 vi.mock('next/cache', () => ({
-  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
 }))
 
 /**

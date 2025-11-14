@@ -30,7 +30,7 @@ vi.mock('@/lib/linear-sync', () => ({
 }))
 
 vi.mock('next/cache', () => ({
-  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
 }))
 
 vi.mock('@/lib/agent-status', () => ({

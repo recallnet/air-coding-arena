@@ -9,7 +9,7 @@
 import crypto from 'node:crypto'
 
 import { eq, and, asc, gt, sql } from 'drizzle-orm'
-import { revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -237,10 +237,9 @@ async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
   // Sync existing state from Linear API (fills metadata)
   await syncIssueFromLinear(issue.id)
 
-  // Invalidate caches so homepage shows updated issue
-  revalidateTag('issues-list')
-  revalidateTag('agent-stats')
-  console.log(`[Linear] Invalidated cache for issue ${issue.identifier}`)
+  // Invalidate homepage cache to show updated issue
+  revalidatePath('/')
+  console.log(`[Linear] Revalidated homepage for issue ${issue.identifier}`)
 }
 
 /**
@@ -351,11 +350,10 @@ async function handleAttachmentEvent(
       },
     })
 
-  // Invalidate caches so homepage shows new PR attachment
-  revalidateTag('issues-list')
-  revalidateTag('agent-stats')
+  // Invalidate homepage cache to show new PR attachment
+  revalidatePath('/')
   console.log(
-    `[Linear] Invalidated cache for attachment on issue ${issueRecord.linearKey}`
+    `[Linear] Revalidated homepage for attachment on issue ${issueRecord.linearKey}`
   )
 
   // Update agent status to submitted

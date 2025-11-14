@@ -16,7 +16,7 @@ vi.mock('@/lib/linear-reconcile', () => ({
 }))
 
 vi.mock('next/cache', () => ({
-  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
 }))
 
 const INTERNAL_SERVER_ERROR = 'Internal server error'

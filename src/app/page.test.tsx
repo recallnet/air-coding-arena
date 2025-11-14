@@ -23,10 +23,7 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock Next.js cache
-vi.mock('next/cache', () => ({
-  unstable_cache: vi.fn((fn: () => unknown) => fn),
-}))
+// No Next.js cache mocks needed - Server Components cached by Full Route Cache
 
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock

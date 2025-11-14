@@ -7,7 +7,7 @@
 import crypto from 'node:crypto'
 
 import { and, eq } from 'drizzle-orm'
-import { revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -343,11 +343,8 @@ async function handlePullRequestClosed(
 
     // NOTE: Rating updates moved to Linear webhook (updateWinner transaction)
     // GitHub webhook only tracks commit counts and CI status
-    revalidateTag('agent-stats')
-    revalidateTag('issues-list')
-    console.log(
-      `[GitHub] Invalidated cache (agent-stats, issues-list) for issue ${attempt.issueId}`
-    )
+    revalidatePath('/')
+    console.log(`[GitHub] Revalidated homepage for issue ${attempt.issueId}`)
   } else {
     // PR was closed without merging
     await db

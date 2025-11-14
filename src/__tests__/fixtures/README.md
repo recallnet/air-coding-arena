@@ -26,11 +26,13 @@ fixtures/
 ## Capturing New Fixtures
 
 ### Option 1: Capture All Fixtures
+
 ```bash
 npm run fixtures:capture
 ```
 
 ### Option 2: Capture Individually
+
 ```bash
 # Capture webhook events from database (default: last 30 events)
 npm run fixtures:capture:webhooks
@@ -40,6 +42,7 @@ npm run fixtures:capture:issues
 ```
 
 ### Advanced Options
+
 ```bash
 # Capture more/fewer webhook events
 npx dotenv -e .env.local -- tsx scripts/capture-webhook-fixtures.ts --limit=50
@@ -91,20 +94,22 @@ it('should parse all real Linear issues correctly', async () => {
 ## What Makes This Different
 
 ### Traditional Unit Tests
+
 ```typescript
 // Mock/fake data - may not reflect reality
 it('should handle attachment', async () => {
   const payload = {
     type: 'Attachment',
     data: {
-      issue: { id: 'test-123' }  // We assume this structure
-    }
+      issue: { id: 'test-123' }, // We assume this structure
+    },
   }
   // ...
 })
 ```
 
 ### Fixture-Based Tests
+
 ```typescript
 // Real production data - captures actual variations
 it('should handle all real attachments', async () => {
@@ -127,6 +132,7 @@ it('should handle all real attachments', async () => {
 ## When to Recapture Fixtures
 
 Recapture fixtures when:
+
 - 📊 New issue patterns emerge (e.g., new label structures)
 - 🐛 A production bug reveals missing edge cases
 - 🔄 Linear API changes or adds fields
@@ -136,12 +142,14 @@ Recapture fixtures when:
 ## Metadata Files
 
 Each fixture directory includes a `metadata.json` with:
+
 - Capture timestamp
 - Total fixture count
 - Summary statistics
 - Edge cases identified (e.g., attachments without issue field)
 
 Example:
+
 ```json
 {
   "capturedAt": "2025-11-14T17:58:27.962Z",
@@ -162,12 +170,14 @@ Fixture-based testing ensures our code handles reality, not our assumptions abou
 ## Current Fixture Coverage
 
 ### Webhook Events (30 samples)
+
 - ✅ 26 Comment events (including agent mentions)
 - ✅ 3 Issue events (create, update)
 - ✅ 1 Attachment event (with GitHub PR link)
 - 🐛 Includes events that triggered the `attachment.issue` bug
 
 ### Linear Issues (7 samples)
+
 - ✅ Issues with agent mentions and PR links
 - ✅ Issues with varying comment counts (9-22 comments)
 - ✅ Issues with and without attachments
@@ -178,11 +188,13 @@ Fixture-based testing ensures our code handles reality, not our assumptions abou
 Validates `linear-sync.ts` comment parsing and PR attribution logic with comprehensive test coverage.
 
 ### Test File
+
 - **Main tests**: `/Users/andrewhill/Coding/coding-arena/src/lib/linear-sync.test.ts` (27 tests)
 
 ### Test Coverage
 
 **1. Agent Mention Detection** (7 tests)
+
 - Detects agent mentions in comment bodies (`@cursor`, `@engine`, etc.)
 - Finds agents via body analysis (cursor.com URL patterns)
 - Searches older comments when PR comment lacks agent
@@ -190,15 +202,18 @@ Validates `linear-sync.ts` comment parsing and PR attribution logic with compreh
 - Handles explicit mentions when body analysis fails
 
 **2. PR URL Extraction** (3 tests)
+
 - Extracts GitHub PR URLs from various comment formats
 - Handles multiple PR URLs in a single comment
 - Detects cursor.com URLs to attribute PRs to Cursor agent
 
 **3. Parent Chain Walking** (2 tests)
+
 - Attributes PRs to agents mentioned in parent comment threads
 - Detects circular parent chains without crashing (cycle protection)
 
 **4. Edge Cases** (5 tests)
+
 - Returns early if issue not in database
 - Falls back to unknown agent when no context found
 - Skips orphaned attachments (attachments without linked issues)
@@ -206,6 +221,7 @@ Validates `linear-sync.ts` comment parsing and PR attribution logic with compreh
 - Handles agent dispatch errors without crashing
 
 **5. Full Integration** (10 tests)
+
 - Syncs entire issues with comments and attachments
 - Extracts complete issue metadata (assignee, creator, project, cycle, team, state, labels)
 - Creates attempts with correct agent attribution
@@ -244,6 +260,7 @@ Real-world edge case testing with 5 synthetic fixtures at `/Users/andrewhill/Cod
 ### Real Patterns Validated
 
 From 27 comprehensive tests:
+
 - Agent mentions: @cursor, @engine, @cyrus, @claude, @factory
 - Mention formats: Simple (@agent), UUID-tagged (@[agent](uuid)), URL-inferred
 - PR attribution: Direct mention, parent chain, body analysis, fallback searches
@@ -253,6 +270,7 @@ From 27 comprehensive tests:
 ### When to Update Tests
 
 Update or regenerate tests when:
+
 - Adding new agent mention patterns
 - Changing PR URL extraction logic
 - Modifying parent chain walking algorithm
@@ -271,9 +289,9 @@ it('should sync comments and find agent mentions', async () => {
     comments: vi.fn().mockResolvedValue({
       nodes: [
         { body: '@cursor can you help?', createdAt: '2024-01-01T00:00:00Z' },
-        { body: '@engine please review', createdAt: '2024-01-02T00:00:00Z' }
-      ]
-    })
+        { body: '@engine please review', createdAt: '2024-01-02T00:00:00Z' },
+      ],
+    }),
   })
 
   // Execute sync and verify database updates
