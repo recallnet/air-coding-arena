@@ -344,7 +344,8 @@ async function handlePullRequestClosed(
     // NOTE: Rating updates moved to Linear webhook (updateWinner transaction)
     // GitHub webhook only tracks commit counts and CI status
     revalidateTag('agent-stats')
-    console.log(`[GitHub] Invalidated cache for issue ${attempt.issueId}`)
+    revalidateTag('issues-list')
+    console.log(`[GitHub] Invalidated cache (agent-stats, issues-list) for issue ${attempt.issueId}`)
   } else {
     // PR was closed without merging
     await db
