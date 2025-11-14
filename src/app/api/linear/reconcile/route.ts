@@ -4,6 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 
 import { reconcileLinearIssues } from '@/lib/linear-reconcile'
 
@@ -18,6 +19,11 @@ export async function GET(): Promise<NextResponse> {
     console.log('[Reconcile] Starting reconciliation...')
     const count = await reconcileLinearIssues()
     console.log(`[Reconcile] Complete: ${count} issues`)
+
+    // Invalidate caches after full reconciliation
+    revalidateTag('issues-list')
+    revalidateTag('agent-stats')
+    console.log('[Linear Reconcile] Invalidated cache after full sync')
 
     return NextResponse.json({ success: true, count })
   } catch (error) {
