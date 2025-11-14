@@ -33,6 +33,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# cache files
+.eslintcache
+node_modules/.vite
+node_modules/.cache
+
 # IDE
 .vscode/*
 !.vscode/settings.json
