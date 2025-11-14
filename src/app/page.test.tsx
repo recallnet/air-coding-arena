@@ -23,6 +23,11 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+// Mock Next.js cache
+vi.mock('next/cache', () => ({
+  unstable_cache: vi.fn((fn) => fn),
+}))
+
 // Import after mocking to get the mocked version
 // eslint-disable-next-line import/order -- Must import after mock
 import {
