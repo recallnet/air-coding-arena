@@ -580,6 +580,58 @@ describe('/api/linear/webhook', () => {
         expect(response.status).toBe(200)
       }
     })
+
+    it('should gracefully handle attachment without issue field', async () => {
+      // Reproduces production bug where attachment.issue is undefined
+      const payload = {
+        type: 'Attachment',
+        action: 'create',
+        data: {
+          id: TEST_ATTACHMENT_ID,
+          url: TEST_PR_URL,
+          title: 'Fix issue',
+          subtitle: TEST_ATTACHMENT_SUBTITLE,
+          metadata: {
+            branch: 'eng-123--fix-issue--agent-cursor',
+          },
+          // NOTE: issue field is missing - this causes the bug
+          issueId: TEST_ISSUE_ID, // Linear might send issueId at root level instead
+        },
+        updatedAt: TEST_TIMESTAMP,
+        createdAt: TEST_TIMESTAMP,
+      }
+
+      // Mock database calls
+      let selectCallCount = 0
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockImplementation(async () => {
+              selectCallCount++
+              // First call: time-window check (no recent events)
+              if (selectCallCount === 1) return []
+              // Second call: issue lookup (return issue)
+              return [{ id: TEST_DB_ISSUE_ID }]
+            }),
+          }),
+        }),
+      } as never)
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+          onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+        }),
+      } as never)
+
+      const req = createMockRequest(payload)
+      const response = await POST(req)
+
+      // Should not crash - should return 200 and gracefully skip
+      expect(response.status).toBe(200)
+    })
   })
 
   describe('Attachment.create - graceful agent name handling', () => {

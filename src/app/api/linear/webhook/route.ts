@@ -40,7 +40,8 @@ type LinearAttachment = {
   title: string
   subtitle?: string
   metadata?: Record<string, unknown>
-  issue: { id: string }
+  issue?: { id: string } // Optional - may not be included in webhook payload
+  issueId?: string // Alternative field Linear might use
 }
 
 /**
@@ -258,15 +259,24 @@ async function handleAttachmentEvent(
   if (!org || !repoName || !prNumber) return
   const repo = `${org}/${repoName}`
 
+  // Extract issue ID from attachment (try multiple possible fields)
+  const linearIssueId = attachment.issue?.id ?? attachment.issueId
+  if (!linearIssueId) {
+    console.warn(
+      `Attachment ${attachment.id} missing issue ID - skipping (URL: ${attachment.url})`
+    )
+    return
+  }
+
   // Get the issue this attachment belongs to
   const issueResult = await db
     .select({ id: issues.id })
     .from(issues)
-    .where(eq(issues.linearId, attachment.issue.id))
+    .where(eq(issues.linearId, linearIssueId))
     .limit(1)
 
   if (issueResult.length === 0) {
-    console.warn(`Attachment for unknown issue: ${attachment.issue.id}`)
+    console.warn(`Attachment for unknown issue: ${linearIssueId}`)
     return
   }
 
@@ -302,7 +312,7 @@ async function handleAttachmentEvent(
     )
 
     // Trigger immediate sync to process comment thread
-    await syncIssueFromLinear(attachment.issue.id)
+    await syncIssueFromLinear(linearIssueId)
     return
   }
 
