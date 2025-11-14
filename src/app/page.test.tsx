@@ -25,7 +25,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock Next.js cache
 vi.mock('next/cache', () => ({
-  unstable_cache: vi.fn((fn) => fn),
+  unstable_cache: vi.fn((fn: () => unknown) => fn),
 }))
 
 // Import after mocking to get the mocked version

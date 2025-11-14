@@ -345,7 +345,9 @@ async function handlePullRequestClosed(
     // GitHub webhook only tracks commit counts and CI status
     revalidateTag('agent-stats')
     revalidateTag('issues-list')
-    console.log(`[GitHub] Invalidated cache (agent-stats, issues-list) for issue ${attempt.issueId}`)
+    console.log(
+      `[GitHub] Invalidated cache (agent-stats, issues-list) for issue ${attempt.issueId}`
+    )
   } else {
     // PR was closed without merging
     await db

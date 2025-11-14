@@ -15,6 +15,10 @@ vi.mock('@/lib/linear-reconcile', () => ({
   reconcileLinearIssues: vi.fn(),
 }))
 
+vi.mock('next/cache', () => ({
+  revalidateTag: vi.fn(),
+}))
+
 const INTERNAL_SERVER_ERROR = 'Internal server error'
 
 describe('GET /api/linear/reconcile', () => {

@@ -3,8 +3,8 @@
  * Triggers full reconciliation with Linear API every hour
  */
 
-import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { NextResponse } from 'next/server'
 
 import { reconcileLinearIssues } from '@/lib/linear-reconcile'
 

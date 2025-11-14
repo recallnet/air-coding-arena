@@ -354,7 +354,9 @@ async function handleAttachmentEvent(
   // Invalidate caches so homepage shows new PR attachment
   revalidateTag('issues-list')
   revalidateTag('agent-stats')
-  console.log(`[Linear] Invalidated cache for attachment on issue ${issueRecord.linearKey}`)
+  console.log(
+    `[Linear] Invalidated cache for attachment on issue ${issueRecord.linearKey}`
+  )
 
   // Update agent status to submitted
   await updateAgentStatusOnPR(issueId, agentNameFromBranch)

@@ -29,6 +29,10 @@ vi.mock('@/lib/linear-sync', () => ({
   syncIssueFromLinear: vi.fn(),
 }))
 
+vi.mock('next/cache', () => ({
+  revalidateTag: vi.fn(),
+}))
+
 vi.mock('@/lib/agent-status', () => ({
   updateAgentStatusOnPR: vi.fn(),
 }))

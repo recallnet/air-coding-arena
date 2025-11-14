@@ -6,6 +6,7 @@
  */
 
 import { unstable_cache } from 'next/cache'
+
 import { AgentAvatar } from '@/components/AgentAvatar'
 import { IssueActivityTable } from '@/components/IssueActivityTable'
 import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
@@ -32,6 +33,9 @@ import {
 } from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
 
+const CACHE_TAG_AGENT_STATS = 'agent-stats'
+const CACHE_TAG_ISSUES_LIST = 'issues-list'
+
 /**
  * Dashboard home page component.
  * Displays agent leaderboard with performance metrics.
@@ -41,18 +45,18 @@ import type { AgentStats } from '@/types/database'
 export default async function Home(): Promise<React.JSX.Element> {
   const agentStats = await unstable_cache(
     async () => getAgentStats(),
-    ['agent-stats'],
-    { tags: ['agent-stats'] }
+    [CACHE_TAG_AGENT_STATS],
+    { tags: [CACHE_TAG_AGENT_STATS] }
   )()
   const agentTemporalStats = await unstable_cache(
     async () => getAgentTemporalStats(),
     ['agent-temporal-stats'],
-    { tags: ['agent-stats'] }
+    { tags: [CACHE_TAG_AGENT_STATS] }
   )()
   const recentIssues = await unstable_cache(
     async () => getIssuesWithAgents(),
-    ['issues-list'],
-    { tags: ['issues-list'] }
+    [CACHE_TAG_ISSUES_LIST],
+    { tags: [CACHE_TAG_ISSUES_LIST] }
   )()
 
   // Find the top performer (highest ordinal score)

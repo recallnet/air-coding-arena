@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Mock Next.js cache functions before any imports
 vi.mock('next/cache', () => ({
-  unstable_cache: vi.fn((fn) => fn),
+  unstable_cache: vi.fn((fn: () => unknown) => fn),
   revalidateTag: vi.fn(),
 }))
 
