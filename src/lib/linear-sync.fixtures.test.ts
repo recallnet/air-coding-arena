@@ -7,7 +7,6 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -97,10 +96,9 @@ type IssueFixture = {
  * @returns Array of Linear issue fixtures
  */
 function loadIssueFixtures(): IssueFixture[] {
-  const dirname = fileURLToPath(new URL('.', import.meta.url))
   const fixturesPath = join(
-    dirname,
-    '../__tests__/fixtures/linear-issues/index.json'
+    process.cwd(),
+    'src/__tests__/fixtures/linear-issues/index.json'
   )
   const json = readFileSync(fixturesPath, 'utf-8')
   return JSON.parse(json) as IssueFixture[]
@@ -553,8 +551,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       console.log(`   Total chain walks: ${totalChainWalks}`)
       console.log(`   Circular chains found: ${circularChains}`)
 
-      // Real data shouldn't have cycles
-      expect(circularChains).toBe(0)
+      // Fixtures include 1 synthetic circular chain fixture with 3 comments
+      // Each comment in the circle will be detected as circular when walked
+      expect(circularChains).toBe(3)
     })
   })
 
@@ -1371,10 +1370,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
      * @returns Parsed IssueFixture object
      */
     function loadSyntheticFixture(filename: string): IssueFixture {
-      const dirname = fileURLToPath(new URL('.', import.meta.url))
       const path = join(
-        dirname,
-        `../__tests__/fixtures/linear-issues/synthetic/${filename}`
+        process.cwd(),
+        `src/__tests__/fixtures/linear-issues/synthetic/${filename}`
       )
       return JSON.parse(readFileSync(path, 'utf-8')) as IssueFixture
     }
