@@ -14,7 +14,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
-import { issues, attempts, events } from '@/db/schema'
+import { issues, attempts, events, issueAgents } from '@/db/schema'
 import {
   updateAgentStatusOnPR,
   markIgnoredOnIssueClosed,
@@ -433,13 +433,36 @@ async function updateWinner(issueId: string): Promise<void> {
       .set({ status: 'closed', closedAt: new Date() })
       .where(and(eq(attempts.issueId, issueId), eq(attempts.status, 'open')))
 
+    // 6. Mark winning agent as accepted
+    await tx
+      .update(issueAgents)
+      .set({ status: 'accepted' })
+      .where(
+        and(
+          eq(issueAgents.issueId, issueId),
+          eq(issueAgents.agentName, winner.agentName)
+        )
+      )
+
+    // 7. Mark all other submitted agents as rejected
+    await tx
+      .update(issueAgents)
+      .set({ status: 'rejected' })
+      .where(
+        and(
+          eq(issueAgents.issueId, issueId),
+          eq(issueAgents.status, 'submitted'),
+          sql`${issueAgents.agentName} != ${winner.agentName}`
+        )
+      )
+
     console.log(`Winner set for issue ${issueId}: ${winner.agentName}`)
   })
 
-  // 7. Mark agents who never submitted as ignored
+  // 8. Mark agents who never submitted as ignored
   await markIgnoredOnIssueClosed(issueId)
 
-  // 6. Calculate ratings after transaction (separate error boundary)
+  // 9. Calculate ratings after transaction (separate error boundary)
   // Rating updates use global db instance, so must be outside transaction.
   // If ratings fail, winner is already set correctly - no rollback needed.
   try {
