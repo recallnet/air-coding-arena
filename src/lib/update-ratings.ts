@@ -20,13 +20,16 @@ import {
 
 /**
  * Determines ranking of agents based on attempt outcomes.
- * Winner (merged PR) ranks first. Other closed PRs rank by closedAt time (earlier = better).
- * DNF (closed without trying) are excluded from ranking.
+ * Returns grouped ranking: [[winners], [losers]]
+ *
+ * Winner = agent whose PR was merged
+ * Losers = ALL other agents who submitted PRs (tied for 2nd place)
+ * DNF = agents with < 2 commits (excluded entirely)
  *
  * @param issueAttempts - All attempts for the issue
- * @returns Sorted array of agent names (1st place = winner, last = worst finisher)
+ * @returns Array of arrays: [[winner], [loser1, loser2, ...]]
  */
-function determineRanking(
+export function determineRanking(
   issueAttempts: Array<{
     agentName: string
     status: string
@@ -35,40 +38,36 @@ function determineRanking(
     openedAt: Date
     commitCount: number
   }>
-): string[] {
-  // Filter to only agents who finished (merged or closed with effort)
-  // Exclude DNF: closed PRs with minimal effort (< 2 commits) or very short lifespan (< 5 minutes)
-  const finishers = issueAttempts.filter((attempt) => {
-    if (attempt.status === 'merged') return true
-    if (attempt.status === 'closed' && attempt.closedAt) {
-      // Check for DNF indicators: minimal commits or very short lifespan
-      const lifespanMs = attempt.closedAt.getTime() - attempt.openedAt.getTime()
-      const lifespanMinutes = lifespanMs / (1000 * 60)
+): string[][] {
+  // Find winner (merged PR)
+  const winner = issueAttempts.find((a) => a.status === 'merged')
 
-      // DNF if: low commit count (< 2 = minimal effort) OR closed within 5 minutes
-      if (attempt.commitCount < 2 || lifespanMinutes < 5) {
-        return false // Exclude from finishers
-      }
+  // Find losers (non-merged PRs with sufficient effort)
+  const losers = issueAttempts.filter((attempt) => {
+    // Skip winner
+    if (attempt.status === 'merged') return false
 
-      // Otherwise, closed PRs with effort are considered "finished" (competed but lost)
-      return true
-    }
-    return false
+    // Skip DNF (< 2 commits = minimal effort)
+    if (attempt.commitCount < 2) return false
+
+    // Must be closed
+    if (attempt.status !== 'closed') return false
+
+    return true
   })
 
-  // Sort: merged first, then by closedAt/mergedAt (earlier = better)
-  finishers.sort((a, b) => {
-    // Merged PRs always rank first
-    if (a.status === 'merged' && b.status !== 'merged') return -1
-    if (b.status === 'merged' && a.status !== 'merged') return 1
+  // Build grouped ranking
+  const ranking: string[][] = []
 
-    // Both merged or both closed: sort by completion time
-    const aTime = (a.mergedAt ?? a.closedAt ?? a.openedAt).getTime()
-    const bTime = (b.mergedAt ?? b.closedAt ?? b.openedAt).getTime()
-    return aTime - bTime
-  })
+  if (winner) {
+    ranking.push([winner.agentName]) // Position 1: winner
+  }
 
-  return finishers.map((f) => f.agentName)
+  if (losers.length > 0) {
+    ranking.push(losers.map((l) => l.agentName)) // Position 2: all losers tied
+  }
+
+  return ranking
 }
 
 /**
@@ -103,7 +102,7 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
     return
   }
 
-  // Determine ranking (winner first, losers by finish time, DNF excluded)
+  // Determine ranking (winner first, losers tied for second, DNF excluded)
   const ranking = determineRanking(issueAttempts)
 
   if (ranking.length === 0) {
@@ -113,15 +112,18 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
     return
   }
 
+  // Flatten ranking to get all participating agents
+  const allAgents = ranking.flat()
+
   // Fetch current ratings for all participating agents
   const currentScores = await db
     .select()
     .from(agentScores)
-    .where(inArray(agentScores.agentName, ranking))
+    .where(inArray(agentScores.agentName, allAgents))
 
   // Build currentRatings map
   const currentRatings: Record<string, Rating> = {}
-  for (const agentName of ranking) {
+  for (const agentName of allAgents) {
     const score = currentScores.find((s) => s.agentName === agentName)
     if (score) {
       currentRatings[agentName] = rating({ mu: score.mu, sigma: score.sigma })
@@ -134,62 +136,58 @@ export async function updateRatingsForIssue(issueId: string): Promise<void> {
   // Calculate new ratings using OpenSkill
   const updatedRatings = updateRatingsForCompletedIssue(currentRatings, ranking)
 
-  // Determine completedAt timestamp (use mergedAt of winner or latest closedAt)
+  // Determine completedAt timestamp (use mergedAt of winner)
   const winner = issueAttempts.find((a) => a.status === 'merged')
-  const closedAttempts = issueAttempts
-    .filter((a) => a.closedAt !== null)
-    .sort((a, b) => {
-      if (!a.closedAt || !b.closedAt) return 0
-      return b.closedAt.getTime() - a.closedAt.getTime()
-    })
-  const completedAt =
-    winner?.mergedAt ?? closedAttempts[0]?.closedAt ?? new Date()
+  const completedAt = winner?.mergedAt ?? new Date()
 
   // Update database: agent_scores and agent_score_history
-  for (let i = 0; i < ranking.length; i++) {
-    const agentName = ranking[i]
-    if (!agentName) continue
+  // Calculate rank based on position in grouped ranking
+  let currentRank = 0
+  for (const group of ranking) {
+    currentRank++ // Increment rank for this group (1 = winner, 2 = all losers)
 
-    const newRating = updatedRatings[agentName]
-    if (!newRating) continue
+    for (const agentName of group) {
+      const newRating = updatedRatings[agentName]
+      if (!newRating) continue
 
-    const newOrdinal = calculateOrdinal(newRating)
+      const newOrdinal = calculateOrdinal(newRating)
 
-    // Update agent_scores (upsert)
-    await db
-      .insert(agentScores)
-      .values({
-        agentName,
-        mu: newRating.mu,
-        sigma: newRating.sigma,
-        ordinal: newOrdinal,
-        gamesPlayed: 1, // Will be incremented by ON CONFLICT
-        lastUpdatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: agentScores.agentName,
-        set: {
+      // Update agent_scores (upsert)
+      await db
+        .insert(agentScores)
+        .values({
+          agentName,
           mu: newRating.mu,
           sigma: newRating.sigma,
           ordinal: newOrdinal,
-          gamesPlayed: sql`${agentScores.gamesPlayed} + 1`,
+          gamesPlayed: 1,
           lastUpdatedAt: new Date(),
-        },
-      })
+        })
+        .onConflictDoUpdate({
+          target: agentScores.agentName,
+          set: {
+            mu: newRating.mu,
+            sigma: newRating.sigma,
+            ordinal: newOrdinal,
+            gamesPlayed: sql`${agentScores.gamesPlayed} + 1`,
+            lastUpdatedAt: new Date(),
+          },
+        })
 
-    // Insert agent_score_history
-    await db.insert(agentScoreHistory).values({
-      agentName,
-      issueId,
-      mu: newRating.mu,
-      sigma: newRating.sigma,
-      ordinal: newOrdinal,
-      rank: i + 1, // 1-indexed rank
-      completedAt,
-    })
+      // Insert agent_score_history
+      await db.insert(agentScoreHistory).values({
+        agentName,
+        issueId,
+        mu: newRating.mu,
+        sigma: newRating.sigma,
+        ordinal: newOrdinal,
+        rank: currentRank, // All losers get rank 2
+        completedAt,
+      })
+    }
   }
 
   globalThis.console.log(
-    `Updated ratings for ${ranking.length} agents on issue ${issue.linearKey}`
+    `Updated ratings for ${allAgents.length} agents on issue ${issue.linearKey}`
   )
 }

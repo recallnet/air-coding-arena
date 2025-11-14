@@ -4,7 +4,7 @@ import { mockDeep, mockReset } from 'vitest-mock-extended'
 import { db } from '@/db/client'
 
 import * as openskillModule from './openskill'
-import { updateRatingsForIssue } from './update-ratings'
+import { updateRatingsForIssue, determineRanking } from './update-ratings'
 
 // Mock the db client
 vi.mock('@/db/client', () => ({
@@ -40,6 +40,12 @@ const MOCK_FIX_TEST_3_BRANCH = `${MOCK_FIX_BASE_BRANCH}-3`
 const MOCK_MERGED_TIME = `${MOCK_TIME_BASE}1:00:00Z`
 const MOCK_CLOSED_TIME = `${MOCK_TIME_BASE}2:00:00Z`
 const MOCK_CLOSED_TIME_2 = `${MOCK_TIME_BASE}3:00:00Z`
+const MOCK_AGENT_WINNER = 'agent-winner'
+const MOCK_AGENT_LOSER = 'agent-loser'
+const MOCK_AGENT_LOSER_CLOSED_EARLY = 'agent-loser-closed-early'
+const MOCK_AGENT_LOSER_CLOSED_LATE = 'agent-loser-closed-late'
+const MOCK_AGENT_DNF = 'agent-dnf'
+const MOCK_TIME_12PM = '2024-01-01T12:00:00Z'
 
 describe('updateRatingsForIssue - Unit Tests', () => {
   beforeEach(() => {
@@ -53,14 +59,17 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     ).mockImplementation((currentRatings, ranking) => {
       // Mock implementation: winners get higher mu, losers get lower mu
       const result: Record<string, { mu: number; sigma: number }> = {}
-      for (const [index, agentName] of ranking.entries()) {
-        const currentRating = currentRatings[agentName]
-        if (currentRating) {
-          // Winner gets +2 mu, losers get -2 mu / rank
-          const muChange = index === 0 ? 2 : -2 / (index + 1)
-          result[agentName] = {
-            mu: currentRating.mu + muChange,
-            sigma: currentRating.sigma - 0.5, // Reduce uncertainty
+      // ranking is now string[][], so flatten and iterate
+      for (const [groupIndex, group] of ranking.entries()) {
+        for (const agentName of group) {
+          const currentRating = currentRatings[agentName]
+          if (currentRating) {
+            // Winner gets +2 mu, losers get -2 mu / rank
+            const muChange = groupIndex === 0 ? 2 : -2 / (groupIndex + 1)
+            result[agentName] = {
+              mu: currentRating.mu + muChange,
+              sigma: currentRating.sigma - 0.5, // Reduce uncertainty
+            }
           }
         }
       }
@@ -309,7 +318,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         cursor: expect.objectContaining({ mu: 25, sigma: 8.333 }),
         engine: expect.objectContaining({ mu: 25, sigma: 8.333 }),
       }),
-      [MOCK_AGENT_CURSOR, MOCK_AGENT_ENGINE] // Ranking
+      [[MOCK_AGENT_CURSOR], [MOCK_AGENT_ENGINE]] // Grouped ranking
     )
   })
 
@@ -400,11 +409,11 @@ describe('updateRatingsForIssue - Unit Tests', () => {
       expect.objectContaining({
         cursor: expect.objectContaining({ mu: 25 }),
       }),
-      [MOCK_AGENT_CURSOR] // Only cursor, engine DNF'd
+      [[MOCK_AGENT_CURSOR]] // Only cursor, engine DNF'd
     )
   })
 
-  it('should detect DNF for short lifespan PRs (< 5 minutes)', async () => {
+  it('should include all agents with sufficient commits (win/loss model)', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
     const mergedTime = new Date(MOCK_MERGED_TIME)
@@ -440,9 +449,9 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
-        closedAt: shortCloseTime, // DNF: closed within 5 minutes
+        closedAt: shortCloseTime, // Short lifespan but sufficient commits
         status: MOCK_STATUS_CLOSED,
-        commitCount: 5, // Even with good commits, short lifespan = DNF
+        commitCount: 5, // Sufficient commits = valid loser
         lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
@@ -451,7 +460,10 @@ describe('updateRatingsForIssue - Unit Tests', () => {
       },
     ]
 
-    const mockCurrentScores = [createMockScore(MOCK_AGENT_CURSOR)]
+    const mockCurrentScores = [
+      createMockScore(MOCK_AGENT_CURSOR),
+      createMockScore(MOCK_AGENT_CYRUS),
+    ]
 
     const mockIssueSelect = {
       from: vi.fn().mockReturnThis(),
@@ -483,13 +495,13 @@ describe('updateRatingsForIssue - Unit Tests', () => {
 
     await updateRatingsForIssue(MOCK_ISSUE_ID)
 
-    // Only cursor should be updated (cyrus DNF'd)
+    // Both agents should be updated (win/loss model: only commit count matters)
     expect(mockDb.insert).toHaveBeenCalled()
 
-    // Verify only cursor in ranking
+    // Verify cursor winner, cyrus loser (no lifespan check in win/loss model)
     expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
       expect.any(Object),
-      [MOCK_AGENT_CURSOR] // Only cursor, cyrus DNF'd
+      [[MOCK_AGENT_CURSOR], [MOCK_AGENT_CYRUS]]
     )
   })
 
@@ -599,10 +611,13 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     // All three agents should be updated with proper ranking
     expect(mockDb.insert).toHaveBeenCalled()
 
-    // Verify ranking: cursor (merged) first, engine (closed earlier) second, cyrus (closed later) third
+    // Verify ranking: cursor (merged) first, engine and cyrus tied for second
     expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
       expect.any(Object),
-      [MOCK_AGENT_CURSOR, MOCK_AGENT_ENGINE, MOCK_AGENT_CYRUS]
+      expect.arrayContaining([
+        [MOCK_AGENT_CURSOR],
+        expect.arrayContaining([MOCK_AGENT_ENGINE, MOCK_AGENT_CYRUS]),
+      ])
     )
   })
 
@@ -760,7 +775,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     // Verify ranking has single agent
     expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
       expect.any(Object),
-      [MOCK_AGENT_CURSOR]
+      [[MOCK_AGENT_CURSOR]]
     )
   })
 
@@ -799,7 +814,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
-        closedAt: new Date('2024-01-01T12:00:00Z'),
+        closedAt: new Date(MOCK_TIME_12PM),
         status: MOCK_STATUS_CLOSED,
         commitCount: 4,
         lastCommitSha: MOCK_COMMIT_SHA_DEF456,
@@ -904,16 +919,18 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     // All 5 agents should be updated
     expect(mockDb.insert).toHaveBeenCalled()
 
-    // Verify all 5 in ranking
+    // Verify all 5 in ranking (winner first, all losers tied)
     expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
       expect.any(Object),
-      [
-        MOCK_AGENT_CURSOR,
-        MOCK_AGENT_ENGINE,
-        MOCK_AGENT_CYRUS,
-        'aider',
-        'windsurf',
-      ]
+      expect.arrayContaining([
+        [MOCK_AGENT_CURSOR],
+        expect.arrayContaining([
+          MOCK_AGENT_ENGINE,
+          MOCK_AGENT_CYRUS,
+          'aider',
+          'windsurf',
+        ]),
+      ])
     )
   })
 
@@ -1069,7 +1086,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     // Verify only cursor in ranking
     expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
       expect.any(Object),
-      [MOCK_AGENT_CURSOR] // Only cursor, engine excluded (open PR)
+      [[MOCK_AGENT_CURSOR]] // Only cursor, engine excluded (open PR)
     )
   })
 
@@ -1077,7 +1094,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
     const mergedTime = new Date(MOCK_MERGED_TIME)
-    const sameCloseTime = new Date('2024-01-01T12:00:00Z')
+    const sameCloseTime = new Date(MOCK_TIME_12PM)
 
     const mockAttempts = [
       {
@@ -1178,107 +1195,89 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     // All three should be processed
     expect(mockDb.insert).toHaveBeenCalled()
 
-    // Verify cursor first (merged), then engine and cyrus (tied on close time)
-    const rankingCall = vi.mocked(
-      openskillModule.updateRatingsForCompletedIssue
-    ).mock.calls[0]
-    if (rankingCall?.[1]) {
-      expect(rankingCall[1][0]).toBe(MOCK_AGENT_CURSOR) // Winner first
-      expect(rankingCall[1]).toContain(MOCK_AGENT_ENGINE)
-      expect(rankingCall[1]).toContain(MOCK_AGENT_CYRUS)
-    }
+    // Verify cursor first (merged), then engine and cyrus tied for second
+    expect(openskillModule.updateRatingsForCompletedIssue).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.arrayContaining([
+        [MOCK_AGENT_CURSOR],
+        expect.arrayContaining([MOCK_AGENT_ENGINE, MOCK_AGENT_CYRUS]),
+      ])
+    )
+  })
+})
+
+describe('determineRanking - win/loss model', () => {
+  it('should rank winner first, all losers tied for second (no close time sorting)', () => {
+    const attempts = [
+      {
+        agentName: MOCK_AGENT_WINNER,
+        status: MOCK_STATUS_MERGED,
+        mergedAt: new Date(MOCK_TIME_12PM),
+        closedAt: null,
+        openedAt: new Date(MOCK_BASE_TIME),
+        commitCount: 5,
+      },
+      {
+        agentName: MOCK_AGENT_LOSER_CLOSED_EARLY,
+        status: MOCK_STATUS_CLOSED,
+        mergedAt: null,
+        closedAt: new Date('2024-01-01T11:00:00Z'), // Closed BEFORE winner merged
+        openedAt: new Date(MOCK_BASE_TIME),
+        commitCount: 3,
+      },
+      {
+        agentName: MOCK_AGENT_LOSER_CLOSED_LATE,
+        status: MOCK_STATUS_CLOSED,
+        mergedAt: null,
+        closedAt: new Date('2024-01-01T14:00:00Z'), // Closed AFTER winner merged
+        openedAt: new Date(MOCK_BASE_TIME),
+        commitCount: 4,
+      },
+    ]
+
+    const ranking = determineRanking(attempts)
+
+    // Winner should be position 1 (index 0)
+    expect(ranking[0]).toEqual([MOCK_AGENT_WINNER])
+
+    // ALL losers should be position 2 (index 1) - order within doesn't matter
+    expect(ranking[1]).toHaveLength(2)
+    expect(ranking[1]).toContain(MOCK_AGENT_LOSER_CLOSED_EARLY)
+    expect(ranking[1]).toContain(MOCK_AGENT_LOSER_CLOSED_LATE)
   })
 
-  it('should handle no winner, only closed PRs for completedAt', async () => {
-    const mockIssue = createMockIssue()
-    const baseTime = new Date(MOCK_BASE_TIME)
-    const closedTime1 = new Date(MOCK_CLOSED_TIME)
-    const closedTime2 = new Date(MOCK_CLOSED_TIME_2)
-
-    const mockAttempts = [
+  it('should exclude DNF agents (< 2 commits) from all ranking positions', () => {
+    const attempts = [
       {
-        id: 'attempt-1',
-        issueId: MOCK_ISSUE_ID,
-        agentName: MOCK_AGENT_ENGINE,
-        repo: MOCK_REPO,
-        prNumber: 1,
-        prUrl: MOCK_PR_URL_1,
-        branch: MOCK_FIX_TEST_BRANCH,
-        openedAt: baseTime,
-        mergedAt: null,
-        closedAt: closedTime1,
+        agentName: MOCK_AGENT_WINNER,
+        status: MOCK_STATUS_MERGED,
+        mergedAt: new Date(),
+        closedAt: null,
+        openedAt: new Date(),
+        commitCount: 5,
+      },
+      {
+        agentName: MOCK_AGENT_LOSER,
         status: MOCK_STATUS_CLOSED,
+        mergedAt: null,
+        closedAt: new Date(),
+        openedAt: new Date(),
         commitCount: 3,
-        lastCommitSha: MOCK_COMMIT_SHA_ABC123,
-        ciStatus: null,
-        ciLastCheckedAt: null,
-        sourceAttachmentId: null,
-        sourceAttachmentUrl: null,
       },
       {
-        id: 'attempt-2',
-        issueId: MOCK_ISSUE_ID,
-        agentName: MOCK_AGENT_CYRUS,
-        repo: MOCK_REPO,
-        prNumber: 2,
-        prUrl: MOCK_PR_URL_2,
-        branch: MOCK_FIX_TEST_2_BRANCH,
-        openedAt: baseTime,
-        mergedAt: null,
-        closedAt: closedTime2,
+        agentName: MOCK_AGENT_DNF,
         status: MOCK_STATUS_CLOSED,
-        commitCount: 4,
-        lastCommitSha: MOCK_COMMIT_SHA_DEF456,
-        ciStatus: null,
-        ciLastCheckedAt: null,
-        sourceAttachmentId: null,
-        sourceAttachmentUrl: null,
+        mergedAt: null,
+        closedAt: new Date(),
+        openedAt: new Date(),
+        commitCount: 1, // DNF
       },
     ]
 
-    const mockCurrentScores = [
-      createMockScore(MOCK_AGENT_ENGINE),
-      createMockScore(MOCK_AGENT_CYRUS),
-    ]
+    const ranking = determineRanking(attempts)
 
-    const mockIssueSelect = {
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue([mockIssue]),
-    }
-
-    const mockAttemptsSelect = {
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockResolvedValue(mockAttempts),
-    }
-
-    const mockScoresSelect = {
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockResolvedValue(mockCurrentScores),
-    }
-
-    const mockInsert = {
-      values: vi.fn().mockReturnThis(),
-      onConflictDoUpdate: vi.fn().mockResolvedValue([]),
-    }
-
-    mockDb.select
-      .mockReturnValueOnce(mockIssueSelect as never)
-      .mockReturnValueOnce(mockAttemptsSelect as never)
-      .mockReturnValueOnce(mockScoresSelect as never)
-
-    mockDb.insert.mockReturnValue(mockInsert as never)
-
-    await updateRatingsForIssue(MOCK_ISSUE_ID)
-
-    // Both agents should be updated
-    expect(mockDb.insert).toHaveBeenCalled()
-
-    // Verify completedAt uses latest closedAt (closedTime2)
-    expect(mockInsert.values).toHaveBeenCalledWith(
-      expect.objectContaining({
-        completedAt: closedTime2,
-      })
-    )
+    expect(ranking).toHaveLength(2) // Only 2 positions: [winner], [loser]
+    expect(ranking[0]).toEqual([MOCK_AGENT_WINNER])
+    expect(ranking[1]).toEqual([MOCK_AGENT_LOSER])
   })
 })

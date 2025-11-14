@@ -64,14 +64,15 @@ describe('openskill rating service', () => {
   })
 
   describe('updateRatingsForCompletedIssue', () => {
-    it('should update ratings based on ranking', () => {
+    it('should update ratings based on grouped ranking (win/loss model)', () => {
       const beforeRatings = {
         cursor: rating({ mu: 25, sigma: 8.333 }),
         engine: rating({ mu: 25, sigma: 8.333 }),
         cyrus: rating({ mu: 25, sigma: 8.333 }),
       }
 
-      const ranking = ['cursor', 'engine', 'cyrus'] // cursor wins
+      // Grouped ranking: cursor wins, engine and cyrus tied for 2nd
+      const ranking = [['cursor'], ['engine', 'cyrus']]
 
       const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
 
@@ -84,6 +85,7 @@ describe('openskill rating service', () => {
 
       // Loser's mu should decrease
       expect(result['cyrus']?.mu).toBeLessThan(beforeRatings['cyrus'].mu)
+      expect(result['engine']?.mu).toBeLessThan(beforeRatings['engine'].mu)
     })
 
     it('should handle single agent (no competition)', () => {
@@ -91,7 +93,7 @@ describe('openskill rating service', () => {
         cursor: rating({ mu: 25, sigma: 8.333 }),
       }
 
-      const ranking = ['cursor']
+      const ranking = [['cursor']]
 
       const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
 
@@ -107,7 +109,7 @@ describe('openskill rating service', () => {
       }
 
       // Only cursor and engine finished (cyrus DNF)
-      const ranking = ['cursor', 'engine']
+      const ranking = [['cursor'], ['engine']]
 
       const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
 
@@ -117,31 +119,38 @@ describe('openskill rating service', () => {
       expect(result['engine']).toBeDefined()
     })
 
-    it('should throw error when agent in ranking not found in currentRatings', () => {
+    it('should use fallback rating when agent not in currentRatings', () => {
       const beforeRatings = {
         cursor: rating({ mu: 25, sigma: 8.333 }),
       }
 
-      // 'engine' is in ranking but not in beforeRatings
-      const ranking = ['cursor', 'engine']
+      // 'engine' is in ranking but not in beforeRatings - should use default
+      const ranking = [['cursor'], ['engine']]
 
-      expect(() => {
-        updateRatingsForCompletedIssue(beforeRatings, ranking)
-      }).toThrow('Agent engine not found in currentRatings')
+      const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
+
+      // Should not throw, should use default rating for engine
+      expect(result['cursor']).toBeDefined()
+      expect(result['engine']).toBeDefined()
+      expect(result['engine']?.mu).toBeLessThan(25) // New agent loses, mu decreases
     })
 
-    it('should throw error for missing agent with descriptive message', () => {
+    it('should handle all agents in same group (tied)', () => {
       const beforeRatings = {
         cursor: rating({ mu: 25, sigma: 8.333 }),
         engine: rating({ mu: 25, sigma: 8.333 }),
+        cyrus: rating({ mu: 25, sigma: 8.333 }),
       }
 
-      // 'cyrus' is in ranking but not in beforeRatings
-      const ranking = ['cursor', 'engine', 'cyrus']
+      // All agents tied for first place
+      const ranking = [['cursor', 'engine', 'cyrus']]
 
-      expect(() => {
-        updateRatingsForCompletedIssue(beforeRatings, ranking)
-      }).toThrow('Agent cyrus not found in currentRatings')
+      const result = updateRatingsForCompletedIssue(beforeRatings, ranking)
+
+      // All agents should have similar ratings (tied)
+      expect(result['cursor']).toBeDefined()
+      expect(result['engine']).toBeDefined()
+      expect(result['cyrus']).toBeDefined()
     })
   })
 })

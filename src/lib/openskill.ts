@@ -48,39 +48,44 @@ export function calculateOrdinal(agentRating: Rating): number {
 }
 
 /**
- * Updates agent ratings after a completed issue.
- * Uses Plackett-Luce model where ranking determines rating changes.
+ * Updates ratings for agents after a completed issue.
+ * Uses OpenSkill's rate() function with grouped ranking (teams).
  *
- * @param currentRatings - Map of agentName to current Rating
- * @param ranking - Array of agent names in finish order (1st = winner, last = worst)
- * @returns Updated ratings for agents who participated (DNF agents excluded)
+ * @param currentRatings - Map of agent name to current Rating
+ * @param ranking - Grouped ranking: [[winner], [loser1, loser2, ...]]
+ * @returns Map of agent name to updated Rating
  */
 export function updateRatingsForCompletedIssue(
   currentRatings: Record<string, Rating>,
-  ranking: string[]
+  ranking: string[][]
 ): Record<string, Rating> {
-  // Build teams array: each agent is a "team" of one
-  // Order matters: teams[0] = 1st place, teams[1] = 2nd place, etc.
-  const teams = ranking.map((agentName) => {
-    const agentRating = currentRatings[agentName]
-    if (!agentRating) {
-      throw new Error(`Agent ${agentName} not found in currentRatings`)
-    }
-    return [agentRating]
-  })
+  // Build teams array for OpenSkill
+  const teams = ranking.map((group) =>
+    group.map(
+      (agentName) => currentRatings[agentName] ?? initializeAgentRating()
+    )
+  )
 
-  // Calculate new ratings using Plackett-Luce
+  // Calculate new ratings
   const updatedTeams = rate(teams)
 
-  // Build result map: agentName -> updated Rating
-  const result: Record<string, Rating> = {}
+  // Map back to agent names
+  const updatedRatings: Record<string, Rating> = {}
   for (let i = 0; i < ranking.length; i++) {
-    const agentName = ranking[i]
-    const updatedRating = updatedTeams[i]?.[0]
-    if (agentName !== undefined && updatedRating !== undefined) {
-      result[agentName] = updatedRating
+    const group = ranking[i]
+    const updatedGroup = updatedTeams[i]
+
+    if (!group || !updatedGroup) continue
+
+    for (let j = 0; j < group.length; j++) {
+      const agentName = group[j]
+      const updatedRating = updatedGroup[j]
+
+      if (agentName && updatedRating) {
+        updatedRatings[agentName] = updatedRating
+      }
     }
   }
 
-  return result
+  return updatedRatings
 }
