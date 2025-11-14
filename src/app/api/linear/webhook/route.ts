@@ -9,6 +9,7 @@
 import crypto from 'node:crypto'
 
 import { eq, and, asc, gt, sql } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -235,6 +236,11 @@ async function handleIssueEvent(payload: LinearWebhookPayload): Promise<void> {
 
   // Sync existing state from Linear API (fills metadata)
   await syncIssueFromLinear(issue.id)
+
+  // Invalidate caches so homepage shows updated issue
+  revalidateTag('issues-list')
+  revalidateTag('agent-stats')
+  console.log(`[Linear] Invalidated cache for issue ${issue.identifier}`)
 }
 
 /**
@@ -270,7 +276,7 @@ async function handleAttachmentEvent(
 
   // Get the issue this attachment belongs to
   const issueResult = await db
-    .select({ id: issues.id })
+    .select({ id: issues.id, linearKey: issues.linearKey })
     .from(issues)
     .where(eq(issues.linearId, linearIssueId))
     .limit(1)
@@ -280,8 +286,9 @@ async function handleAttachmentEvent(
     return
   }
 
-  const issueId = issueResult[0]?.id
-  if (!issueId) return
+  const issueRecord = issueResult[0]
+  if (!issueRecord) return
+  const issueId = issueRecord.id
 
   // Parse status from subtitle (e.g., "org/repo #123 • merged")
   let status = 'open'
@@ -343,6 +350,11 @@ async function handleAttachmentEvent(
         sourceAttachmentUrl: attachment.url,
       },
     })
+
+  // Invalidate caches so homepage shows new PR attachment
+  revalidateTag('issues-list')
+  revalidateTag('agent-stats')
+  console.log(`[Linear] Invalidated cache for attachment on issue ${issueRecord.linearKey}`)
 
   // Update agent status to submitted
   await updateAgentStatusOnPR(issueId, agentNameFromBranch)
