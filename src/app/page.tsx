@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import { unstable_cache } from 'next/cache'
 import { AgentAvatar } from '@/components/AgentAvatar'
 import { IssueActivityTable } from '@/components/IssueActivityTable'
 import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
@@ -31,9 +32,6 @@ import {
 } from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
 
-// Revalidate every 30 seconds - fresh data without constant DB queries
-export const revalidate = 30
-
 /**
  * Dashboard home page component.
  * Displays agent leaderboard with performance metrics.
@@ -41,9 +39,21 @@ export const revalidate = 30
  * @returns Dashboard home page with agent leaderboard
  */
 export default async function Home(): Promise<React.JSX.Element> {
-  const agentStats = await getAgentStats()
-  const agentTemporalStats = await getAgentTemporalStats()
-  const recentIssues = await getIssuesWithAgents()
+  const agentStats = await unstable_cache(
+    async () => getAgentStats(),
+    ['agent-stats'],
+    { tags: ['agent-stats'] }
+  )()
+  const agentTemporalStats = await unstable_cache(
+    async () => getAgentTemporalStats(),
+    ['agent-temporal-stats'],
+    { tags: ['agent-stats'] }
+  )()
+  const recentIssues = await unstable_cache(
+    async () => getIssuesWithAgents(),
+    ['issues-list'],
+    { tags: ['issues-list'] }
+  )()
 
   // Find the top performer (highest ordinal score)
   const topPerformer =
