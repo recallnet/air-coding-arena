@@ -11,6 +11,7 @@ import { db } from '@/db/client'
 import { issues } from '@/db/schema'
 
 import { syncIssueFromLinear } from './linear-sync'
+import { updateWinner } from './update-winner'
 
 /**
  * Reconciles database state with Linear API
@@ -81,6 +82,30 @@ export async function reconcileLinearIssues(): Promise<number> {
 
       reconciledCount++
       console.log(`[Reconcile] Synced ${issue.identifier}`)
+
+      // Check if issue needs winner determination and rating calculation
+      // This covers missed Linear webhooks that would have triggered these
+      const issueRecord = await db.query.issues.findFirst({
+        where: (issues, { eq }) => eq(issues.linearId, issue.id),
+        with: {
+          attempts: {
+            where: (attempts, { eq }) => eq(attempts.status, 'merged'),
+          },
+        },
+      })
+
+      if (issueRecord && issueRecord.attempts.length > 0) {
+        // Has merged PRs - ensure winner is set and ratings calculated
+        if (!issueRecord.winnerAttemptId) {
+          console.log(
+            `[Reconcile] Issue ${issue.identifier} has merged PRs but no winner - updating...`
+          )
+          await updateWinner(issueRecord.id)
+          console.log(
+            `[Reconcile] Winner and ratings updated for ${issue.identifier}`
+          )
+        }
+      }
     } catch (error) {
       console.error(`[Reconcile] Failed to sync ${issue.identifier}:`, error)
       // Continue with other issues
