@@ -1,5 +1,12 @@
 /**
  * Integration test for PR merge → winner selection → rating update flow
+ *
+ * NOTE: This test requires a real database connection and will modify data.
+ * It is skipped when:
+ * - No DATABASE_URL is set (no database available)
+ * - IS_TEST_DB_URL === 'true' (test database is not properly configured for integration tests)
+ *
+ * To run locally, set DATABASE_URL to a development/staging database.
  */
 import { eq, inArray } from 'drizzle-orm'
 import { describe, it, expect, beforeEach } from 'vitest'
