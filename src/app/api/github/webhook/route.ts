@@ -13,7 +13,6 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/db/client'
 import { attempts, events, githubAppInstallations } from '@/db/schema'
-import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
 import { getInstallationToken } from '@/lib/github-app-auth'
 
 type GitHubWebhookPayload = {
@@ -80,7 +79,7 @@ async function getCommitCount(repo: string, prNumber: number): Promise<number> {
   }
 
   // Look up installation for this org
-  let token: string | undefined
+  let token: string
   try {
     const installation = await db
       .select()
@@ -93,20 +92,22 @@ async function getCommitCount(repo: string, prNumber: number): Promise<number> {
       token = await getInstallationToken(installation[0].installationId)
       console.log(`[GitHub] Using installation token for ${owner}`)
     } else {
-      // Fallback to PAT if no installation found
-      console.log(
-        `[GitHub] No installation found for ${owner}, falling back to PAT`
+      // NO FALLBACK - fail fast
+      console.error(`GitHub App installation not found for ${owner}`)
+      throw new Error(
+        `GitHub App installation not found for repository ${repo}`
       )
-      token = process.env['GITHUB_TOKEN']
     }
   } catch (error) {
-    console.error(`[GitHub] Error looking up installation for ${owner}:`, error)
-    token = process.env['GITHUB_TOKEN']
-  }
-
-  if (!token) {
-    console.error('No GitHub authentication available (no installation or PAT)')
-    return 1 // Fallback to current count
+    // NO FALLBACK - fail fast
+    if (
+      error instanceof Error &&
+      error.message.includes('installation not found')
+    ) {
+      throw error
+    }
+    console.error(`GitHub App installation error for ${owner}:`, error)
+    throw new Error(`GitHub App installation not found for repository ${repo}`)
   }
 
   const url = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/commits`
@@ -334,15 +335,10 @@ async function handlePullRequestClosed(
 
     console.log(`[GitHub] PR ${repo}#${prNumber} merged`)
 
-    // Update agent status (accepted/rejected)
-    // Critical business logic - fail loudly if this breaks
-    await updateAgentStatusOnPRClose(attempt.issueId, attempt.agentName, true)
-    console.log(
-      `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
-    )
+    // NOTE: Agent status updates are handled by Linear webhook's updateWinner()
+    // which uses transactions to avoid race conditions. GitHub webhook only
+    // tracks attempt status (merged/closed).
 
-    // NOTE: Rating updates moved to Linear webhook (updateWinner transaction)
-    // GitHub webhook only tracks commit counts and CI status
     revalidatePath('/')
     console.log(`[GitHub] Revalidated homepage for issue ${attempt.issueId}`)
   } else {
@@ -357,12 +353,9 @@ async function handlePullRequestClosed(
 
     console.log(`[GitHub] PR ${repo}#${prNumber} closed without merge`)
 
-    // Update agent status (rejected)
-    // Critical business logic - fail loudly if this breaks
-    await updateAgentStatusOnPRClose(attempt.issueId, attempt.agentName, false)
-    console.log(
-      `[GitHub] Updated agent status for ${attempt.agentName} on issue ${attempt.issueId}`
-    )
+    // NOTE: Agent status updates are handled by Linear webhook's updateWinner()
+    // which uses transactions to avoid race conditions. GitHub webhook only
+    // tracks attempt status (merged/closed).
   }
 }
 

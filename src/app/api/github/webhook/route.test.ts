@@ -234,7 +234,20 @@ describe('/api/github/webhook', () => {
       const installationLookupChain = {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]), // No installation found
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: 'install-uuid',
+                installationId: '12345',
+                accountId: '123',
+                accountLogin: 'recallnet',
+                accountType: 'Organization',
+                isActive: true,
+                installedAt: new Date(),
+                suspendedAt: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ]),
           }),
         }),
       }
@@ -263,6 +276,11 @@ describe('/api/github/webhook', () => {
       vi.mocked(db.select)
         .mockReturnValueOnce(attemptLookupChain as never)
         .mockReturnValueOnce(installationLookupChain as never)
+
+      // Mock getInstallationToken
+      vi.mocked(getInstallationToken).mockResolvedValue(
+        'ghs_installation_token'
+      )
 
       // Mock GitHub API response for commit count
       global.fetch = vi.fn().mockResolvedValue({
@@ -667,7 +685,20 @@ describe('/api/github/webhook', () => {
       const installationLookupChain = {
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]), // No installation found
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: 'install-uuid',
+                installationId: '12345',
+                accountId: '123',
+                accountLogin: 'recallnet',
+                accountType: 'Organization',
+                isActive: true,
+                installedAt: new Date(),
+                suspendedAt: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ]),
           }),
         }),
       }
@@ -696,6 +727,11 @@ describe('/api/github/webhook', () => {
       vi.mocked(db.select)
         .mockReturnValueOnce(attemptLookupChain as never)
         .mockReturnValueOnce(installationLookupChain as never)
+
+      // Mock getInstallationToken
+      vi.mocked(getInstallationToken).mockResolvedValue(
+        'ghs_installation_token'
+      )
 
       // Mock GitHub API response
       global.fetch = vi.fn().mockResolvedValue({
@@ -1495,12 +1531,8 @@ describe('/api/github/webhook', () => {
       // Verify update was called with merged status
       expect(db.update).toHaveBeenCalled()
 
-      // Verify agent status was updated
-      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith(
-        TEST_ISSUE_ID,
-        'cursor',
-        true
-      )
+      // Agent status updates moved to Linear webhook - should NOT be called here
+      expect(updateAgentStatusOnPRClose).not.toHaveBeenCalled()
 
       // Rating updates moved to Linear webhook - should NOT be called here
       expect(updateRatingsForIssue).not.toHaveBeenCalled()
@@ -1560,12 +1592,8 @@ describe('/api/github/webhook', () => {
         })
       )
 
-      // Verify agent status was updated to rejected
-      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith(
-        TEST_ISSUE_ID,
-        'cursor',
-        false
-      )
+      // Agent status updates moved to Linear webhook - should NOT be called here
+      expect(updateAgentStatusOnPRClose).not.toHaveBeenCalled()
 
       // Verify rating update was NOT triggered for closed PRs
       expect(updateRatingsForIssue).not.toHaveBeenCalled()
@@ -1624,12 +1652,8 @@ describe('/api/github/webhook', () => {
       // Rating updates should NOT be called (handled by Linear webhook now)
       expect(updateRatingsForIssue).not.toHaveBeenCalled()
 
-      // But agent status should still be updated
-      expect(updateAgentStatusOnPRClose).toHaveBeenCalledWith(
-        'issue-123',
-        'cursor',
-        true
-      )
+      // Agent status updates should also NOT be called (handled by Linear webhook now)
+      expect(updateAgentStatusOnPRClose).not.toHaveBeenCalled()
     })
 
     it('should ignore untracked PRs', async () => {
@@ -1761,6 +1785,135 @@ describe('/api/github/webhook', () => {
 
       const json = (await response.json()) as { error?: string }
       expect(json.error).toBe('Internal server error')
+    })
+
+    it('should throw error when GitHub App installation not found (no PAT fallback)', async () => {
+      const payload = {
+        action: 'synchronize',
+        pull_request: {
+          number: 123,
+          head: { sha: 'abc123' },
+        },
+        repository: { full_name: 'test/repo' },
+      }
+
+      // Mock idempotency check (event is new)
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup (PR is tracked)
+      const attemptLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'test-agent',
+                repo: 'test/repo',
+                prNumber: 123,
+                commitCount: 1,
+              },
+            ]),
+          }),
+        }),
+      }
+
+      // Mock installation lookup (not found)
+      const installationLookupChain = {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]), // No installation found
+          }),
+        }),
+      }
+
+      // Mock db.select for both calls
+      vi.mocked(db.select)
+        .mockReturnValueOnce(attemptLookupChain as never)
+        .mockReturnValueOnce(installationLookupChain as never)
+
+      // Clear GITHUB_TOKEN to ensure error is thrown (not fallback)
+      vi.stubEnv('GITHUB_TOKEN', '')
+
+      // Should throw error when no installation found and no PAT
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(500)
+
+      const json = (await response.json()) as { error?: string }
+      expect(json.error).toBe('Internal server error')
+    })
+  })
+
+  describe('Agent Status Updates', () => {
+    beforeEach(() => {
+      vi.stubEnv('GITHUB_WEBHOOK_SECRET', TEST_SECRET)
+      vi.clearAllMocks()
+    })
+
+    it('should NOT update agent status on PR merge (Linear webhook handles this)', async () => {
+      // This test documents that GitHub webhook does NOT update agent status
+      // Linear webhook's updateWinner() handles status updates atomically in a transaction
+
+      const payload = {
+        action: 'closed',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+          merged: true,
+          merged_at: '2024-01-01T12:00:00Z',
+          title: 'Fix bug',
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'test-agent',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }]),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // GitHub webhook should update attempt status to merged
+      expect(db.update).toHaveBeenCalled()
+
+      // GitHub webhook should NOT call updateAgentStatusOnPRClose
+      // Linear webhook handles agent status updates atomically
+      expect(updateAgentStatusOnPRClose).not.toHaveBeenCalled()
     })
   })
 })
