@@ -7,10 +7,20 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AgentConfig } from './agent-config'
 import { getAgentConfigs } from './agent-config'
+
+// Constants for duplicate strings
+const MOCK_USER_ID = 'mock-user-id'
+const GITHUB_COM_PATH = 'github.com'
+const MOCK_TEAM_ID = 'team-1'
+const ENGINEERING_NAME = 'Engineering'
+// eslint-disable-next-line sonarjs/no-duplicate-string
+const IN_PROGRESS_STATE = 'In Progress'
 
 // Set up mock data with real agent configs
 const mockAgentConfigs: AgentConfig[] = [
@@ -18,37 +28,37 @@ const mockAgentConfigs: AgentConfig[] = [
     name: 'cursor',
     handle: '@Cursor',
     displayName: 'Cursor',
-    linearUserId: 'mock-user-id',
+    linearUserId: MOCK_USER_ID,
   },
   {
     name: 'engine',
     handle: '@Engine',
     displayName: 'Engine',
-    linearUserId: 'mock-user-id',
+    linearUserId: MOCK_USER_ID,
   },
   {
     name: 'cyrus',
     handle: '@Cyrus',
     displayName: 'Cyrus',
-    linearUserId: 'mock-user-id',
+    linearUserId: MOCK_USER_ID,
   },
   {
     name: 'claude',
     handle: '@Claude',
     displayName: 'Claude',
-    linearUserId: 'mock-user-id',
+    linearUserId: MOCK_USER_ID,
   },
   {
     name: 'factory',
     handle: '@Factory',
     displayName: 'Factory',
-    linearUserId: 'mock-user-id',
+    linearUserId: MOCK_USER_ID,
   },
   {
     name: 'githubcopilot',
     handle: '@GitHubCopilot',
     displayName: 'GitHubCopilot',
-    linearUserId: 'mock-user-id',
+    linearUserId: MOCK_USER_ID,
   },
 ]
 
@@ -64,6 +74,9 @@ type IssueFixture = {
   id: string
   identifier: string
   title: string
+  url: string
+  createdAt: string
+  updatedAt: string
   comments: Array<{
     id: string
     body: string
@@ -81,10 +94,12 @@ type IssueFixture = {
 
 /**
  * Load all captured Linear issue fixtures
+ * @returns Array of Linear issue fixtures
  */
 function loadIssueFixtures(): IssueFixture[] {
+  const dirname = fileURLToPath(new URL('.', import.meta.url))
   const fixturesPath = join(
-    __dirname,
+    dirname,
     '../__tests__/fixtures/linear-issues/index.json'
   )
   const json = readFileSync(fixturesPath, 'utf-8')
@@ -95,6 +110,8 @@ function loadIssueFixtures(): IssueFixture[] {
  * Extract agent mentions from comment body
  * Uses exact production logic from linear-sync.ts lines 302-308
  * Matches both @displayName and @[displayName] formats using .includes()
+ * @param body - Comment body text to search for agent mentions
+ * @returns Promise resolving to array of agent names mentioned in the body
  */
 async function extractAgentMentions(body: string): Promise<string[]> {
   const agentConfigs = await getAgentConfigs()
@@ -160,7 +177,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
           if (mentions.length > 0) {
             commentsWithMentions++
             for (const mention of mentions) {
-              mentionPatterns[mention] = (mentionPatterns[mention] || 0) + 1
+              mentionPatterns[mention] = (mentionPatterns[mention] ?? 0) + 1
             }
           }
         }
@@ -181,6 +198,8 @@ describe('Linear Sync - Fixture-Based Tests', () => {
      * Extract PR URLs from comment body
      * Uses exact production logic from linear-sync.ts lines 356-364
      * Pattern: /github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/g
+     * @param body - Comment body text to search for PR URLs
+     * @returns Array of PR URL information objects
      */
     function extractPRURLs(body: string): Array<{ org: string; repo: string; prNumber: string; fullUrl: string }> {
       const prRegex = /github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/g
@@ -202,6 +221,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       return results
     }
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     it('should extract GitHub PR URLs from all real comments', () => {
       const fixtures = loadIssueFixtures()
 
@@ -292,7 +312,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
       // Validate against real fixture data
       const issuesWithPRLinks = fixtures.filter((issue) =>
-        issue.comments.some((c) => c.body.includes('github.com') && c.body.includes('/pull/'))
+        issue.comments.some((c) => c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/'))
       )
 
       console.log(`\n   Issues with PR links in comments: ${issuesWithPRLinks.length}/${fixtures.length}`)
@@ -339,12 +359,14 @@ describe('Linear Sync - Fixture-Based Tests', () => {
      * Walk parent chain for a comment
      * Uses exact production logic from linear-sync.ts lines 186-255
      * Walks up parent chain until finding agent mention or reaching root
+     * @param commentId - Starting comment ID
+     * @param commentParents - Map of comment IDs to parent IDs
+     * @returns Array of comment IDs in the chain
      */
     function walkParentChain(
       commentId: string,
-      commentParents: Map<string, string | null>,
-      commentMap: Map<string, IssueFixture['comments'][0]>
-    ): Array<string> {
+      commentParents: Map<string, string | null>
+    ): string[] {
       const chain: string[] = []
       let currentId: string | null = commentId
       const visited = new Set<string>()
@@ -355,7 +377,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         chain.push(currentId)
 
         // Move to parent
-        const parentId = commentParents.get(currentId) ?? null
+        const parentId: string | null = commentParents.get(currentId) ?? null
         currentId = parentId
       }
 
@@ -391,13 +413,13 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
         // Walk parent chain for each comment
         for (const comment of issue.comments) {
-          const chain = walkParentChain(comment.id, parentMap, commentMap)
+          const chain = walkParentChain(comment.id, parentMap)
           const depth = chain.length - 1 // Subtract self
 
           if (depth > 0) {
             totalParentsCollected += depth
             maxDepth = Math.max(maxDepth, depth)
-            chainDepths[depth] = (chainDepths[depth] || 0) + 1
+            chainDepths[depth] = (chainDepths[depth] ?? 0) + 1
           }
         }
       }
@@ -416,6 +438,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(maxDepth).toBeLessThan(100) // No infinite loops
     })
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     it('should find agent ownership by walking parent chain', async () => {
       const fixtures = loadIssueFixtures()
 
@@ -643,13 +666,13 @@ describe('Linear Sync - Fixture-Based Tests', () => {
           cycle: Promise.resolve(null),
           parent: Promise.resolve(null),
           team: Promise.resolve({
-            id: 'team-1',
+            id: MOCK_TEAM_ID,
             key: 'ENG',
-            name: 'Engineering',
+            name: ENGINEERING_NAME,
           }),
           state: Promise.resolve({
             id: 'state-1',
-            name: 'In Progress',
+            name: IN_PROGRESS_STATE,
             type: 'started',
           }),
         }
@@ -818,7 +841,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       let testIssue: IssueFixture | null = null
       for (const fixture of fixtures) {
         const hasPR = fixture.comments.some((c) =>
-          c.body.includes('github.com') && c.body.includes('/pull/')
+          c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
         )
         if (hasPR) {
           testIssue = fixture
@@ -1051,6 +1074,9 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         id: 'test-empty-comments',
         identifier: 'TEST-EMPTY',
         title: 'Issue with no comments',
+        url: 'https://linear.app/test/issue/TEST-EMPTY',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
         comments: [], // Empty array
         attachments: [],
       }
@@ -1196,6 +1222,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(totalAttachments).toBeGreaterThanOrEqual(0)
     })
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     it('should detect malformed agent mentions in real data', async () => {
       console.log(`\n🔍 Checking for malformed mentions in real data...`)
 
@@ -1275,6 +1302,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       }
     })
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     it('should validate fixture data integrity for edge cases', () => {
       const fixtures = loadIssueFixtures()
 
@@ -1339,10 +1367,13 @@ describe('Linear Sync - Fixture-Based Tests', () => {
     /**
      * Load a synthetic fixture by filename
      * Synthetic fixtures are created by modifying real data to test edge cases
+     * @param filename - Name of the synthetic fixture file
+     * @returns Parsed IssueFixture object
      */
     function loadSyntheticFixture(filename: string): IssueFixture {
+      const dirname = fileURLToPath(new URL('.', import.meta.url))
       const path = join(
-        __dirname,
+        dirname,
         `../__tests__/fixtures/linear-issues/synthetic/${filename}`
       )
       return JSON.parse(readFileSync(path, 'utf-8')) as IssueFixture
@@ -1389,6 +1420,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(visited.size).toBe(3) // Should visit all 3 comments before hitting cycle
     })
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     it('should handle deep nested threading (depth 5+)', async () => {
       const fixture = loadSyntheticFixture('deep-threading.json')
 
@@ -1417,7 +1449,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
       while (current && !visited.has(current)) {
         visited.add(current)
-        const parent = parentMap.get(current) ?? null
+        const parent: string | null = parentMap.get(current) ?? null
         if (parent) {
           depth++
         }
@@ -1432,7 +1464,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(visited.size).toBe(6)
 
       // Verify agent mention is found by walking up the chain
-      const prComment = fixture.comments.find((c) => c.body.includes('github.com'))
+      const prComment = fixture.comments.find((c) => c.body.includes(GITHUB_COM_PATH))
       if (prComment) {
         // Walk to find agent mention
         let currentId: string | null = prComment.id
@@ -1517,11 +1549,12 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(mentions).toContain('claude')
 
       // Verify each mentioned agent has a corresponding PR in thread
-      const prComments = fixture.comments.filter((c) => c.body.includes('github.com'))
+      const prComments = fixture.comments.filter((c) => c.body.includes(GITHUB_COM_PATH))
       console.log(`   Found ${prComments.length} comments with PR URLs`)
       expect(prComments.length).toBeGreaterThan(0)
     })
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     it('should handle extreme case with 20+ comments in deep chain', async () => {
       const fixture = loadSyntheticFixture('extreme-long-chain.json')
 
@@ -1549,7 +1582,7 @@ describe('Linear Sync - Fixture-Based Tests', () => {
 
         while (current && !visited.has(current)) {
           visited.add(current)
-          const parent = parentMap.get(current) ?? null
+          const parent: string | null = parentMap.get(current) ?? null
           if (parent) depth++
           current = parent
         }
@@ -1584,13 +1617,17 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       const rootComments = fixture.comments.filter((c) => c.parentId === null)
       expect(rootComments.length).toBe(1)
 
-      const rootMentions = await extractAgentMentions(rootComments[0]!.body)
+      const rootComment = rootComments[0]
+      if (!rootComment) {
+        throw new Error('No root comment found')
+      }
+      const rootMentions = await extractAgentMentions(rootComment.body)
       console.log(`   Root comment agent mentions: ${rootMentions.join(', ')}`)
       expect(rootMentions.length).toBeGreaterThan(0)
 
       // Find PR in deep comment
       const prComment = fixture.comments.find((c) =>
-        c.body.includes('github.com') && c.body.includes('/pull/')
+        c.body.includes(GITHUB_COM_PATH) && c.body.includes('/pull/')
       )
       expect(prComment).toBeTruthy()
 
