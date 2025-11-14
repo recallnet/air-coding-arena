@@ -481,3 +481,6 @@ async function handleCommentEvent(
   // (Cheaper than parsing single comment + risk of missing context)
   await syncIssueFromLinear(issue.linearId)
 }
+
+// Export for integration testing
+export { updateWinner }
