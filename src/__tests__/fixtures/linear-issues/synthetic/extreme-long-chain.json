@@ -1,0 +1,195 @@
+{
+  "id": "synthetic-extreme-1",
+  "identifier": "TEST-EXTREME",
+  "title": "Synthetic test: Extreme case with long chain and many comments",
+  "description": "Tests behavior with 20+ comments and a very deep chain",
+  "url": "https://linear.app/test/issue/TEST-EXTREME",
+  "createdAt": "2025-11-14T00:00:00.000Z",
+  "updatedAt": "2025-11-14T00:20:00.000Z",
+  "archivedAt": null,
+  "canceledAt": null,
+  "completedAt": null,
+  "startedAt": "2025-11-14T00:00:00.000Z",
+  "priority": 0,
+  "priorityLabel": "No priority",
+  "estimate": null,
+  "comments": [
+    {
+      "id": "c1",
+      "body": "@cursor please implement this complex feature",
+      "createdAt": "2025-11-14T00:00:00.000Z",
+      "parentId": null,
+      "userId": "user-1",
+      "userName": "PM"
+    },
+    {
+      "id": "c2",
+      "body": "Starting work",
+      "createdAt": "2025-11-14T00:01:00.000Z",
+      "parentId": "c1",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c3",
+      "body": "Question about requirement A",
+      "createdAt": "2025-11-14T00:02:00.000Z",
+      "parentId": "c2",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c4",
+      "body": "Answer to requirement A",
+      "createdAt": "2025-11-14T00:03:00.000Z",
+      "parentId": "c3",
+      "userId": "user-1",
+      "userName": "PM"
+    },
+    {
+      "id": "c5",
+      "body": "Question about requirement B",
+      "createdAt": "2025-11-14T00:04:00.000Z",
+      "parentId": "c4",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c6",
+      "body": "Answer to requirement B",
+      "createdAt": "2025-11-14T00:05:00.000Z",
+      "parentId": "c5",
+      "userId": "user-1",
+      "userName": "PM"
+    },
+    {
+      "id": "c7",
+      "body": "Working on part 1",
+      "createdAt": "2025-11-14T00:06:00.000Z",
+      "parentId": "c6",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c8",
+      "body": "Part 1 done",
+      "createdAt": "2025-11-14T00:07:00.000Z",
+      "parentId": "c7",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c9",
+      "body": "Working on part 2",
+      "createdAt": "2025-11-14T00:08:00.000Z",
+      "parentId": "c8",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c10",
+      "body": "Part 2 done",
+      "createdAt": "2025-11-14T00:09:00.000Z",
+      "parentId": "c9",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c11",
+      "body": "Working on part 3",
+      "createdAt": "2025-11-14T00:10:00.000Z",
+      "parentId": "c10",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c12",
+      "body": "Part 3 done",
+      "createdAt": "2025-11-14T00:11:00.000Z",
+      "parentId": "c11",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c13",
+      "body": "Working on integration",
+      "createdAt": "2025-11-14T00:12:00.000Z",
+      "parentId": "c12",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c14",
+      "body": "Integration complete",
+      "createdAt": "2025-11-14T00:13:00.000Z",
+      "parentId": "c13",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c15",
+      "body": "Testing now",
+      "createdAt": "2025-11-14T00:14:00.000Z",
+      "parentId": "c14",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c16",
+      "body": "Tests passing",
+      "createdAt": "2025-11-14T00:15:00.000Z",
+      "parentId": "c15",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c17",
+      "body": "Creating PR",
+      "createdAt": "2025-11-14T00:16:00.000Z",
+      "parentId": "c16",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c18",
+      "body": "PR ready: github.com/test/massive/pull/9999",
+      "createdAt": "2025-11-14T00:17:00.000Z",
+      "parentId": "c17",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "c19",
+      "body": "Looks good!",
+      "createdAt": "2025-11-14T00:18:00.000Z",
+      "parentId": "c18",
+      "userId": "user-1",
+      "userName": "PM"
+    },
+    {
+      "id": "c20",
+      "body": "Merging",
+      "createdAt": "2025-11-14T00:19:00.000Z",
+      "parentId": "c19",
+      "userId": "user-2",
+      "userName": "Cursor"
+    }
+  ],
+  "attachments": [],
+  "labels": [],
+  "assignee": null,
+  "creator": null,
+  "team": {
+    "id": "team-1",
+    "key": "TEST",
+    "name": "Test Team"
+  },
+  "state": {
+    "id": "state-1",
+    "name": "Open",
+    "type": "unstarted"
+  },
+  "project": null,
+  "cycle": null,
+  "parent": null
+}

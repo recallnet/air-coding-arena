@@ -1334,4 +1334,309 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       expect(stats.attachmentsWithEmptyUrl).toBe(0)
     })
   })
+
+  describe('Synthetic Test Cases - Based on Real Data Models', () => {
+    /**
+     * Load a synthetic fixture by filename
+     * Synthetic fixtures are created by modifying real data to test edge cases
+     */
+    function loadSyntheticFixture(filename: string): IssueFixture {
+      const path = join(
+        __dirname,
+        `../__tests__/fixtures/linear-issues/synthetic/${filename}`
+      )
+      return JSON.parse(readFileSync(path, 'utf-8')) as IssueFixture
+    }
+
+    it('should detect and handle circular parent chains', () => {
+      const fixture = loadSyntheticFixture('circular-chain.json')
+
+      console.log(`\n🔄 Testing circular chain detection with synthetic fixture...`)
+      console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
+
+      // Build parent map
+      const parentMap = new Map<string, string | null>()
+      const commentMap = new Map<string, IssueFixture['comments'][0]>()
+
+      for (const comment of fixture.comments) {
+        parentMap.set(comment.id, comment.parentId)
+        commentMap.set(comment.id, comment)
+      }
+
+      // Try to walk chain from last comment (which should hit a cycle)
+      const visited = new Set<string>()
+      let current: string | null = fixture.comments[0]?.id ?? null
+      let cycleDetected = false
+      let steps = 0
+
+      console.log(`   Walking chain from comment: ${current}`)
+
+      while (current && steps < 100) {
+        if (visited.has(current)) {
+          cycleDetected = true
+          console.log(`   ✓ Detected cycle at: ${current} after ${steps} steps`)
+          break
+        }
+        visited.add(current)
+        current = parentMap.get(current) ?? null
+        steps++
+      }
+
+      console.log(`   Visited ${visited.size} comments before detecting cycle`)
+
+      // Should detect the synthetic cycle
+      expect(cycleDetected).toBe(true)
+      expect(visited.size).toBe(3) // Should visit all 3 comments before hitting cycle
+    })
+
+    it('should handle deep nested threading (depth 5+)', async () => {
+      const fixture = loadSyntheticFixture('deep-threading.json')
+
+      console.log(`\n🧵 Testing deep nested threading with synthetic fixture...`)
+      console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
+
+      // Build parent map
+      const parentMap = new Map<string, string | null>()
+      const commentMap = new Map<string, IssueFixture['comments'][0]>()
+
+      for (const comment of fixture.comments) {
+        parentMap.set(comment.id, comment.parentId)
+        commentMap.set(comment.id, comment)
+      }
+
+      // Find the deepest comment (should be last in chain)
+      const lastComment = fixture.comments[fixture.comments.length - 1]
+      if (!lastComment) {
+        throw new Error('No comments in fixture')
+      }
+
+      // Walk chain from deepest to root
+      const visited = new Set<string>()
+      let current: string | null = lastComment.id
+      let depth = 0
+
+      while (current && !visited.has(current)) {
+        visited.add(current)
+        const parent = parentMap.get(current) ?? null
+        if (parent) {
+          depth++
+        }
+        current = parent
+      }
+
+      console.log(`   Chain depth: ${depth}`)
+      console.log(`   Comments in chain: ${visited.size}`)
+
+      // Should handle depth 5 (6 comments total: root + 5 levels)
+      expect(depth).toBe(5)
+      expect(visited.size).toBe(6)
+
+      // Verify agent mention is found by walking up the chain
+      const prComment = fixture.comments.find((c) => c.body.includes('github.com'))
+      if (prComment) {
+        // Walk to find agent mention
+        let currentId: string | null = prComment.id
+        let foundAgent = false
+
+        while (currentId && !foundAgent) {
+          const comment = commentMap.get(currentId)
+          if (comment) {
+            const mentions = await extractAgentMentions(comment.body)
+            if (mentions.length > 0) {
+              foundAgent = true
+              console.log(`   ✓ Found agent @${mentions[0]} in chain for PR comment`)
+            }
+            currentId = comment.parentId
+          } else {
+            break
+          }
+        }
+
+        expect(foundAgent).toBe(true)
+      }
+    })
+
+    it('should extract multiple PR URLs from single comment', () => {
+      const fixture = loadSyntheticFixture('multiple-prs.json')
+
+      console.log(`\n🔗 Testing multiple PR URLs in single comment...`)
+      console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
+
+      // Find comment with multiple PRs
+      const prRegex = /github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/g
+
+      for (const comment of fixture.comments) {
+        const matches = [...comment.body.matchAll(prRegex)]
+
+        if (matches.length > 1) {
+          console.log(`   Found ${matches.length} PR URLs in comment:`)
+          for (const match of matches) {
+            const [, org, repo, prNumber] = match
+            console.log(`     - ${org}/${repo}#${prNumber}`)
+          }
+
+          // Should extract all 3 PRs from the synthetic comment
+          expect(matches.length).toBe(3)
+
+          // Validate each PR has correct structure
+          for (const match of matches) {
+            expect(match[1]).toBeTruthy() // org
+            expect(match[2]).toBeTruthy() // repo
+            expect(match[3]).toBeTruthy() // prNumber
+          }
+        }
+      }
+    })
+
+    it('should handle mixed agent mention formats in single comment', async () => {
+      const fixture = loadSyntheticFixture('mixed-mentions.json')
+
+      console.log(`\n👥 Testing mixed agent mention formats...`)
+      console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
+
+      // Find comment with multiple mention formats
+      const firstComment = fixture.comments[0]
+      if (!firstComment) {
+        throw new Error('No comments in fixture')
+      }
+
+      console.log(`   Comment body: "${firstComment.body.slice(0, 100)}..."`)
+
+      // Extract mentions using production logic
+      const mentions = await extractAgentMentions(firstComment.body)
+
+      console.log(`   Extracted ${mentions.length} agent mentions:`)
+      for (const mention of mentions) {
+        console.log(`     - @${mention}`)
+      }
+
+      // Should detect multiple agents: cursor, engine, claude
+      expect(mentions.length).toBeGreaterThan(1)
+      expect(mentions).toContain('cursor')
+      expect(mentions).toContain('engine')
+      expect(mentions).toContain('claude')
+
+      // Verify each mentioned agent has a corresponding PR in thread
+      const prComments = fixture.comments.filter((c) => c.body.includes('github.com'))
+      console.log(`   Found ${prComments.length} comments with PR URLs`)
+      expect(prComments.length).toBeGreaterThan(0)
+    })
+
+    it('should handle extreme case with 20+ comments in deep chain', async () => {
+      const fixture = loadSyntheticFixture('extreme-long-chain.json')
+
+      console.log(`\n💪 Testing extreme case with long chain and many comments...`)
+      console.log(`   Fixture: ${fixture.identifier} - ${fixture.title}`)
+      console.log(`   Total comments: ${fixture.comments.length}`)
+
+      // Build maps
+      const parentMap = new Map<string, string | null>()
+      const commentMap = new Map<string, IssueFixture['comments'][0]>()
+
+      for (const comment of fixture.comments) {
+        parentMap.set(comment.id, comment.parentId)
+        commentMap.set(comment.id, comment)
+      }
+
+      // Find deepest comment
+      let maxDepth = 0
+      let deepestComment: IssueFixture['comments'][0] | null = null
+
+      for (const comment of fixture.comments) {
+        const visited = new Set<string>()
+        let current: string | null = comment.id
+        let depth = 0
+
+        while (current && !visited.has(current)) {
+          visited.add(current)
+          const parent = parentMap.get(current) ?? null
+          if (parent) depth++
+          current = parent
+        }
+
+        if (depth > maxDepth) {
+          maxDepth = depth
+          deepestComment = comment
+        }
+      }
+
+      console.log(`   Max chain depth: ${maxDepth}`)
+
+      // Should handle depth 19 (20 comments in chain)
+      expect(maxDepth).toBeGreaterThan(15)
+      expect(fixture.comments.length).toBe(20)
+
+      // Walk full chain from deepest to root
+      if (deepestComment) {
+        const visited = new Set<string>()
+        let current: string | null = deepestComment.id
+
+        while (current && !visited.has(current)) {
+          visited.add(current)
+          current = parentMap.get(current) ?? null
+        }
+
+        console.log(`   Full chain length: ${visited.size} comments`)
+        expect(visited.size).toBe(20) // All comments in single chain
+      }
+
+      // Find agent mention at root
+      const rootComments = fixture.comments.filter((c) => c.parentId === null)
+      expect(rootComments.length).toBe(1)
+
+      const rootMentions = await extractAgentMentions(rootComments[0]!.body)
+      console.log(`   Root comment agent mentions: ${rootMentions.join(', ')}`)
+      expect(rootMentions.length).toBeGreaterThan(0)
+
+      // Find PR in deep comment
+      const prComment = fixture.comments.find((c) =>
+        c.body.includes('github.com') && c.body.includes('/pull/')
+      )
+      expect(prComment).toBeTruthy()
+
+      if (prComment) {
+        console.log(`   PR found at comment: ${prComment.id}`)
+        console.log(`   PR comment body: "${prComment.body.slice(0, 60)}..."`)
+      }
+    })
+
+    it('should validate synthetic fixtures have correct structure', () => {
+      console.log(`\n✅ Validating all synthetic fixtures...`)
+
+      const syntheticFiles = [
+        'circular-chain.json',
+        'deep-threading.json',
+        'multiple-prs.json',
+        'mixed-mentions.json',
+        'extreme-long-chain.json',
+      ]
+
+      for (const filename of syntheticFiles) {
+        const fixture = loadSyntheticFixture(filename)
+
+        console.log(`   Checking ${fixture.identifier}...`)
+
+        // Validate required fields
+        expect(fixture.id).toBeTruthy()
+        expect(fixture.identifier).toBeTruthy()
+        expect(fixture.title).toBeTruthy()
+        expect(Array.isArray(fixture.comments)).toBe(true)
+        expect(Array.isArray(fixture.attachments)).toBe(true)
+
+        // Validate each comment
+        for (const comment of fixture.comments) {
+          expect(comment.id).toBeTruthy()
+          expect(comment.body).toBeDefined()
+          expect(comment.createdAt).toBeTruthy()
+          expect(comment).toHaveProperty('parentId')
+          expect(comment).toHaveProperty('userId')
+          expect(comment).toHaveProperty('userName')
+        }
+
+        console.log(`     ✓ ${fixture.identifier}: ${fixture.comments.length} comments`)
+      }
+
+      expect(syntheticFiles.length).toBe(5)
+    })
+  })
 })

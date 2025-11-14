@@ -1,0 +1,83 @@
+{
+  "id": "synthetic-deep-1",
+  "identifier": "TEST-DEEP",
+  "title": "Synthetic test: Deep nested threading (depth 5)",
+  "description": "Tests deep parent chains beyond typical depth 1-2 in real data",
+  "url": "https://linear.app/test/issue/TEST-DEEP",
+  "createdAt": "2025-11-14T00:00:00.000Z",
+  "updatedAt": "2025-11-14T00:06:00.000Z",
+  "archivedAt": null,
+  "canceledAt": null,
+  "completedAt": null,
+  "startedAt": "2025-11-14T00:00:00.000Z",
+  "priority": 0,
+  "priorityLabel": "No priority",
+  "estimate": null,
+  "comments": [
+    {
+      "id": "comment-1",
+      "body": "@cursor please implement feature X",
+      "createdAt": "2025-11-14T00:00:00.000Z",
+      "parentId": null,
+      "userId": "user-1",
+      "userName": "Product Manager"
+    },
+    {
+      "id": "comment-2",
+      "body": "Sure, starting work",
+      "createdAt": "2025-11-14T00:01:00.000Z",
+      "parentId": "comment-1",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "comment-3",
+      "body": "Can you clarify requirements?",
+      "createdAt": "2025-11-14T00:02:00.000Z",
+      "parentId": "comment-2",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "comment-4",
+      "body": "Here are the details...",
+      "createdAt": "2025-11-14T00:03:00.000Z",
+      "parentId": "comment-3",
+      "userId": "user-1",
+      "userName": "Product Manager"
+    },
+    {
+      "id": "comment-5",
+      "body": "Got it, implementing now",
+      "createdAt": "2025-11-14T00:04:00.000Z",
+      "parentId": "comment-4",
+      "userId": "user-2",
+      "userName": "Cursor"
+    },
+    {
+      "id": "comment-6",
+      "body": "Done! PR here: github.com/test/repo/pull/456",
+      "createdAt": "2025-11-14T00:05:00.000Z",
+      "parentId": "comment-5",
+      "userId": "user-2",
+      "userName": "Cursor"
+    }
+  ],
+  "attachments": [],
+  "labels": [],
+  "assignee": null,
+  "creator": null,
+  "team": {
+    "id": "team-1",
+    "key": "TEST",
+    "name": "Test Team"
+  },
+  "state": {
+    "id": "state-1",
+    "name": "Open",
+    "type": "unstarted"
+  },
+  "project": null,
+  "cycle": null,
+  "parent": null
+}

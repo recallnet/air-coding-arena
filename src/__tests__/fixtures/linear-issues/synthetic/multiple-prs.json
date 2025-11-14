@@ -1,0 +1,51 @@
+{
+  "id": "synthetic-multi-pr-1",
+  "identifier": "TEST-MULTIPRS",
+  "title": "Synthetic test: Multiple PR URLs in single comment",
+  "description": "Tests extraction of multiple GitHub PR URLs from one comment",
+  "url": "https://linear.app/test/issue/TEST-MULTIPRS",
+  "createdAt": "2025-11-14T00:00:00.000Z",
+  "updatedAt": "2025-11-14T00:02:00.000Z",
+  "archivedAt": null,
+  "canceledAt": null,
+  "completedAt": null,
+  "startedAt": "2025-11-14T00:00:00.000Z",
+  "priority": 0,
+  "priorityLabel": "No priority",
+  "estimate": null,
+  "comments": [
+    {
+      "id": "comment-1",
+      "body": "@engine please split this into multiple PRs",
+      "createdAt": "2025-11-14T00:00:00.000Z",
+      "parentId": null,
+      "userId": "user-1",
+      "userName": "Tech Lead"
+    },
+    {
+      "id": "comment-2",
+      "body": "Done! I split it into 3 PRs:\n- Backend changes: github.com/org/backend/pull/101\n- Frontend changes: github.com/org/frontend/pull/202\n- Docs update: github.com/org/docs/pull/303\n\nAll PRs are ready for review.",
+      "createdAt": "2025-11-14T00:01:00.000Z",
+      "parentId": "comment-1",
+      "userId": "user-2",
+      "userName": "Engine"
+    }
+  ],
+  "attachments": [],
+  "labels": [],
+  "assignee": null,
+  "creator": null,
+  "team": {
+    "id": "team-1",
+    "key": "TEST",
+    "name": "Test Team"
+  },
+  "state": {
+    "id": "state-1",
+    "name": "Open",
+    "type": "unstarted"
+  },
+  "project": null,
+  "cycle": null,
+  "parent": null
+}

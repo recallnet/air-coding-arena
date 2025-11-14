@@ -1,0 +1,59 @@
+{
+  "id": "synthetic-circular-1",
+  "identifier": "TEST-CIRCULAR",
+  "title": "Synthetic test: Circular parent chain",
+  "description": "Tests circular reference detection (A→B→C→A)",
+  "url": "https://linear.app/test/issue/TEST-CIRCULAR",
+  "createdAt": "2025-11-14T00:00:00.000Z",
+  "updatedAt": "2025-11-14T00:05:00.000Z",
+  "archivedAt": null,
+  "canceledAt": null,
+  "completedAt": null,
+  "startedAt": "2025-11-14T00:00:00.000Z",
+  "priority": 0,
+  "priorityLabel": "No priority",
+  "estimate": null,
+  "comments": [
+    {
+      "id": "comment-a",
+      "body": "@cursor please work on this",
+      "createdAt": "2025-11-14T00:00:00.000Z",
+      "parentId": "comment-c",
+      "userId": "user-1",
+      "userName": "Test User"
+    },
+    {
+      "id": "comment-b",
+      "body": "Working on it",
+      "createdAt": "2025-11-14T00:01:00.000Z",
+      "parentId": "comment-a",
+      "userId": "user-2",
+      "userName": "Agent"
+    },
+    {
+      "id": "comment-c",
+      "body": "PR ready: github.com/org/repo/pull/123",
+      "createdAt": "2025-11-14T00:02:00.000Z",
+      "parentId": "comment-b",
+      "userId": "user-2",
+      "userName": "Agent"
+    }
+  ],
+  "attachments": [],
+  "labels": [],
+  "assignee": null,
+  "creator": null,
+  "team": {
+    "id": "team-1",
+    "key": "TEST",
+    "name": "Test Team"
+  },
+  "state": {
+    "id": "state-1",
+    "name": "Open",
+    "type": "unstarted"
+  },
+  "project": null,
+  "cycle": null,
+  "parent": null
+}

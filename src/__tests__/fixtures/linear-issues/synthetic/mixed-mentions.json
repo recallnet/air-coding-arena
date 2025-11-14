@@ -1,0 +1,75 @@
+{
+  "id": "synthetic-mixed-1",
+  "identifier": "TEST-MIXED",
+  "title": "Synthetic test: Mixed agent mention formats",
+  "description": "Tests @agent and @[agent](uuid) formats together with multiple agents",
+  "url": "https://linear.app/test/issue/TEST-MIXED",
+  "createdAt": "2025-11-14T00:00:00.000Z",
+  "updatedAt": "2025-11-14T00:03:00.000Z",
+  "archivedAt": null,
+  "canceledAt": null,
+  "completedAt": null,
+  "startedAt": "2025-11-14T00:00:00.000Z",
+  "priority": 0,
+  "priorityLabel": "No priority",
+  "estimate": null,
+  "comments": [
+    {
+      "id": "comment-1",
+      "body": "Can @cursor and @[engine](uuid-123) collaborate on this? Also CC @claude for review.",
+      "createdAt": "2025-11-14T00:00:00.000Z",
+      "parentId": null,
+      "userId": "user-1",
+      "userName": "Manager"
+    },
+    {
+      "id": "comment-2",
+      "body": "I'll handle the backend",
+      "createdAt": "2025-11-14T00:01:00.000Z",
+      "parentId": "comment-1",
+      "userId": "user-2",
+      "userName": "Engine"
+    },
+    {
+      "id": "comment-3",
+      "body": "I'll do the frontend",
+      "createdAt": "2025-11-14T00:02:00.000Z",
+      "parentId": "comment-1",
+      "userId": "user-3",
+      "userName": "Cursor"
+    },
+    {
+      "id": "comment-4",
+      "body": "Backend PR: github.com/test/repo/pull/100",
+      "createdAt": "2025-11-14T00:03:00.000Z",
+      "parentId": "comment-2",
+      "userId": "user-2",
+      "userName": "Engine"
+    },
+    {
+      "id": "comment-5",
+      "body": "Frontend PR: github.com/test/repo/pull/101",
+      "createdAt": "2025-11-14T00:04:00.000Z",
+      "parentId": "comment-3",
+      "userId": "user-3",
+      "userName": "Cursor"
+    }
+  ],
+  "attachments": [],
+  "labels": [],
+  "assignee": null,
+  "creator": null,
+  "team": {
+    "id": "team-1",
+    "key": "TEST",
+    "name": "Test Team"
+  },
+  "state": {
+    "id": "state-1",
+    "name": "Open",
+    "type": "unstarted"
+  },
+  "project": null,
+  "cycle": null,
+  "parent": null
+}
