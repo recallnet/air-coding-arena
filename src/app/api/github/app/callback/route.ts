@@ -92,6 +92,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       redirectUrl.searchParams.set('success', 'true')
     }
 
+    // Add cache-busting timestamp to force page revalidation
+    redirectUrl.searchParams.set('t', Date.now().toString())
+
     return NextResponse.redirect(redirectUrl)
   } catch (error) {
     console.error('GitHub App callback error:', error)

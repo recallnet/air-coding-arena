@@ -76,9 +76,9 @@ describe('/api/github/app/callback', () => {
     const response = await GET(request)
 
     expect(response.status).toBe(307)
-    expect(response.headers.get('Location')).toBe(
-      'http://localhost:3000/admin/github/setup?success=true'
-    )
+    const location = response.headers.get('Location')
+    expect(location).toContain('/admin/github/setup?success=true')
+    expect(location).toContain('&t=')
   })
 
   test('should handle missing installation_id', async () => {
@@ -146,9 +146,9 @@ describe('/api/github/app/callback', () => {
     const response = await GET(request)
 
     expect(response.status).toBe(307)
-    expect(response.headers.get('Location')).toBe(
-      'http://localhost:3000/admin/github/setup?suspended=true'
-    )
+    const location = response.headers.get('Location')
+    expect(location).toContain('/admin/github/setup?suspended=true')
+    expect(location).toContain('&t=')
   })
 
   test('should mark as suspended when suspended_at is present but action is not install/update', async () => {
@@ -186,8 +186,8 @@ describe('/api/github/app/callback', () => {
     const response = await GET(request)
 
     expect(response.status).toBe(307)
-    expect(response.headers.get('Location')).toBe(
-      'http://localhost:3000/admin/github/setup?suspended=true'
-    )
+    const location = response.headers.get('Location')
+    expect(location).toContain('/admin/github/setup?suspended=true')
+    expect(location).toContain('&t=')
   })
 })

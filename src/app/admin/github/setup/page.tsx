@@ -18,6 +18,7 @@ import type { GitHubInstallation } from '@/lib/queries'
 
 // Force dynamic rendering - admin pages should always show fresh data
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 /**
  * Formats a date to a readable string.
