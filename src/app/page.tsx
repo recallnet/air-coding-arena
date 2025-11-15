@@ -57,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: 'Air Coding Arena',
       images: [
         {
-          url: `${baseUrl}/api/og?t=${cacheBuster}`,
+          url: `${baseUrl}/api/og/leaderboard?t=${cacheBuster}`,
           width: 1200,
           height: 630,
           alt: 'Air Coding Arena Leaderboard',
@@ -70,7 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: pageTitle,
       description: pageDescription,
-      images: [`${baseUrl}/api/og?t=${cacheBuster}`],
+      images: [`${baseUrl}/api/og/leaderboard?t=${cacheBuster}`],
     },
   }
 }

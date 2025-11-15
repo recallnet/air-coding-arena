@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -147,35 +148,100 @@ function formatDate(date: Date | null): string {
  * For completed issues, shows outcome-based labels (won/lost/dnf).
  * For in-progress issues, shows process-based labels (pending/submitted/etc).
  *
+ * @param agentName - Name of the agent
  * @param status - Agent status from database
  * @param issueStatus - Issue status from database
+ * @param winnerAgentName - Name of the winning agent, if any
  * @returns Display text for the agent status
  */
 function getAgentStatusDisplayText(
+  agentName: string,
   status: string,
-  issueStatus: string | null
+  issueStatus: string | null,
+  winnerAgentName: string | null
 ): string {
   // For completed issues (Done or Canceled), show outcome
   const isCompleted = issueStatus === 'Done' || issueStatus === 'Canceled'
 
   if (isCompleted) {
+    // Check if this agent is the winner
+    if (winnerAgentName && agentName === winnerAgentName) {
+      return 'won'
+    }
+
+    // Not the winner - determine if they participated or not
     switch (status) {
       case 'accepted':
-        return 'won'
       case 'rejected':
       case 'submitted':
-        return 'lost'
+        return 'lost' // Participated but didn't win
       case 'pending':
       case 'ignored':
       case 'dispatch_failed':
-        return 'dnf'
+        return 'dnf' // Never participated
       default:
-        return 'dnf' // Unknown status on completed issue = did not finish
+        return 'dnf' // Unknown status = didn't participate
     }
   }
 
   // For in-progress issues, show process status as-is
   return status
+}
+
+/**
+ * Generates metadata for issue detail page with cache-busting OpenGraph image.
+ *
+ * @param props - Page props with dynamic route parameter
+ * @returns Metadata object with title, description, and OpenGraph image
+ */
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { id } = await params
+  const issue = await getIssueById(id)
+
+  // Handle 404 case
+  if (!issue) {
+    return {
+      title: 'Issue Not Found',
+      description: 'The requested issue could not be found',
+    }
+  }
+
+  // Cache-busting timestamp ensures fresh OG images when content changes
+  const cacheBuster = Date.now()
+  const baseUrl = process.env['NEXT_PUBLIC_BASE_URL'] ?? 'http://localhost:3000'
+
+  const pageTitle = `${issue.linearKey}: ${issue.title}`
+  const pageDescription =
+    issue.description ?? 'View issue details and competition status'
+
+  return {
+    title: pageTitle,
+    description: pageDescription,
+    openGraph: {
+      title: pageTitle,
+      description: pageDescription,
+      url: `${baseUrl}/issues/${id}`,
+      siteName: 'Air Coding Arena',
+      images: [
+        {
+          url: `${baseUrl}/api/og/issue/${id}?t=${cacheBuster}`,
+          width: 1200,
+          height: 630,
+          alt: `${issue.linearKey} competition status`,
+        },
+      ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDescription,
+      images: [`${baseUrl}/api/og/issue/${id}?t=${cacheBuster}`],
+    },
+  }
 }
 
 /**
@@ -320,7 +386,12 @@ export default async function IssuePage({
                             : 'outline'
                     }
                   >
-                    {getAgentStatusDisplayText(agent.status, issue.status)}
+                    {getAgentStatusDisplayText(
+                      agent.agentName,
+                      agent.status,
+                      issue.status,
+                      winnerAttempt?.agentName ?? null
+                    )}
                   </Badge>
                 </div>
               ))}
