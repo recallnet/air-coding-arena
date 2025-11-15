@@ -207,6 +207,58 @@ async function handlePRSyncError(
 }
 
 /**
+ * Determines PR status from GitHub API response
+ * Only trusts pr.state and pr.merged, not timestamps
+ *
+ * @param pr - GitHub PR data with state, merged flag, and timestamps
+ * @param currentStatus - Current database status
+ * @param currentMergedAt - Current merged timestamp
+ * @param currentClosedAt - Current closed timestamp
+ * @returns New status, mergedAt, and closedAt values
+ */
+function determinePRStatus(
+  pr: {
+    state: string
+    merged: boolean
+    merged_at: string | null
+    closed_at: string | null
+  },
+  currentStatus: string,
+  currentMergedAt: Date | null,
+  currentClosedAt: Date | null
+): { status: string; mergedAt: Date | null; closedAt: Date | null } {
+  if (pr.merged && pr.merged_at) {
+    return {
+      status: 'merged',
+      mergedAt: new Date(pr.merged_at),
+      closedAt: currentClosedAt,
+    }
+  }
+
+  if (pr.state === 'closed') {
+    return {
+      status: 'closed',
+      mergedAt: currentMergedAt,
+      closedAt: pr.closed_at ? new Date(pr.closed_at) : currentClosedAt,
+    }
+  }
+
+  if (pr.state === 'open') {
+    return {
+      status: 'open',
+      mergedAt: currentMergedAt,
+      closedAt: null,
+    }
+  }
+
+  return {
+    status: currentStatus,
+    mergedAt: currentMergedAt,
+    closedAt: currentClosedAt,
+  }
+}
+
+/**
  * Syncs PR status from GitHub for all attempts in an issue
  * Safety net for missed webhooks - fetches current status from GitHub API
  *
@@ -245,21 +297,16 @@ async function syncPRStatusFromGitHub(issueId: string): Promise<void> {
       })
 
       // Determine correct status
-      const merged = pr.merged
-      const closed = pr.state === 'closed'
-      let newStatus = attempt.status
-      let newMergedAt = attempt.mergedAt
-      let newClosedAt = attempt.closedAt
-
-      if (merged && pr.merged_at) {
-        newStatus = 'merged'
-        newMergedAt = new Date(pr.merged_at)
-      } else if (closed && pr.closed_at) {
-        newStatus = 'closed'
-        newClosedAt = new Date(pr.closed_at)
-      } else if (pr.state === 'open') {
-        newStatus = 'open'
-      }
+      const {
+        status: newStatus,
+        mergedAt: newMergedAt,
+        closedAt: newClosedAt,
+      } = determinePRStatus(
+        pr,
+        attempt.status,
+        attempt.mergedAt,
+        attempt.closedAt
+      )
 
       // Update database if status changed
       if (
