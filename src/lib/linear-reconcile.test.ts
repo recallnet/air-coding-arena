@@ -8,7 +8,7 @@ import { LinearClient } from '@linear/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
-import { issues } from '@/db/schema'
+import { attempts, issues } from '@/db/schema'
 
 import { reconcileLinearIssues } from './linear-reconcile'
 
@@ -31,6 +31,11 @@ vi.mock('@/db/client', () => ({
 // Mock linear-sync to avoid complex sync logic during reconciliation
 vi.mock('./linear-sync', () => ({
   syncIssueFromLinear: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Mock update-winner to avoid complex winner calculation logic
+vi.mock('./update-winner', () => ({
+  updateWinner: vi.fn().mockResolvedValue(undefined),
 }))
 
 const MOCK_LINEAR_ID = 'linear-issue-1'
@@ -154,6 +159,36 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
+    // Mock db.select chain for getting issue ID and attempts
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
     // Mock db.update chain for deletion marking
     const mockWhere = vi.fn().mockReturnThis()
     const mockReturning = vi.fn().mockResolvedValue([])
@@ -210,6 +245,31 @@ describe('reconcileLinearIssues', () => {
     vi.mocked(db.insert).mockReturnValue({
       values: mockValues,
     } as never)
+
+    // Mock db.select chain - called twice per issue (6 times total)
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([])
+
+    vi.mocked(db).select = vi.fn().mockReturnValue({
+      from: vi.fn((schema) => {
+        // Check if schema is attempts or issues
+        if (schema === attempts) {
+          return { where: mockAttemptsWhere }
+        }
+        return { where: mockIssueWhere }
+      }),
+    }) as never
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
 
     // Mock db.update chain for deletion marking
     const mockWhere = vi.fn().mockReturnThis()
@@ -317,6 +377,30 @@ describe('reconcileLinearIssues', () => {
     vi.mocked(db.insert).mockReturnValue({
       values: mockValues,
     } as never)
+
+    // Mock db.select chain
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([])
+
+    vi.mocked(db).select = vi.fn().mockReturnValue({
+      from: vi.fn((schema) => {
+        if (schema === attempts) {
+          return { where: mockAttemptsWhere }
+        }
+        return { where: mockIssueWhere }
+      }),
+    }) as never
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
 
     // Mock db.update chain for deletion marking
     const mockWhere = vi.fn().mockReturnThis()
@@ -653,5 +737,738 @@ describe('reconcileLinearIssues', () => {
       status: 'closed',
       closedAt: expect.any(Date),
     })
+  })
+
+  it('should handle non-404 GitHub API errors gracefully', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-error',
+      identifier: 'ENG-500',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select - needs to handle two different queries:
+    // 1. Getting issue ID after insert (with .limit())
+    // 2. Getting attempts for an issue (without .limit())
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-1',
+        repo: 'recallnet/air-coding-arena',
+        prNumber: 10,
+        status: 'open',
+        mergedAt: null,
+        closedAt: null,
+      },
+    ])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    // db.select is called twice - once for getting issue ID, once for getting attempts
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.update chain
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock GitHub API to return 500 error (non-404)
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn().mockRejectedValue({
+      status: 500,
+      message: 'Internal Server Error',
+      name: 'HttpError',
+    })
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully despite error
+    expect(count).toBe(1)
+
+    // Should NOT have updated the PR status (non-404 errors are logged but don't update DB)
+    expect(mockSet).not.toHaveBeenCalledWith({
+      status: 'closed',
+      closedAt: expect.any(Date),
+    })
+  })
+
+  it('should sync PR status successfully when PR is merged', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-merged-pr',
+      identifier: 'ENG-MERGED',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select - needs to handle two different queries:
+    // 1. Getting issue ID after insert (with .limit())
+    // 2. Getting attempts for an issue (without .limit())
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-merged',
+        repo: 'recallnet/air-coding-arena',
+        prNumber: 11,
+        status: 'open',
+        mergedAt: null,
+        closedAt: null,
+      },
+    ])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    // db.select is called twice
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.update chain
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock GitHub API to return merged PR
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn().mockResolvedValue({
+      data: {
+        state: 'closed',
+        merged: true,
+        merged_at: '2024-01-15T10:30:00Z',
+        closed_at: '2024-01-15T10:30:00Z',
+      },
+    })
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully
+    expect(count).toBe(1)
+
+    // Should have updated the PR status to 'merged'
+    expect(mockSet).toHaveBeenCalledWith({
+      status: 'merged',
+      mergedAt: new Date('2024-01-15T10:30:00Z'),
+      closedAt: null,
+    })
+  })
+
+  it('should sync PR status successfully when PR is closed without merge', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-closed-pr',
+      identifier: 'ENG-CLOSED',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select - needs to handle two different queries:
+    // 1. Getting issue ID after insert (with .limit())
+    // 2. Getting attempts for an issue (without .limit())
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-closed',
+        repo: 'recallnet/air-coding-arena',
+        prNumber: 12,
+        status: 'open',
+        mergedAt: null,
+        closedAt: null,
+      },
+    ])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    // db.select is called twice
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.update chain
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock GitHub API to return closed PR (not merged)
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn().mockResolvedValue({
+      data: {
+        state: 'closed',
+        merged: false,
+        merged_at: null,
+        closed_at: '2024-01-15T11:00:00Z',
+      },
+    })
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully
+    expect(count).toBe(1)
+
+    // Should have updated the PR status to 'closed'
+    expect(mockSet).toHaveBeenCalledWith({
+      status: 'closed',
+      mergedAt: null,
+      closedAt: new Date('2024-01-15T11:00:00Z'),
+    })
+  })
+
+  it('should update winner when issue has merged PRs but no winner set', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-merged-no-winner',
+      identifier: 'ENG-WINNER',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select chain
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.query.issues.findFirst to return issue with merged attempts but no winner
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'db-issue-id',
+          linearId: 'linear-with-merged-no-winner',
+          winnerAttemptId: null, // No winner set yet
+          attempts: [
+            {
+              id: 'attempt-merged-1',
+              status: 'merged',
+              mergedAt: new Date('2024-01-15T10:00:00Z'),
+            },
+          ],
+        }),
+      },
+    } as never
+
+    // Mock db.update chain
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock updateWinner function
+    const { updateWinner } = await import('./update-winner')
+    vi.mocked(updateWinner).mockResolvedValue(undefined)
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully
+    expect(count).toBe(1)
+
+    // Should have called updateWinner for issue with merged PRs but no winner
+    expect(updateWinner).toHaveBeenCalledWith('db-issue-id')
+  })
+
+  it('should skip attempts with invalid repo format during PR sync', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-invalid-repo',
+      identifier: 'ENG-INVALID',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select chain
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    // Return an attempt with invalid repo format (missing owner or repo)
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-invalid-repo',
+        repo: 'invalid-repo-format', // Missing '/' separator
+        prNumber: 14,
+        status: 'open',
+        mergedAt: null,
+        closedAt: null,
+      },
+    ])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock db.update chain
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock GitHub API (should not be called due to invalid repo format)
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn()
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully
+    expect(count).toBe(1)
+
+    // GitHub API should NOT have been called (invalid repo format)
+    expect(mockGet).not.toHaveBeenCalled()
+  })
+
+  it('should update PR when mergedAt timestamp changes', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-merged-timestamp-change',
+      identifier: 'ENG-TIMESTAMP',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select chain
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    // Return an attempt that's already merged but with different timestamp
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-merged-old-timestamp',
+        repo: 'recallnet/air-coding-arena',
+        prNumber: 15,
+        status: 'merged',
+        mergedAt: new Date('2024-01-15T09:00:00Z'), // Old timestamp
+        closedAt: null,
+      },
+    ])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock db.update chain
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock GitHub API to return merged PR with newer timestamp
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn().mockResolvedValue({
+      data: {
+        state: 'closed',
+        merged: true,
+        merged_at: '2024-01-15T10:00:00Z', // New timestamp
+        closed_at: '2024-01-15T10:00:00Z',
+      },
+    })
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully
+    expect(count).toBe(1)
+
+    // Should have updated the PR with new timestamp
+    expect(mockSet).toHaveBeenCalledWith({
+      status: 'merged',
+      mergedAt: new Date('2024-01-15T10:00:00Z'),
+      closedAt: null,
+    })
+  })
+
+  it('should sync PR status successfully when PR remains open', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-open-pr',
+      identifier: 'ENG-OPEN',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select - needs to handle two different queries:
+    // 1. Getting issue ID after insert (with .limit())
+    // 2. Getting attempts for an issue (without .limit())
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-open',
+        repo: 'recallnet/air-coding-arena',
+        prNumber: 13,
+        status: 'open',
+        mergedAt: null,
+        closedAt: null,
+      },
+    ])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    // db.select is called twice
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
+
+    // Mock db.update chain - track calls separately for PR status vs deletion
+    const mockSetForPRStatus = vi.fn()
+    const mockSetForDeletion = vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([]),
+      }),
+    })
+
+    vi.mocked(db.update).mockReturnValue({
+      set: vi.fn((setArg: Record<string, unknown>) => {
+        // Check if this is a PR status update or deletion marking
+        if ('status' in setArg && setArg['status'] === 'deleted') {
+          return mockSetForDeletion(setArg) as { where: () => unknown }
+        }
+        // Track PR status updates
+        mockSetForPRStatus(setArg)
+        return {
+          where: vi.fn().mockResolvedValue(undefined),
+        }
+      }),
+    } as never)
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock GitHub API to return open PR
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn().mockResolvedValue({
+      data: {
+        state: 'open',
+        merged: false,
+        merged_at: null,
+        closed_at: null,
+      },
+    })
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully
+    expect(count).toBe(1)
+
+    // Should NOT have updated the PR status (no change from 'open' to 'open')
+    expect(mockSetForPRStatus).not.toHaveBeenCalled()
   })
 })
