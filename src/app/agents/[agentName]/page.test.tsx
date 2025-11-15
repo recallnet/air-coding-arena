@@ -164,6 +164,9 @@ describe('AgentPage', () => {
       mockGetAgentStats.mockResolvedValue([
         {
           agentName: MOCK_AGENT_CURSOR,
+          issues: 8,
+          prs: 10,
+          dnf: 2,
           attempts: 1,
           wins: 1,
           acceptancePct: 100.0,
@@ -211,6 +214,9 @@ describe('AgentPage', () => {
       mockGetAgentStats.mockResolvedValue([
         {
           agentName: MOCK_AGENT_CURSOR,
+          issues: 8,
+          prs: 10,
+          dnf: 2,
           attempts: 1,
           wins: 0,
           acceptancePct: 0.0,
@@ -252,6 +258,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 5,
             wins: 3,
             acceptancePct: 60.0,
@@ -293,6 +302,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 5,
             wins: 3,
             acceptancePct: 60.0,
@@ -307,7 +319,7 @@ describe('AgentPage', () => {
         expect(screen.getByText('3')).toBeInTheDocument()
       })
 
-      it('should display acceptance rate with one decimal place', async () => {
+      it('should display issues count', async () => {
         mockGetAttemptsByAgent.mockResolvedValue([
           {
             id: MOCK_ATTEMPT_ID_1,
@@ -334,6 +346,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 7,
+            prs: 10,
+            dnf: 2,
             attempts: 10,
             wins: 8,
             acceptancePct: 80.5,
@@ -344,8 +359,96 @@ describe('AgentPage', () => {
 
         render(await AgentPage({ params: { agentName: MOCK_AGENT_CURSOR } }))
 
-        expect(screen.getByText('Acceptance Rate')).toBeInTheDocument()
-        expect(screen.getByText('80.5%')).toBeInTheDocument()
+        expect(screen.getByText('Issues')).toBeInTheDocument()
+        expect(screen.getByText('7')).toBeInTheDocument()
+      })
+
+      it('should display PRs count', async () => {
+        mockGetAttemptsByAgent.mockResolvedValue([
+          {
+            id: MOCK_ATTEMPT_ID_1,
+            issueId: MOCK_ISSUE_ID,
+            agentName: MOCK_AGENT_CURSOR,
+            repo: MOCK_REPO,
+            prNumber: 123,
+            prUrl: MOCK_PR_URL,
+            branch: MOCK_BRANCH,
+            openedAt: MOCK_OPENED_DATE,
+            mergedAt: MOCK_MERGED_DATE,
+            closedAt: null,
+            status: MOCK_STATUS_MERGED,
+            commitCount: 5,
+            lastCommitSha: MOCK_COMMIT_SHA,
+            ciStatus: null,
+            ciLastCheckedAt: null,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
+            issueLinearKey: MOCK_LINEAR_KEY,
+          },
+        ])
+
+        mockGetAgentStats.mockResolvedValue([
+          {
+            agentName: MOCK_AGENT_CURSOR,
+            issues: 6,
+            prs: 9,
+            dnf: 2,
+            attempts: 10,
+            wins: 7,
+            acceptancePct: 70.0,
+            ordinal: 1600,
+            gamesPlayed: 10,
+          },
+        ])
+
+        render(await AgentPage({ params: { agentName: MOCK_AGENT_CURSOR } }))
+
+        expect(screen.getByText('PRs')).toBeInTheDocument()
+        expect(screen.getByText('9')).toBeInTheDocument()
+      })
+
+      it('should display DNF count', async () => {
+        mockGetAttemptsByAgent.mockResolvedValue([
+          {
+            id: MOCK_ATTEMPT_ID_1,
+            issueId: MOCK_ISSUE_ID,
+            agentName: MOCK_AGENT_CURSOR,
+            repo: MOCK_REPO,
+            prNumber: 123,
+            prUrl: MOCK_PR_URL,
+            branch: MOCK_BRANCH,
+            openedAt: MOCK_OPENED_DATE,
+            mergedAt: MOCK_MERGED_DATE,
+            closedAt: null,
+            status: MOCK_STATUS_MERGED,
+            commitCount: 5,
+            lastCommitSha: MOCK_COMMIT_SHA,
+            ciStatus: null,
+            ciLastCheckedAt: null,
+            sourceAttachmentId: null,
+            sourceAttachmentUrl: null,
+            issueLinearKey: MOCK_LINEAR_KEY,
+          },
+        ])
+
+        mockGetAgentStats.mockResolvedValue([
+          {
+            agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
+            attempts: 10,
+            wins: 8,
+            acceptancePct: 80.5,
+            ordinal: 1600,
+            gamesPlayed: 10,
+          },
+        ])
+
+        render(await AgentPage({ params: { agentName: MOCK_AGENT_CURSOR } }))
+
+        expect(screen.getByText('DNF')).toBeInTheDocument()
+        expect(screen.getByText('2')).toBeInTheDocument()
       })
 
       it('should handle agent stats not found in stats array', async () => {
@@ -376,6 +479,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_ENGINE,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 5,
             wins: 3,
             acceptancePct: 60.0,
@@ -387,11 +493,11 @@ describe('AgentPage', () => {
         render(await AgentPage({ params: { agentName: MOCK_AGENT_CURSOR } }))
 
         // Should display attempt count from actual attempts
+        expect(screen.getByText('Total Attempts')).toBeInTheDocument()
         expect(screen.getByText('1')).toBeInTheDocument()
-        // Should display 0 wins
-        expect(screen.getByText('0')).toBeInTheDocument()
-        // Should display 0% acceptance rate
-        expect(screen.getByText('0.0%')).toBeInTheDocument()
+        // Should display 0 for all stats when not found
+        const zeros = screen.getAllByText('0')
+        expect(zeros.length).toBeGreaterThanOrEqual(4) // wins, issues, prs, dnf
       })
     })
 
@@ -423,6 +529,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 10,
             wins: 9,
             acceptancePct: 90.0,
@@ -464,6 +573,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 10,
             wins: 6,
             acceptancePct: 60.0,
@@ -507,6 +619,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 4,
             wins: 3,
             acceptancePct: 75.0,
@@ -552,6 +667,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
@@ -595,6 +713,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
@@ -640,6 +761,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 1,
             wins: 1,
             acceptancePct: 100.0,
@@ -685,6 +809,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
@@ -726,6 +853,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
@@ -769,6 +899,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 1,
             wins: 0,
             acceptancePct: 0.0,
@@ -838,6 +971,9 @@ describe('AgentPage', () => {
         mockGetAgentStats.mockResolvedValue([
           {
             agentName: MOCK_AGENT_CURSOR,
+            issues: 8,
+            prs: 10,
+            dnf: 2,
             attempts: 2,
             wins: 1,
             acceptancePct: 50.0,
@@ -884,6 +1020,9 @@ describe('AgentPage', () => {
           mockGetAgentStats.mockResolvedValue([
             {
               agentName: MOCK_AGENT_CURSOR,
+              issues: 8,
+              prs: 10,
+              dnf: 2,
               attempts: 1,
               wins: 1,
               acceptancePct: 100.0,
@@ -924,6 +1063,9 @@ describe('AgentPage', () => {
           mockGetAgentStats.mockResolvedValue([
             {
               agentName: MOCK_AGENT_CURSOR,
+              issues: 8,
+              prs: 10,
+              dnf: 2,
               attempts: 1,
               wins: 0,
               acceptancePct: 0.0,
@@ -964,6 +1106,9 @@ describe('AgentPage', () => {
           mockGetAgentStats.mockResolvedValue([
             {
               agentName: MOCK_AGENT_CURSOR,
+              issues: 8,
+              prs: 10,
+              dnf: 2,
               attempts: 1,
               wins: 0,
               acceptancePct: 0.0,
@@ -1004,6 +1149,9 @@ describe('AgentPage', () => {
           mockGetAgentStats.mockResolvedValue([
             {
               agentName: MOCK_AGENT_CURSOR,
+              issues: 8,
+              prs: 10,
+              dnf: 2,
               attempts: 1,
               wins: 0,
               acceptancePct: 0.0,

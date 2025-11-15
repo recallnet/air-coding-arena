@@ -196,7 +196,9 @@ describe('getAgentStats', () => {
         expect(firstStat.prs).toBeGreaterThanOrEqual(firstStat.issues)
 
         // DNF + Wins should be <= PRs
-        expect(firstStat.dnf + firstStat.wins).toBeLessThanOrEqual(firstStat.prs)
+        expect(firstStat.dnf + firstStat.wins).toBeLessThanOrEqual(
+          firstStat.prs
+        )
       }
     })
   })

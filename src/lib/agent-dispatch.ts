@@ -48,6 +48,7 @@ export function generateBranchName(
  * @returns Number of agents dispatched
  * @throws Error if LINEAR_API_KEY is not configured or issue not found
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export async function dispatchMissingAgents(
   dbIssueId: string
 ): Promise<number> {

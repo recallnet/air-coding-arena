@@ -132,8 +132,11 @@ export default async function AgentPage({
   // Calculate stats (should always exist if attempts exist, but handle null safely)
   const totalAttempts = agentStats?.attempts ?? attempts.length
   const wins = agentStats?.wins ?? 0
-  const acceptanceRate = agentStats?.acceptancePct ?? 0
-  const isTopPerformer = acceptanceRate > 75
+  const issues = agentStats?.issues ?? 0
+  const prs = agentStats?.prs ?? 0
+  const dnf = agentStats?.dnf ?? 0
+  const isTopPerformer =
+    wins > 0 && totalAttempts > 0 && wins / totalAttempts > 0.75
 
   return (
     <main className="container mx-auto p-6 md:p-8 lg:p-12">
@@ -162,12 +165,26 @@ export default async function AgentPage({
           <CardDescription>Agent performance summary</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
             <div>
               <span className="text-sm font-medium text-foreground-secondary">
                 Total Attempts
               </span>
               <div className="mt-1 text-2xl font-semibold">{totalAttempts}</div>
+            </div>
+
+            <div>
+              <span className="text-sm font-medium text-foreground-secondary">
+                Issues
+              </span>
+              <div className="mt-1 text-2xl font-semibold">{issues}</div>
+            </div>
+
+            <div>
+              <span className="text-sm font-medium text-foreground-secondary">
+                PRs
+              </span>
+              <div className="mt-1 text-2xl font-semibold">{prs}</div>
             </div>
 
             <div>
@@ -179,11 +196,9 @@ export default async function AgentPage({
 
             <div>
               <span className="text-sm font-medium text-foreground-secondary">
-                Acceptance Rate
+                DNF
               </span>
-              <div className="mt-1 text-2xl font-semibold">
-                {acceptanceRate.toFixed(1)}%
-              </div>
+              <div className="mt-1 text-2xl font-semibold">{dnf}</div>
             </div>
           </div>
         </CardContent>

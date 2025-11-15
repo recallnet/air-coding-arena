@@ -21,6 +21,7 @@ import { updateWinner } from './update-winner'
  * @returns Number of issues reconciled
  * @throws Error if LINEAR_API_KEY not configured
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export async function reconcileLinearIssues(): Promise<number> {
   const apiKey = process.env['LINEAR_API_KEY']
   if (!apiKey) {
