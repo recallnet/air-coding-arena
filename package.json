@@ -29,7 +29,6 @@
     "// === DOCS GENERATION ===": "",
     "docs": "typedoc",
     "docs:serve": "npm run docs && npx serve docs/api",
-    "generate-diagrams": "tsx scripts/generate-state-diagrams.ts",
     "// === DATABASE SCRIPTS ===": "",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
