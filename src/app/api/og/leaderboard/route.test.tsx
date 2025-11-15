@@ -78,7 +78,6 @@ describe('GET /api/og/leaderboard', () => {
 
     vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
 
-    const request = new Request('http://localhost/api/og/leaderboard')
     const response = await GET()
 
     // Verify response is an image
@@ -92,7 +91,6 @@ describe('GET /api/og/leaderboard', () => {
   it('should render empty state when no agents exist', async () => {
     vi.mocked(getAgentStats).mockResolvedValue([])
 
-    const request = new Request('http://localhost/api/og/leaderboard')
     const response = await GET()
 
     // Verify response is an image
@@ -108,7 +106,6 @@ describe('GET /api/og/leaderboard', () => {
       new Error('Database connection failed')
     )
 
-    const request = new Request('http://localhost/api/og/leaderboard')
     const response = await GET()
 
     expect(response.status).toBe(500)

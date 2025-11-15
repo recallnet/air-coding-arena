@@ -125,6 +125,7 @@ export async function GET(): Promise<Response> {
                 }}
               >
                 {agent.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- ImageResponse does not support next/image
                   <img
                     src={agent.avatarUrl}
                     alt={agent.displayName ?? agent.agentName}
