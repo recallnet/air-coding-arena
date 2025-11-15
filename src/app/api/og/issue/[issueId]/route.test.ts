@@ -14,6 +14,8 @@ import { GET } from './route.js'
 const TEST_ISSUE_ID = '123e4567-e89b-12d3-a456-426614174000'
 const TEST_LINEAR_ID = 'ISS-123'
 const TEST_REQUEST_URL_WINNER = `http://localhost/api/og/issue/${TEST_ISSUE_ID}`
+const IMAGE_PNG_CONTENT_TYPE = 'image/png'
+const WITH_WINNER_ATTEMPT = { winnerAttempt: true }
 
 // Mock database
 vi.mock('@/db/client', () => ({

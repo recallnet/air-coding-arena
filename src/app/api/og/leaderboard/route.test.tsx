@@ -15,6 +15,9 @@ vi.mock('@/lib/queries', () => ({
 
 const { getAgentStats } = await import('@/lib/queries')
 
+// Test constants
+const IMAGE_PNG_CONTENT_TYPE = 'image/png'
+
 describe('GET /api/og/leaderboard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -82,7 +85,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -95,7 +98,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -146,7 +149,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -188,7 +191,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -217,7 +220,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -246,7 +249,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -288,7 +291,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -317,7 +320,7 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()

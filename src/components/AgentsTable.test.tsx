@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest'
 
 import { AgentsTable, type Agent } from './AgentsTable'
 
+const MOCK_AGENT_NOT_FOUND_ERROR = 'Mock agent not found'
+
 const mockAgents: Agent[] = [
   {
     id: 'agent-1',
@@ -158,7 +160,7 @@ describe('AgentsTable', () => {
     it('should show "Just now" for very recent times', () => {
       const now = new Date()
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: now.toISOString(),
@@ -172,7 +174,7 @@ describe('AgentsTable', () => {
       const now = new Date()
       const oneMinuteAgo = new Date(now.getTime() - 60000)
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: oneMinuteAgo.toISOString(),
@@ -186,7 +188,7 @@ describe('AgentsTable', () => {
       const now = new Date()
       const twoMinutesAgo = new Date(now.getTime() - 120000)
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: twoMinutesAgo.toISOString(),
@@ -200,7 +202,7 @@ describe('AgentsTable', () => {
       const now = new Date()
       const oneHourAgo = new Date(now.getTime() - 3600000)
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: oneHourAgo.toISOString(),
@@ -214,7 +216,7 @@ describe('AgentsTable', () => {
       const now = new Date()
       const twoHoursAgo = new Date(now.getTime() - 7200000)
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: twoHoursAgo.toISOString(),
@@ -228,7 +230,7 @@ describe('AgentsTable', () => {
       const now = new Date()
       const oneDayAgo = new Date(now.getTime() - 86400000)
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: oneDayAgo.toISOString(),
@@ -242,7 +244,7 @@ describe('AgentsTable', () => {
       const now = new Date()
       const twoDaysAgo = new Date(now.getTime() - 172800000)
       const baseAgent = mockAgents[0]
-      if (!baseAgent) throw new Error('Mock agent not found')
+      if (!baseAgent) throw new Error(MOCK_AGENT_NOT_FOUND_ERROR)
       const recentAgent: Agent = {
         ...baseAgent,
         lastSeenAt: twoDaysAgo.toISOString(),
