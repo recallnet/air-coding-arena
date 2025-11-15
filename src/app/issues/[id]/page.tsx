@@ -163,12 +163,14 @@ function getAgentStatusDisplayText(
       case 'accepted':
         return 'won'
       case 'rejected':
+      case 'submitted':
         return 'lost'
+      case 'pending':
       case 'ignored':
       case 'dispatch_failed':
         return 'dnf'
       default:
-        return 'dnf' // Any other status on completed issue = did not finish
+        return 'dnf' // Unknown status on completed issue = did not finish
     }
   }
 
