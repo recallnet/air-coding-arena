@@ -92,8 +92,11 @@ export type IssueAgentStatus =
  */
 export type AgentStats = {
   agentName: string
-  attempts: number
+  issues: number
+  prs: number
   wins: number
+  dnf: number
+  attempts: number
   acceptancePct: number
   ordinal: number
   gamesPlayed: number

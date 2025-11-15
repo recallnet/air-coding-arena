@@ -69,8 +69,11 @@ describe('getAgentStats', () => {
       const mockStats = [
         {
           agent_name: MOCK_AGENT_NAME,
-          attempts: 10,
+          issues: 5,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptance_pct: 80.0,
           ordinal: 1500,
           games_played: 5,
@@ -79,8 +82,11 @@ describe('getAgentStats', () => {
         },
         {
           agent_name: 'engine',
-          attempts: 5,
+          issues: 3,
+          prs: 5,
           wins: 3,
+          dnf: 2,
+          attempts: 5,
           acceptance_pct: 60.0,
           ordinal: 1400,
           games_played: 3,
@@ -96,8 +102,11 @@ describe('getAgentStats', () => {
       expect(result).toEqual([
         {
           agentName: MOCK_AGENT_NAME,
-          attempts: 10,
+          issues: 5,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 1500,
           gamesPlayed: 5,
@@ -106,8 +115,11 @@ describe('getAgentStats', () => {
         },
         {
           agentName: 'engine',
-          attempts: 5,
+          issues: 3,
+          prs: 5,
           wins: 3,
+          dnf: 2,
+          attempts: 5,
           acceptancePct: 60.0,
           ordinal: 1400,
           gamesPlayed: 3,
@@ -141,6 +153,51 @@ describe('getAgentStats', () => {
       mockDb.execute.mockRejectedValue(error)
 
       await expect(getAgentStats()).rejects.toThrow(MOCK_DB_ERROR)
+    })
+  })
+
+  describe('when agent stats have new column structure', () => {
+    it('should return agent stats with issues, prs, and dnf columns', async () => {
+      const mockStats = [
+        {
+          agent_name: MOCK_AGENT_NAME,
+          issues: 5,
+          prs: 10,
+          wins: 8,
+          dnf: 2,
+          attempts: 10,
+          acceptance_pct: 80.0,
+          ordinal: 1500,
+          games_played: 5,
+          avatar_url: null,
+          display_name: null,
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockStats as never)
+
+      const result = await getAgentStats()
+
+      expect(result.length).toBeGreaterThan(0)
+      const firstStat = result[0]
+
+      if (firstStat) {
+        // New columns must exist
+        expect(firstStat).toHaveProperty('issues')
+        expect(firstStat).toHaveProperty('prs')
+        expect(firstStat).toHaveProperty('dnf')
+
+        // Verify types
+        expect(typeof firstStat.issues).toBe('number')
+        expect(typeof firstStat.prs).toBe('number')
+        expect(typeof firstStat.dnf).toBe('number')
+
+        // PRs should equal or exceed issues (can't submit more issues than PRs)
+        expect(firstStat.prs).toBeGreaterThanOrEqual(firstStat.issues)
+
+        // DNF + Wins should be <= PRs
+        expect(firstStat.dnf + firstStat.wins).toBeLessThanOrEqual(firstStat.prs)
+      }
     })
   })
 })

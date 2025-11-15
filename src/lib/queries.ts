@@ -65,8 +65,11 @@ export async function getAgentBySlugOrName(slugOrName: string) {
 export async function getAgentStats(): Promise<AgentStats[]> {
   const result = await db.execute<{
     agent_name: string
-    attempts: number
+    issues: number
+    prs: number
     wins: number
+    dnf: number
+    attempts: number
     acceptance_pct: number
     ordinal: number
     games_played: number
@@ -75,8 +78,11 @@ export async function getAgentStats(): Promise<AgentStats[]> {
   }>(sql`
     SELECT
       a.agent_name,
-      a.attempts,
+      a.issues,
+      a.prs,
       a.wins,
+      a.dnf,
+      a.attempts,
       a.acceptance_pct,
       COALESCE(s.ordinal, 0) as ordinal,
       COALESCE(s.games_played, 0) as games_played,
@@ -90,8 +96,11 @@ export async function getAgentStats(): Promise<AgentStats[]> {
 
   return result.map((row) => ({
     agentName: row.agent_name,
-    attempts: Number(row.attempts),
+    issues: Number(row.issues),
+    prs: Number(row.prs),
     wins: Number(row.wins),
+    dnf: Number(row.dnf),
+    attempts: Number(row.attempts),
     acceptancePct: Number(row.acceptance_pct),
     ordinal: Number(row.ordinal),
     gamesPlayed: Number(row.games_played),
