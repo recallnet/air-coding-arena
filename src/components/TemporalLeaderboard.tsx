@@ -320,8 +320,7 @@ export function TemporalLeaderboard({
                 {/* Grid lines (using rating scale for positioning) */}
                 <g className="text-border">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-                    const ratingValue =
-                      ratingRangeMin + ratingRange * fraction
+                    const ratingValue = ratingRangeMin + ratingRange * fraction
                     const y = padding.top + yScaleRating(ratingValue)
                     return (
                       <line
