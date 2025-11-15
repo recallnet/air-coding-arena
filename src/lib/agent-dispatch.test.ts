@@ -18,6 +18,7 @@ vi.mock('@/db/client', () => ({
   db: {
     select: vi.fn(),
     insert: vi.fn(),
+    update: vi.fn(),
     delete: vi.fn(),
   },
 }))
@@ -321,6 +322,9 @@ describe('dispatchMissingAgents', () => {
     const mockInsert = vi.fn().mockReturnValue({
       values: vi.fn().mockReturnValue({
         onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'agent-id-1' }]),
+        }),
       }),
     })
     vi.mocked(db).insert = mockInsert
@@ -397,6 +401,9 @@ describe('dispatchMissingAgents', () => {
     const mockInsert = vi.fn().mockReturnValue({
       values: vi.fn().mockReturnValue({
         onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'agent-id-1' }]),
+        }),
       }),
     })
     vi.mocked(db).insert = mockInsert
@@ -479,6 +486,9 @@ describe('dispatchMissingAgents', () => {
     const mockInsert = vi.fn().mockReturnValue({
       values: vi.fn().mockReturnValue({
         onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'agent-id-1' }]),
+        }),
       }),
     })
     vi.mocked(db).insert = mockInsert
@@ -555,6 +565,9 @@ describe('dispatchMissingAgents', () => {
     const mockInsert = vi.fn().mockReturnValue({
       values: vi.fn().mockReturnValue({
         onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'agent-id-1' }]),
+        }),
       }),
     })
     vi.mocked(db).insert = mockInsert
@@ -693,6 +706,9 @@ describe('dispatchMissingAgents', () => {
     const mockInsert = vi.fn().mockReturnValue({
       values: vi.fn().mockReturnValue({
         onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'agent-id-1' }]),
+        }),
       }),
     })
     vi.mocked(db).insert = mockInsert

@@ -44,9 +44,24 @@ export async function reconcileLinearIssues(): Promise<number> {
     },
   })
 
-  const arenaIssues = issuesResponse.nodes
+  const allArenaIssues = issuesResponse.nodes
+
+  // Deduplicate issues by ID (Linear API might return duplicates)
+  const seenIds = new Set<string>()
+  const arenaIssues = allArenaIssues.filter((issue) => {
+    if (seenIds.has(issue.id)) {
+      console.warn(`[Reconcile] Duplicate issue detected: ${issue.identifier}`)
+      return false
+    }
+    seenIds.add(issue.id)
+    return true
+  })
+
   console.log(
-    `[Reconcile] Found ${arenaIssues.length} issues with ${arenaLabel} label`
+    `[Reconcile] Found ${arenaIssues.length} unique issues with ${arenaLabel} label` +
+      (allArenaIssues.length !== arenaIssues.length
+        ? ` (${allArenaIssues.length - arenaIssues.length} duplicates removed)`
+        : '')
   )
 
   let reconciledCount = 0

@@ -85,12 +85,10 @@ export default async function Home(): Promise<React.JSX.Element> {
                   <TableRow>
                     <TableHead>Agent Name</TableHead>
                     <TableHead className="text-right">Rating</TableHead>
-                    <TableHead className="text-right">Games</TableHead>
-                    <TableHead className="text-right">Attempts</TableHead>
+                    <TableHead className="text-right">Issues</TableHead>
+                    <TableHead className="text-right">PRs</TableHead>
                     <TableHead className="text-right">Wins</TableHead>
-                    <TableHead className="text-right">
-                      Acceptance Rate
-                    </TableHead>
+                    <TableHead className="text-right">DNF</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -116,15 +114,11 @@ export default async function Home(): Promise<React.JSX.Element> {
                         {stat.ordinal > 0 ? stat.ordinal.toFixed(0) : '-'}
                       </TableCell>
                       <TableCell className="text-right">
-                        {stat.gamesPlayed}
+                        {stat.issues}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {stat.attempts}
-                      </TableCell>
+                      <TableCell className="text-right">{stat.prs}</TableCell>
                       <TableCell className="text-right">{stat.wins}</TableCell>
-                      <TableCell className="text-right">
-                        {stat.acceptancePct.toFixed(1)}%
-                      </TableCell>
+                      <TableCell className="text-right">{stat.dnf}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

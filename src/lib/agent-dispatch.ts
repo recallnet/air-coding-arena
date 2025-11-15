@@ -152,6 +152,8 @@ export async function dispatchMissingAgents(
   )
 
   // 8. Dispatch each truly missing agent
+  // Use database-first approach: insert record FIRST (acts as distributed lock)
+  // Then create Linear comment. This prevents race conditions.
   let dispatchedCount = 0
 
   // Get all agent configs once
@@ -165,10 +167,31 @@ export async function dispatchMissingAgents(
     }
 
     try {
-      // Use Linear user ID directly from agent config
-      const userId = agentConfig.linearUserId
+      // ATOMIC OPERATION: Insert database record FIRST with onConflictDoNothing
+      // This acts as a distributed lock - only first caller wins
+      const insertResult = await db
+        .insert(issueAgents)
+        .values({
+          issueId: dbIssueId,
+          agentName,
+          status: 'pending',
+          triggeredAt: new Date(),
+        })
+        .onConflictDoNothing({
+          target: [issueAgents.issueId, issueAgents.agentName],
+        })
+        .returning({ id: issueAgents.id })
 
-      // Create simple dispatch comment with proper @mention: @[displayName](userId)
+      // If insert returned nothing, another process already dispatched this agent
+      if (insertResult.length === 0) {
+        console.log(
+          `⏭️  Agent ${agentName} already dispatched by another process, skipping`
+        )
+        continue
+      }
+
+      // Database record created successfully - now create Linear comment
+      const userId = agentConfig.linearUserId
       const mention = `@[${agentConfig.displayName}](${userId})`
       const commentBody = `${mention} please work on this issue and submit a PR.`
 
@@ -177,23 +200,6 @@ export async function dispatchMissingAgents(
         body: commentBody,
       })
 
-      // Record dispatch in database (or update if retrying dispatch_failed)
-      await db
-        .insert(issueAgents)
-        .values({
-          issueId: dbIssueId,
-          agentName,
-          status: 'pending',
-          triggeredAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [issueAgents.issueId, issueAgents.agentName],
-          set: {
-            status: 'pending',
-            triggeredAt: new Date(),
-          },
-        })
-
       dispatchedCount++
       console.log(`✅ Dispatched ${agentName} to ${issue.linearKey}`)
     } catch (error) {
@@ -201,7 +207,25 @@ export async function dispatchMissingAgents(
         `❌ Failed to dispatch ${agentName} to ${issue.linearKey}:`,
         error
       )
-      // Continue with other agents even if one fails
+
+      // Mark as dispatch_failed for retry (only if we created the record)
+      try {
+        await db
+          .update(issueAgents)
+          .set({ status: 'dispatch_failed' })
+          .where(
+            and(
+              eq(issueAgents.issueId, dbIssueId),
+              eq(issueAgents.agentName, agentName),
+              eq(issueAgents.status, 'pending') // Only update if still pending
+            )
+          )
+      } catch (updateError) {
+        console.error(
+          `Failed to mark ${agentName} as dispatch_failed:`,
+          updateError
+        )
+      }
     }
   }
 

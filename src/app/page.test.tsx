@@ -56,8 +56,11 @@ describe('Home', () => {
       const mockStats: AgentStats[] = [
         {
           agentName: MOCK_AGENT_CURSOR,
-          attempts: 10,
+          issues: 5,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
@@ -82,8 +85,11 @@ describe('Home', () => {
       const mockStats: AgentStats[] = [
         {
           agentName: MOCK_AGENT_CURSOR,
-          attempts: 10,
+          issues: 5,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
@@ -104,8 +110,11 @@ describe('Home', () => {
       const mockStats: AgentStats[] = [
         {
           agentName: MOCK_AGENT_CURSOR,
-          attempts: 10,
+          issues: 5,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
@@ -116,26 +125,40 @@ describe('Home', () => {
 
       render(await Home())
 
+      // New headers should exist
       expect(screen.getByText('Agent Name')).toBeInTheDocument()
-      expect(screen.getByText('Attempts')).toBeInTheDocument()
+      expect(screen.getByText('Rating')).toBeInTheDocument()
+      expect(screen.getByText('Issues')).toBeInTheDocument()
+      expect(screen.getByText('PRs')).toBeInTheDocument()
       expect(screen.getByText('Wins')).toBeInTheDocument()
-      expect(screen.getByText('Acceptance Rate')).toBeInTheDocument()
+      expect(screen.getByText('DNF')).toBeInTheDocument()
+
+      // Old headers should NOT exist
+      expect(screen.queryByText('Acceptance Rate')).not.toBeInTheDocument()
+      expect(screen.queryByText('Attempts')).not.toBeInTheDocument()
+      expect(screen.queryByText('Games')).not.toBeInTheDocument()
     })
 
     it('should display agent stats in table rows', async () => {
       const mockStats: AgentStats[] = [
         {
           agentName: 'cursor',
+          issues: 8,
+          prs: 10,
+          wins: 7,
+          dnf: 2,
           attempts: 10,
-          wins: 8,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 12,
         },
         {
           agentName: 'engine',
-          attempts: 5,
+          issues: 4,
+          prs: 5,
           wins: 3,
+          dnf: 1,
+          attempts: 5,
           acceptancePct: 60.0,
           ordinal: 15.0,
           gamesPlayed: 7,
@@ -146,22 +169,36 @@ describe('Home', () => {
 
       render(await Home())
 
+      // Verify agent names are displayed
       expect(screen.getByText('cursor')).toBeInTheDocument()
       expect(screen.getByText('engine')).toBeInTheDocument()
-      expect(screen.getByText('10')).toBeInTheDocument()
-      expect(screen.getByText('8')).toBeInTheDocument()
-      expect(screen.getByText('5')).toBeInTheDocument()
-      expect(screen.getByText('3')).toBeInTheDocument()
-      expect(screen.getByText('80.0%')).toBeInTheDocument()
-      expect(screen.getByText('60.0%')).toBeInTheDocument()
+
+      // Check cursor row has correct values: 8 issues, 10 PRs, 7 wins, 2 DNF
+      const cursorRow = screen.getByText('cursor').closest('tr')
+      expect(cursorRow).toBeTruthy()
+      expect(cursorRow?.textContent).toContain('8')
+      expect(cursorRow?.textContent).toContain('10')
+      expect(cursorRow?.textContent).toContain('7')
+      expect(cursorRow?.textContent).toContain('2')
+
+      // Check engine row has correct values: 4 issues, 5 PRs, 3 wins, 1 DNF
+      const engineRow = screen.getByText('engine').closest('tr')
+      expect(engineRow).toBeTruthy()
+      expect(engineRow?.textContent).toContain('4')
+      expect(engineRow?.textContent).toContain('5')
+      expect(engineRow?.textContent).toContain('3')
+      expect(engineRow?.textContent).toContain('1')
     })
 
-    it('should format acceptance percentage with one decimal place', async () => {
+    it('should display new columns with correct data', async () => {
       const mockStats: AgentStats[] = [
         {
           agentName: 'cursor',
-          attempts: 10,
+          issues: 7,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.12345,
           ordinal: 20.0,
           gamesPlayed: 10,
@@ -172,32 +209,43 @@ describe('Home', () => {
 
       render(await Home())
 
-      expect(screen.getByText('80.1%')).toBeInTheDocument()
-      expect(screen.queryByText('80.12345%')).not.toBeInTheDocument()
+      expect(screen.getByText('7')).toBeInTheDocument()
+      expect(screen.getByText('10')).toBeInTheDocument()
+      expect(screen.getByText('8')).toBeInTheDocument()
+      expect(screen.getByText('2')).toBeInTheDocument()
     })
 
     it('should display Top Performer badge for agent with highest acceptance rate', async () => {
       const mockStats: AgentStats[] = [
         {
           agentName: 'cursor',
-          attempts: 10,
+          issues: 8,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
         },
         {
           agentName: 'engine',
-          attempts: 5,
+          issues: 4,
+          prs: 5,
           wins: 3,
+          dnf: 1,
+          attempts: 5,
           acceptancePct: 60.0,
           ordinal: 15.0,
           gamesPlayed: 5,
         },
         {
           agentName: 'cyrus',
-          attempts: 8,
+          issues: 7,
+          prs: 8,
           wins: 7,
+          dnf: 1,
+          attempts: 8,
           acceptancePct: 87.5,
           ordinal: 25.0,
           gamesPlayed: 8,
@@ -224,8 +272,11 @@ describe('Home', () => {
       const mockStats: AgentStats[] = [
         {
           agentName: 'cursor',
-          attempts: 10,
+          issues: 8,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
@@ -243,16 +294,22 @@ describe('Home', () => {
       const mockStats: AgentStats[] = [
         {
           agentName: 'cursor',
-          attempts: 10,
+          issues: 8,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
         },
         {
           agentName: 'engine',
-          attempts: 5,
+          issues: 4,
+          prs: 5,
           wins: 4,
+          dnf: 1,
+          attempts: 5,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 5,
@@ -281,8 +338,11 @@ describe('Home', () => {
       const mockAgentStats: AgentStats[] = [
         {
           agentName: 'cursor',
-          attempts: 10,
+          issues: 8,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
@@ -306,8 +366,11 @@ describe('Home', () => {
       const mockAgentStats: AgentStats[] = [
         {
           agentName: 'cursor',
-          attempts: 10,
+          issues: 8,
+          prs: 10,
           wins: 8,
+          dnf: 2,
+          attempts: 10,
           acceptancePct: 80.0,
           ordinal: 20.0,
           gamesPlayed: 10,
