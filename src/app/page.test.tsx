@@ -297,7 +297,7 @@ describe('Home', () => {
       expect(screen.getByText(ACTIVITY_TIMELINE_TEXT)).toBeInTheDocument()
       expect(
         screen.getByText(
-          'Cumulative attempts, wins, and failures per agent over the last 30 days'
+          'Agent ratings (left axis) and cumulative attempts, wins, failures (right axis) over the last 30 days'
         )
       ).toBeInTheDocument()
     })

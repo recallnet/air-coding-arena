@@ -4,6 +4,7 @@
  * Processes issues in chronological order to build accurate rating history.
  */
 
+import 'dotenv/config'
 import { db } from '../src/db/client'
 import { issues, attempts, agentScores, agentScoreHistory } from '../src/db/schema'
 import { eq, isNotNull, asc } from 'drizzle-orm'

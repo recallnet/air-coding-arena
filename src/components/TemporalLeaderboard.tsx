@@ -194,7 +194,18 @@ export function TemporalLeaderboard({
   }
 
   // Calculate separate max values for dual Y-axis
-  const maxRating = Math.max(...stats.map((s) => s.ordinal), 1)
+  // For ratings: filter out zeros and calculate min/max range to zoom into actual data
+  const ratingsWithData = stats.map((s) => s.ordinal).filter((r) => r > 0)
+  const minRating =
+    ratingsWithData.length > 0 ? Math.min(...ratingsWithData) : 0
+  const maxRating =
+    ratingsWithData.length > 0 ? Math.max(...ratingsWithData) : 1
+  // Add 5% padding to rating range for visual clarity
+  const ratingPadding = (maxRating - minRating) * 0.05 || 50
+  const ratingRangeMin = Math.max(0, minRating - ratingPadding)
+  const ratingRangeMax = maxRating + ratingPadding
+  const ratingRange = ratingRangeMax - ratingRangeMin
+
   const maxCount = Math.max(
     ...stats.map((s) =>
       Math.max(s.cumulativeAttempts, s.cumulativeWins, s.cumulativeFailures)
@@ -211,9 +222,12 @@ export function TemporalLeaderboard({
 
   // Scale functions - dual Y-axis
   const xScale = (index: number): number =>
-    dates.length > 1 ? (index / (dates.length - 1)) * innerWidth : innerWidth / 2
+    dates.length > 1
+      ? (index / (dates.length - 1)) * innerWidth
+      : innerWidth / 2
+  // Rating scale: zoom into actual data range (minRating to maxRating)
   const yScaleRating = (value: number): number =>
-    innerHeight - (value / maxRating) * innerHeight
+    innerHeight - ((value - ratingRangeMin) / ratingRange) * innerHeight
   const yScaleCount = (value: number): number =>
     innerHeight - (value / maxCount) * innerHeight
 
@@ -306,7 +320,9 @@ export function TemporalLeaderboard({
                 {/* Grid lines (using rating scale for positioning) */}
                 <g className="text-border">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-                    const y = padding.top + yScaleRating(maxRating * fraction)
+                    const ratingValue =
+                      ratingRangeMin + ratingRange * fraction
+                    const y = padding.top + yScaleRating(ratingValue)
                     return (
                       <line
                         key={fraction}
@@ -325,7 +341,9 @@ export function TemporalLeaderboard({
                 {/* Left Y-axis labels (Rating) */}
                 <g className="text-xs text-foreground-secondary">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-                    const value = Math.round(maxRating * fraction)
+                    const value = Math.round(
+                      ratingRangeMin + ratingRange * fraction
+                    )
                     const y = padding.top + yScaleRating(value)
                     return (
                       <text
