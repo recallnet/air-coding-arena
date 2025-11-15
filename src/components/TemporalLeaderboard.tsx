@@ -312,13 +312,13 @@ export function TemporalLeaderboard({
       <CardContent>
         <div className="space-y-6">
           {/* Legend */}
-          <div className="flex flex-wrap justify-center gap-4 text-sm">
+          <div className="flex flex-wrap justify-center gap-6">
             {agents.map((agent, index) => {
               const colors = getAgentColors(index)
               const metadata = agentMetadata.get(agent)
               return (
-                <div key={agent} className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
+                <div key={agent} className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     <AgentAvatar
                       name={agent}
                       status="accepted"
@@ -326,28 +326,28 @@ export function TemporalLeaderboard({
                       avatarUrl={metadata?.avatarUrl}
                       displayName={metadata?.displayName}
                     />
-                    <span className="font-medium">
+                    <span className="text-sm font-semibold">
                       {metadata?.displayName ?? agent}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-foreground-secondary">
+                  <div className="flex items-center gap-2.5 text-sm text-foreground-secondary">
                     <div
-                      className="h-2 w-2 rounded-full"
+                      className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: colors.base }}
                     />
                     <span className="font-semibold">Rating</span>
-                    <span>|</span>
-                    <span>Attempts</span>
+                    <span className="text-border">|</span>
+                    <span className="font-medium">Attempts</span>
                     <div
-                      className="h-2 w-2 rounded-full"
+                      className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: colors.wins }}
                     />
-                    <span>Wins</span>
+                    <span className="font-medium">Wins</span>
                     <div
-                      className="h-2 w-2 rounded-full"
+                      className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: colors.failures }}
                     />
-                    <span>Failures</span>
+                    <span className="font-medium">Failures</span>
                   </div>
                 </div>
               )
@@ -383,7 +383,7 @@ export function TemporalLeaderboard({
                 </g>
 
                 {/* Left Y-axis labels (Rating) */}
-                <g className="text-xs text-foreground-secondary">
+                <g className="text-foreground-secondary">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
                     const value = Math.round(
                       ratingRangeMin + ratingRange * fraction
@@ -392,11 +392,13 @@ export function TemporalLeaderboard({
                     return (
                       <text
                         key={fraction}
-                        x={padding.left - 10}
+                        x={padding.left - 12}
                         y={y}
                         textAnchor="end"
                         dominantBaseline="middle"
                         fill="currentColor"
+                        fontSize="13"
+                        fontWeight="500"
                       >
                         {value}
                       </text>
@@ -410,25 +412,28 @@ export function TemporalLeaderboard({
                     dominantBaseline="middle"
                     fill="currentColor"
                     transform={`rotate(-90, 15, ${chartHeight / 2})`}
-                    className="font-semibold"
+                    fontSize="13"
+                    fontWeight="600"
                   >
                     Rating
                   </text>
                 </g>
 
                 {/* Right Y-axis labels (Count) */}
-                <g className="text-xs text-foreground-secondary">
+                <g className="text-foreground-secondary">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
                     const value = Math.round(maxCount * fraction)
                     const y = padding.top + yScaleCount(value)
                     return (
                       <text
                         key={`count-${fraction}`}
-                        x={chartWidth - padding.right + 10}
+                        x={chartWidth - padding.right + 12}
                         y={y}
                         textAnchor="start"
                         dominantBaseline="middle"
                         fill="currentColor"
+                        fontSize="13"
+                        fontWeight="500"
                       >
                         {value}
                       </text>
@@ -442,14 +447,15 @@ export function TemporalLeaderboard({
                     dominantBaseline="middle"
                     fill="currentColor"
                     transform={`rotate(90, ${chartWidth - 15}, ${chartHeight / 2})`}
-                    className="font-semibold"
+                    fontSize="13"
+                    fontWeight="600"
                   >
                     Count
                   </text>
                 </g>
 
                 {/* X-axis labels (show every 5th date) */}
-                <g className="text-xs text-foreground-secondary">
+                <g className="text-foreground-secondary">
                   {dates
                     .filter(
                       (_, index) =>
@@ -462,9 +468,11 @@ export function TemporalLeaderboard({
                         <text
                           key={date}
                           x={x}
-                          y={chartHeight - padding.bottom + 20}
+                          y={chartHeight - padding.bottom + 24}
                           textAnchor="middle"
                           fill="currentColor"
+                          fontSize="12"
+                          fontWeight="500"
                         >
                           {formatDate(date)}
                         </text>

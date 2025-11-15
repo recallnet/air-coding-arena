@@ -74,11 +74,13 @@ export async function dispatchMissingAgents(
     throw new Error(`Issue has no Linear ID: ${dbIssueId}`)
   }
 
-  // 2. Check issue status - only dispatch to open/in_progress issues
-  const status = issue.status?.toLowerCase() ?? ''
-  if (!['open', 'in progress', 'in_progress'].includes(status)) {
+  // 2. Check issue status - only dispatch to open/dispatchable issues
+  // Don't dispatch to completed, canceled, or deleted issues
+  const status = issue.status ?? ''
+  const dispatchableStatuses = ['Backlog', 'Todo', 'In Progress', 'In Review']
+  if (!dispatchableStatuses.includes(status)) {
     console.log(
-      `Skipping dispatch for ${issue.linearKey}: status is ${issue.status}`
+      `Skipping dispatch for ${issue.linearKey}: status is ${issue.status} (not dispatchable)`
     )
     return 0
   }
