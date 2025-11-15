@@ -18,6 +18,13 @@ const nextConfig = {
     ],
   },
   turbopack: {},
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      encoding: false,
+    }
+    return config
+  },
 }
 
 export default nextConfig

@@ -202,7 +202,7 @@ export function TemporalLeaderboard({
   // Calculate separate max values for dual Y-axis
   // For ratings: use dynamic range based on actual data with ±50 padding
   const ratingsWithData = stats.filter((s) => s.ordinal > 0).map((s) => s.ordinal)
-  const RATING_PADDING = 50
+  const RATING_PADDING = 10
   const ratingRangeMin =
     ratingsWithData.length > 0
       ? Math.min(...ratingsWithData) - RATING_PADDING
