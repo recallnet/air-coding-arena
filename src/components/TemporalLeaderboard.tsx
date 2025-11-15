@@ -269,6 +269,11 @@ export function TemporalLeaderboard({
       const stat = groupedStats[date]?.[agentName]
       const value = getMetricValue(stat, metric)
 
+      // For ordinal (rating), skip dates where agent has no rating
+      if (metric === 'ordinal' && value === 0) {
+        continue
+      }
+
       // For ordinal (rating), add synthetic starting point at 1500 when agent first gets rated
       if (
         metric === 'ordinal' &&
