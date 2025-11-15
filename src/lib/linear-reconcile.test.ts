@@ -17,6 +17,10 @@ vi.mock('@linear/sdk', () => ({
   LinearClient: vi.fn(),
 }))
 
+vi.mock('@octokit/rest', () => ({
+  Octokit: vi.fn(),
+}))
+
 vi.mock('@/db/client', () => ({
   db: {
     insert: vi.fn(),
@@ -540,6 +544,108 @@ describe('reconcileLinearIssues', () => {
           },
         },
       },
+    })
+  })
+
+  it('should handle 404 errors for deleted PRs gracefully', async () => {
+    const mockIssue = createMockLinearIssue({
+      id: 'linear-with-deleted-pr',
+      identifier: 'ENG-404',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select for getting issue ID after insert
+    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockWhere = vi.fn().mockReturnValue({
+      limit: mockLimit,
+    })
+    const mockFrom = vi.fn().mockReturnValue({
+      where: mockWhere,
+    })
+    const mockSelect = vi.fn().mockReturnValue({
+      from: mockFrom,
+    })
+    vi.mocked(db).select = mockSelect as never
+
+    // Mock db.select for getting attempts (empty for this test)
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([
+      {
+        id: 'attempt-1',
+        repo: 'recallnet/air-coding-arena',
+        prNumber: 9,
+        status: 'open',
+        mergedAt: null,
+        closedAt: null,
+      },
+    ])
+    vi.mocked(db).select = vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: mockAttemptsWhere,
+      }),
+    }) as never
+
+    // Mock db.update chain for both PR status update and deletion marking
+    const mockReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    // Mock GitHub API to return 404 error
+    process.env['GITHUB_TOKEN'] = 'test-token'
+
+    // Need to mock Octokit globally
+    const { Octokit } = await import('@octokit/rest')
+    const mockGet = vi.fn().mockRejectedValue({
+      status: 404,
+      message: 'Not Found',
+      name: 'HttpError',
+    })
+    vi.mocked(Octokit).mockImplementation(
+      () =>
+        ({
+          rest: {
+            pulls: {
+              get: mockGet,
+            },
+          },
+        }) as never
+    )
+
+    const count = await reconcileLinearIssues()
+
+    // Should complete successfully despite 404
+    expect(count).toBe(1)
+
+    // Should have attempted to update the PR status to 'closed'
+    expect(mockSet).toHaveBeenCalledWith({
+      status: 'closed',
+      closedAt: expect.any(Date),
     })
   })
 })
