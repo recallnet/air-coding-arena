@@ -38,6 +38,11 @@ vi.mock('./update-winner', () => ({
   updateWinner: vi.fn().mockResolvedValue(undefined),
 }))
 
+// Mock github-app-auth to avoid needing credentials
+vi.mock('./github-app-auth', () => ({
+  getInstallationToken: vi.fn().mockResolvedValue('test-installation-token'),
+}))
+
 const MOCK_LINEAR_ID = 'linear-issue-1'
 const MOCK_IDENTIFIER = 'ENG-123'
 const MOCK_TITLE = 'Test Issue'
@@ -651,9 +656,10 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
-    // Mock db.select - needs to handle two different queries:
+    // Mock db.select - needs to handle three different queries:
     // 1. Getting issue ID after insert (with .limit())
     // 2. Getting attempts for an issue (without .limit())
+    // 3. Getting GitHub App installation (with .limit())
     const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
     const mockIssueWhere = vi.fn().mockReturnValue({
       limit: mockIssueLimit,
@@ -676,8 +682,17 @@ describe('reconcileLinearIssues', () => {
       where: mockAttemptsWhere,
     })
 
-    // db.select is called twice - once for getting issue ID, once for getting attempts
-    // We need to return different mocks based on the call
+    const mockInstallationLimit = vi
+      .fn()
+      .mockResolvedValue([{ installationId: 'test-installation-id' }])
+    const mockInstallationWhere = vi.fn().mockReturnValue({
+      limit: mockInstallationLimit,
+    })
+    const mockInstallationFrom = vi.fn().mockReturnValue({
+      where: mockInstallationWhere,
+    })
+
+    // db.select is called three times - issue ID, attempts, installation
     vi.mocked(db).select = vi
       .fn()
       .mockReturnValueOnce({
@@ -685,9 +700,13 @@ describe('reconcileLinearIssues', () => {
       })
       .mockReturnValueOnce({
         from: mockAttemptsFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockInstallationFrom,
       }) as never
 
-    // Mock db.update chain for both PR status update and deletion marking
+    // Mock db.update chain for deletion marking only
+    // PR status updates should NOT happen on 404
     const mockReturning = vi.fn().mockResolvedValue([])
     const mockUpdateWhere = vi.fn().mockReturnValue({
       returning: mockReturning,
@@ -707,9 +726,6 @@ describe('reconcileLinearIssues', () => {
     } as never
 
     // Mock GitHub API to return 404 error
-    process.env['GITHUB_TOKEN'] = 'test-token'
-
-    // Need to mock Octokit globally
     const { Octokit } = await import('@octokit/rest')
     const mockGet = vi.fn().mockRejectedValue({
       status: 404,
@@ -732,11 +748,14 @@ describe('reconcileLinearIssues', () => {
     // Should complete successfully despite 404
     expect(count).toBe(1)
 
-    // Should have attempted to update the PR status to 'closed'
-    expect(mockSet).toHaveBeenCalledWith({
+    // Should NOT have updated the PR status (404 errors are now skipped)
+    expect(mockSet).not.toHaveBeenCalledWith({
       status: 'closed',
       closedAt: expect.any(Date),
     })
+    expect(mockSet).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'closed' })
+    )
   })
 
   it('should handle non-404 GitHub API errors gracefully', async () => {
@@ -865,9 +884,10 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
-    // Mock db.select - needs to handle two different queries:
+    // Mock db.select - needs to handle three different queries:
     // 1. Getting issue ID after insert (with .limit())
     // 2. Getting attempts for an issue (without .limit())
+    // 3. Getting GitHub App installation (with .limit())
     const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
     const mockIssueWhere = vi.fn().mockReturnValue({
       limit: mockIssueLimit,
@@ -890,7 +910,17 @@ describe('reconcileLinearIssues', () => {
       where: mockAttemptsWhere,
     })
 
-    // db.select is called twice
+    const mockInstallationLimit = vi
+      .fn()
+      .mockResolvedValue([{ installationId: 'test-installation-id' }])
+    const mockInstallationWhere = vi.fn().mockReturnValue({
+      limit: mockInstallationLimit,
+    })
+    const mockInstallationFrom = vi.fn().mockReturnValue({
+      where: mockInstallationWhere,
+    })
+
+    // db.select is called three times - issue ID, attempts, installation
     vi.mocked(db).select = vi
       .fn()
       .mockReturnValueOnce({
@@ -898,6 +928,9 @@ describe('reconcileLinearIssues', () => {
       })
       .mockReturnValueOnce({
         from: mockAttemptsFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockInstallationFrom,
       }) as never
 
     // Mock db.update chain
@@ -920,8 +953,6 @@ describe('reconcileLinearIssues', () => {
     } as never
 
     // Mock GitHub API to return merged PR
-    process.env['GITHUB_TOKEN'] = 'test-token'
-
     const { Octokit } = await import('@octokit/rest')
     const mockGet = vi.fn().mockResolvedValue({
       data: {
@@ -975,9 +1006,10 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
-    // Mock db.select - needs to handle two different queries:
+    // Mock db.select - needs to handle three different queries:
     // 1. Getting issue ID after insert (with .limit())
     // 2. Getting attempts for an issue (without .limit())
+    // 3. Getting GitHub App installation (with .limit())
     const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
     const mockIssueWhere = vi.fn().mockReturnValue({
       limit: mockIssueLimit,
@@ -1000,7 +1032,17 @@ describe('reconcileLinearIssues', () => {
       where: mockAttemptsWhere,
     })
 
-    // db.select is called twice
+    const mockInstallationLimit = vi
+      .fn()
+      .mockResolvedValue([{ installationId: 'test-installation-id' }])
+    const mockInstallationWhere = vi.fn().mockReturnValue({
+      limit: mockInstallationLimit,
+    })
+    const mockInstallationFrom = vi.fn().mockReturnValue({
+      where: mockInstallationWhere,
+    })
+
+    // db.select is called three times - issue ID, attempts, installation
     vi.mocked(db).select = vi
       .fn()
       .mockReturnValueOnce({
@@ -1008,6 +1050,9 @@ describe('reconcileLinearIssues', () => {
       })
       .mockReturnValueOnce({
         from: mockAttemptsFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockInstallationFrom,
       }) as never
 
     // Mock db.update chain
@@ -1030,8 +1075,6 @@ describe('reconcileLinearIssues', () => {
     } as never
 
     // Mock GitHub API to return closed PR (not merged)
-    process.env['GITHUB_TOKEN'] = 'test-token'
-
     const { Octokit } = await import('@octokit/rest')
     const mockGet = vi.fn().mockResolvedValue({
       data: {
@@ -1268,7 +1311,10 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
-    // Mock db.select chain
+    // Mock db.select - needs to handle three different queries:
+    // 1. Getting issue ID after insert (with .limit())
+    // 2. Getting attempts for an issue (without .limit())
+    // 3. Getting GitHub App installation (with .limit())
     const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
     const mockIssueWhere = vi.fn().mockReturnValue({
       limit: mockIssueLimit,
@@ -1292,6 +1338,17 @@ describe('reconcileLinearIssues', () => {
       where: mockAttemptsWhere,
     })
 
+    const mockInstallationLimit = vi
+      .fn()
+      .mockResolvedValue([{ installationId: 'test-installation-id' }])
+    const mockInstallationWhere = vi.fn().mockReturnValue({
+      limit: mockInstallationLimit,
+    })
+    const mockInstallationFrom = vi.fn().mockReturnValue({
+      where: mockInstallationWhere,
+    })
+
+    // db.select is called three times - issue ID, attempts, installation
     vi.mocked(db).select = vi
       .fn()
       .mockReturnValueOnce({
@@ -1299,6 +1356,9 @@ describe('reconcileLinearIssues', () => {
       })
       .mockReturnValueOnce({
         from: mockAttemptsFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockInstallationFrom,
       }) as never
 
     // Mock db.query.issues.findFirst for winner check
@@ -1321,8 +1381,6 @@ describe('reconcileLinearIssues', () => {
     } as never)
 
     // Mock GitHub API to return merged PR with newer timestamp
-    process.env['GITHUB_TOKEN'] = 'test-token'
-
     const { Octokit } = await import('@octokit/rest')
     const mockGet = vi.fn().mockResolvedValue({
       data: {

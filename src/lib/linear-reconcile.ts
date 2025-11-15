@@ -9,8 +9,9 @@ import { Octokit } from '@octokit/rest'
 import { eq, notInArray } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { issues, attempts } from '@/db/schema'
+import { issues, attempts, githubAppInstallations } from '@/db/schema'
 
+import { getInstallationToken } from './github-app-auth'
 import { syncIssueFromLinear } from './linear-sync'
 import { updateWinner } from './update-winner'
 
@@ -165,7 +166,9 @@ export async function reconcileLinearIssues(): Promise<number> {
 
 /**
  * Handles errors when syncing PR status from GitHub
- * Specifically handles 404 errors for deleted PRs
+ * Logs errors but does not modify PR status
+ * 404 errors can indicate deleted PRs OR draft PRs (which return 404 with some auth methods)
+ * To avoid incorrectly marking draft PRs as closed, we skip status updates on error
  *
  * @param error - Error from GitHub API
  * @param attempt - Attempt being synced
@@ -175,30 +178,22 @@ async function handlePRSyncError(
   error: unknown,
   attempt: { id: string; repo: string; prNumber: number }
 ): Promise<boolean> {
-  // Check if this is a 404 error (PR deleted or not found)
+  // Check if this is a 404 error
   if (
     error &&
     typeof error === 'object' &&
     'status' in error &&
     error.status === 404
   ) {
-    // PR has been deleted from GitHub - mark as closed
+    // 404 can mean PR was deleted OR it's a draft PR (which can return 404)
+    // Don't modify status - rely on webhooks for accurate state
     console.warn(
-      `[Reconcile] PR ${attempt.repo}#${attempt.prNumber} not found on GitHub (deleted) - marking as closed`
+      `[Reconcile] PR ${attempt.repo}#${attempt.prNumber} returned 404 (deleted or inaccessible) - skipping status update`
     )
-
-    await db
-      .update(attempts)
-      .set({
-        status: 'closed',
-        closedAt: new Date(),
-      })
-      .where(eq(attempts.id, attempt.id))
-
     return true
   }
 
-  // Not a 404 error - log and continue
+  // Other error - log and continue
   console.error(
     `[Reconcile] Failed to sync PR status for ${attempt.repo}#${attempt.prNumber}:`,
     error
@@ -259,20 +254,110 @@ function determinePRStatus(
 }
 
 /**
+ * Groups attempts by repository owner for batch processing
+ *
+ * @param issueAttempts - All attempts for an issue
+ * @returns Map of owner to their attempts
+ */
+function groupAttemptsByOwner(
+  issueAttempts: Array<{
+    id: string
+    repo: string
+    prNumber: number
+    status: string
+    mergedAt: Date | null
+    closedAt: Date | null
+  }>
+): Map<string, typeof issueAttempts> {
+  const attemptsByOwner = new Map<string, typeof issueAttempts>()
+
+  for (const attempt of issueAttempts) {
+    const [owner] = attempt.repo.split('/')
+    if (!owner) continue
+
+    if (!attemptsByOwner.has(owner)) {
+      attemptsByOwner.set(owner, [])
+    }
+    attemptsByOwner.get(owner)?.push(attempt)
+  }
+
+  return attemptsByOwner
+}
+
+/**
+ * Syncs a single PR attempt with GitHub API
+ *
+ * @param octokit - Authenticated Octokit instance
+ * @param owner - Repository owner
+ * @param attempt - Attempt to sync
+ */
+async function syncSinglePRAttempt(
+  octokit: Octokit,
+  owner: string,
+  attempt: {
+    id: string
+    repo: string
+    prNumber: number
+    status: string
+    mergedAt: Date | null
+    closedAt: Date | null
+  }
+): Promise<void> {
+  const [, repo] = attempt.repo.split('/')
+  if (!repo) return
+
+  try {
+    // Fetch PR status from GitHub
+    const { data: pr } = await octokit.rest.pulls.get({
+      owner,
+      repo,
+      pull_number: attempt.prNumber,
+    })
+
+    // Determine correct status
+    const {
+      status: newStatus,
+      mergedAt: newMergedAt,
+      closedAt: newClosedAt,
+    } = determinePRStatus(
+      pr,
+      attempt.status,
+      attempt.mergedAt,
+      attempt.closedAt
+    )
+
+    // Update database if status changed
+    if (
+      newStatus !== attempt.status ||
+      newMergedAt?.getTime() !== attempt.mergedAt?.getTime() ||
+      newClosedAt?.getTime() !== attempt.closedAt?.getTime()
+    ) {
+      await db
+        .update(attempts)
+        .set({
+          status: newStatus,
+          mergedAt: newMergedAt,
+          closedAt: newClosedAt,
+        })
+        .where(eq(attempts.id, attempt.id))
+
+      console.log(
+        `[Reconcile] Updated PR status for ${attempt.repo}#${attempt.prNumber}: ${attempt.status} → ${newStatus}`
+      )
+    }
+  } catch (error) {
+    await handlePRSyncError(error, attempt)
+  }
+}
+
+/**
  * Syncs PR status from GitHub for all attempts in an issue
  * Safety net for missed webhooks - fetches current status from GitHub API
+ * Uses GitHub App installation token for authentication
  *
  * @param issueId - Database issue ID
  */
 async function syncPRStatusFromGitHub(issueId: string): Promise<void> {
-  const githubToken = process.env['GITHUB_TOKEN']
-  if (!githubToken) {
-    console.warn(
-      '[Reconcile] GITHUB_TOKEN not configured - skipping PR status sync'
-    )
-    return
-  }
-
   // Get all attempts for this issue
   const issueAttempts = await db
     .select()
@@ -281,54 +366,41 @@ async function syncPRStatusFromGitHub(issueId: string): Promise<void> {
 
   if (issueAttempts.length === 0) return
 
-  const octokit = new Octokit({ auth: githubToken })
+  // Group attempts by owner to minimize installation token lookups
+  const attemptsByOwner = groupAttemptsByOwner(issueAttempts)
 
-  for (const attempt of issueAttempts) {
+  // Process attempts per owner
+  for (const [owner, ownerAttempts] of attemptsByOwner) {
     try {
-      // Parse owner/repo from repo field
-      const [owner, repo] = attempt.repo.split('/')
-      if (!owner || !repo) continue
+      // Look up installation ID for this owner
+      const installation = await db
+        .select()
+        .from(githubAppInstallations)
+        .where(eq(githubAppInstallations.accountLogin, owner))
+        .limit(1)
 
-      // Fetch PR status from GitHub
-      const { data: pr } = await octokit.rest.pulls.get({
-        owner,
-        repo,
-        pull_number: attempt.prNumber,
-      })
-
-      // Determine correct status
-      const {
-        status: newStatus,
-        mergedAt: newMergedAt,
-        closedAt: newClosedAt,
-      } = determinePRStatus(
-        pr,
-        attempt.status,
-        attempt.mergedAt,
-        attempt.closedAt
-      )
-
-      // Update database if status changed
-      if (
-        newStatus !== attempt.status ||
-        newMergedAt?.getTime() !== attempt.mergedAt?.getTime() ||
-        newClosedAt?.getTime() !== attempt.closedAt?.getTime()
-      ) {
-        await db
-          .update(attempts)
-          .set({
-            status: newStatus,
-            mergedAt: newMergedAt,
-            closedAt: newClosedAt,
-          })
-          .where(eq(attempts.id, attempt.id))
-
-        console.log(
-          `[Reconcile] Updated PR status for ${attempt.repo}#${attempt.prNumber}: ${attempt.status} → ${newStatus}`
+      if (!installation[0]) {
+        console.warn(
+          `[Reconcile] No GitHub App installation found for owner: ${owner} - skipping PR sync`
         )
+        continue
+      }
+
+      // Get installation access token
+      const githubToken = await getInstallationToken(
+        installation[0].installationId
+      )
+      const octokit = new Octokit({ auth: githubToken })
+
+      // Sync PRs for this owner
+      for (const attempt of ownerAttempts) {
+        await syncSinglePRAttempt(octokit, owner, attempt)
       }
     } catch (error) {
-      await handlePRSyncError(error, attempt)
+      console.error(
+        `[Reconcile] Failed to get installation token for ${owner}:`,
+        error
+      )
     }
   }
 }
