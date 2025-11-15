@@ -481,18 +481,10 @@ export default async function IssuePage({
                     <TableCell>
                       <Badge
                         variant={getAttemptStatusBadgeVariant(
-                          attempt.mergedAt
-                            ? 'merged'
-                            : attempt.closedAt
-                              ? 'closed'
-                              : 'open'
+                          attempt.status as AttemptStatus
                         )}
                       >
-                        {attempt.mergedAt
-                          ? 'merged'
-                          : attempt.closedAt
-                            ? 'closed'
-                            : 'open'}
+                        {attempt.status}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(attempt.openedAt)}</TableCell>
