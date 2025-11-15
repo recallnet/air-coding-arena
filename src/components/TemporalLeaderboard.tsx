@@ -154,8 +154,8 @@ export function TemporalLeaderboard({
         <CardHeader>
           <CardTitle>Activity Timeline</CardTitle>
           <CardDescription>
-            Cumulative attempts, wins, and failures per agent over the last 30
-            days
+            Agent ratings (left axis) and cumulative attempts, wins, failures
+            (right axis) over the last 30 days
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -193,15 +193,11 @@ export function TemporalLeaderboard({
     }
   }
 
-  // Calculate max value for Y-axis scaling
-  const maxValue = Math.max(
+  // Calculate separate max values for dual Y-axis
+  const maxRating = Math.max(...stats.map((s) => s.ordinal), 1)
+  const maxCount = Math.max(
     ...stats.map((s) =>
-      Math.max(
-        s.cumulativeAttempts,
-        s.cumulativeWins,
-        s.cumulativeFailures,
-        s.ordinal
-      )
+      Math.max(s.cumulativeAttempts, s.cumulativeWins, s.cumulativeFailures)
     ),
     1
   )
@@ -209,15 +205,17 @@ export function TemporalLeaderboard({
   // Chart dimensions
   const chartWidth = 800
   const chartHeight = 300
-  const padding = { top: 20, right: 20, bottom: 40, left: 50 }
+  const padding = { top: 20, right: 60, bottom: 40, left: 60 }
   const innerWidth = chartWidth - padding.left - padding.right
   const innerHeight = chartHeight - padding.top - padding.bottom
 
-  // Scale functions
+  // Scale functions - dual Y-axis
   const xScale = (index: number): number =>
-    (index / (dates.length - 1)) * innerWidth
-  const yScale = (value: number): number =>
-    innerHeight - (value / maxValue) * innerHeight
+    dates.length > 1 ? (index / (dates.length - 1)) * innerWidth : innerWidth / 2
+  const yScaleRating = (value: number): number =>
+    innerHeight - (value / maxRating) * innerHeight
+  const yScaleCount = (value: number): number =>
+    innerHeight - (value / maxCount) * innerHeight
 
   // Generate line path for a metric
   const generateLinePath = (
@@ -235,7 +233,10 @@ export function TemporalLeaderboard({
               ? stat.cumulativeFailures
               : stat.ordinal
         : 0
-      return `${xScale(index)},${yScale(value)}`
+      // Use appropriate Y-scale: rating scale for ordinal, count scale for others
+      const yValue =
+        metric === 'ordinal' ? yScaleRating(value) : yScaleCount(value)
+      return `${xScale(index)},${yValue}`
     })
     return `M ${points.join(' L ')}`
   }
@@ -245,8 +246,8 @@ export function TemporalLeaderboard({
       <CardHeader>
         <CardTitle>Activity Timeline</CardTitle>
         <CardDescription>
-          Cumulative attempts, wins, and failures per agent over the last 30
-          days
+          Agent ratings (left axis) and cumulative attempts, wins, failures
+          (right axis) over the last 30 days
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -302,10 +303,10 @@ export function TemporalLeaderboard({
                 className="w-full"
                 style={{ maxWidth: '100%', height: 'auto' }}
               >
-                {/* Grid lines */}
+                {/* Grid lines (using rating scale for positioning) */}
                 <g className="text-border">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-                    const y = padding.top + yScale(maxValue * fraction)
+                    const y = padding.top + yScaleRating(maxRating * fraction)
                     return (
                       <line
                         key={fraction}
@@ -321,11 +322,11 @@ export function TemporalLeaderboard({
                   })}
                 </g>
 
-                {/* Y-axis labels */}
+                {/* Left Y-axis labels (Rating) */}
                 <g className="text-xs text-foreground-secondary">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-                    const value = Math.round(maxValue * fraction)
-                    const y = padding.top + yScale(value)
+                    const value = Math.round(maxRating * fraction)
+                    const y = padding.top + yScaleRating(value)
                     return (
                       <text
                         key={fraction}
@@ -339,6 +340,50 @@ export function TemporalLeaderboard({
                       </text>
                     )
                   })}
+                  {/* Left axis label */}
+                  <text
+                    x={15}
+                    y={chartHeight / 2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="currentColor"
+                    transform={`rotate(-90, 15, ${chartHeight / 2})`}
+                    className="font-semibold"
+                  >
+                    Rating
+                  </text>
+                </g>
+
+                {/* Right Y-axis labels (Count) */}
+                <g className="text-xs text-foreground-secondary">
+                  {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+                    const value = Math.round(maxCount * fraction)
+                    const y = padding.top + yScaleCount(value)
+                    return (
+                      <text
+                        key={`count-${fraction}`}
+                        x={chartWidth - padding.right + 10}
+                        y={y}
+                        textAnchor="start"
+                        dominantBaseline="middle"
+                        fill="currentColor"
+                      >
+                        {value}
+                      </text>
+                    )
+                  })}
+                  {/* Right axis label */}
+                  <text
+                    x={chartWidth - 15}
+                    y={chartHeight / 2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="currentColor"
+                    transform={`rotate(90, ${chartWidth - 15}, ${chartHeight / 2})`}
+                    className="font-semibold"
+                  >
+                    Count
+                  </text>
                 </g>
 
                 {/* X-axis labels (show every 5th date) */}
@@ -386,27 +431,33 @@ export function TemporalLeaderboard({
                           d={generateLinePath(agent, 'attempts')}
                           fill="none"
                           stroke={colors.attempts}
-                          strokeWidth="2"
+                          strokeWidth="1.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          strokeDasharray="4 3"
+                          opacity="0.5"
                         />
                         {/* Wins line */}
                         <path
                           d={generateLinePath(agent, 'wins')}
                           fill="none"
                           stroke={colors.wins}
-                          strokeWidth="2"
+                          strokeWidth="1.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          strokeDasharray="4 3"
+                          opacity="0.5"
                         />
                         {/* Failures line */}
                         <path
                           d={generateLinePath(agent, 'failures')}
                           fill="none"
                           stroke={colors.failures}
-                          strokeWidth="2"
+                          strokeWidth="1.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          strokeDasharray="4 3"
+                          opacity="0.5"
                         />
                       </g>
                     )

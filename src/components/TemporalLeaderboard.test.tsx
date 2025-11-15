@@ -16,7 +16,7 @@ const MOCK_DATE_2024_01_01 = '2024-01-01'
 const MOCK_DATE_2024_01_02 = '2024-01-02'
 const MOCK_DATE_2024_01_03 = '2024-01-03'
 const CUMULATIVE_DESCRIPTION_TEXT =
-  'Cumulative attempts, wins, and failures per agent over the last 30 days'
+  'Agent ratings (left axis) and cumulative attempts, wins, failures (right axis) over the last 30 days'
 
 describe('TemporalLeaderboard', () => {
   describe('when stats are available', () => {
