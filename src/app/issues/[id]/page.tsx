@@ -189,6 +189,33 @@ function getAgentStatusDisplayText(
 }
 
 /**
+ * Maps agent status display text to Badge variant for consistent styling.
+ *
+ * @param displayText - Display text from getAgentStatusDisplayText
+ * @returns Badge variant for the display text
+ */
+function getAgentStatusBadgeVariant(
+  displayText: string
+): 'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline' {
+  switch (displayText) {
+    case 'won':
+      return 'success'
+    case 'lost':
+      return 'error'
+    case 'dnf':
+      return 'outline'
+    case 'submitted':
+      return 'warning'
+    case 'accepted':
+      return 'success'
+    case 'rejected':
+      return 'error'
+    default:
+      return 'outline'
+  }
+}
+
+/**
  * Generates metadata for issue detail page with cache-busting OpenGraph image.
  *
  * @param props - Page props with dynamic route parameter
@@ -376,15 +403,14 @@ export default async function IssuePage({
                     {agent.displayName ?? agent.agentName}
                   </Link>
                   <Badge
-                    variant={
-                      agent.status === 'accepted'
-                        ? 'success'
-                        : agent.status === 'submitted'
-                          ? 'warning'
-                          : agent.status === 'rejected'
-                            ? 'error'
-                            : 'outline'
-                    }
+                    variant={getAgentStatusBadgeVariant(
+                      getAgentStatusDisplayText(
+                        agent.agentName,
+                        agent.status,
+                        issue.status,
+                        winnerAttempt?.agentName ?? null
+                      )
+                    )}
                   >
                     {getAgentStatusDisplayText(
                       agent.agentName,
