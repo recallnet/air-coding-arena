@@ -143,6 +143,40 @@ function formatDate(date: Date | null): string {
 }
 
 /**
+ * Maps agent status to display text.
+ * For completed issues, shows outcome-based labels (won/lost/dnf).
+ * For in-progress issues, shows process-based labels (pending/submitted/etc).
+ *
+ * @param status - Agent status from database
+ * @param issueStatus - Issue status from database
+ * @returns Display text for the agent status
+ */
+function getAgentStatusDisplayText(
+  status: string,
+  issueStatus: string | null
+): string {
+  // For completed issues (Done or Canceled), show outcome
+  const isCompleted = issueStatus === 'Done' || issueStatus === 'Canceled'
+
+  if (isCompleted) {
+    switch (status) {
+      case 'accepted':
+        return 'won'
+      case 'rejected':
+        return 'lost'
+      case 'ignored':
+      case 'dispatch_failed':
+        return 'dnf'
+      default:
+        return 'dnf' // Any other status on completed issue = did not finish
+    }
+  }
+
+  // For in-progress issues, show process status as-is
+  return status
+}
+
+/**
  * Issue detail page component.
  * Displays a single issue with all its attempts.
  *
@@ -284,7 +318,7 @@ export default async function IssuePage({
                             : 'outline'
                     }
                   >
-                    {agent.status}
+                    {getAgentStatusDisplayText(agent.status, issue.status)}
                   </Badge>
                 </div>
               ))}
@@ -341,9 +375,11 @@ export default async function IssuePage({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={getAttemptStatusBadgeVariant(attempt.status)}
+                        variant={getAttemptStatusBadgeVariant(
+                          attempt.mergedAt ? 'merged' : attempt.status
+                        )}
                       >
-                        {attempt.status}
+                        {attempt.mergedAt ? 'merged' : attempt.status}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(attempt.openedAt)}</TableCell>

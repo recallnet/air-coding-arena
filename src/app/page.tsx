@@ -5,6 +5,8 @@
  * @packageDocumentation
  */
 
+import type { Metadata } from 'next'
+
 import { AgentAvatar } from '@/components/AgentAvatar'
 import { IssueActivityTable } from '@/components/IssueActivityTable'
 import { TemporalLeaderboard } from '@/components/TemporalLeaderboard'
@@ -30,6 +32,48 @@ import {
   getIssuesWithAgents,
 } from '@/lib/queries'
 import type { AgentStats } from '@/types/database'
+
+/**
+ * Generates metadata for the homepage with cache-busting OpenGraph image.
+ *
+ * @returns Metadata object with title, description, and OpenGraph image
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  // Cache-busting timestamp ensures fresh OG images when content changes
+  const cacheBuster = Date.now()
+  const baseUrl = process.env['NEXT_PUBLIC_BASE_URL'] ?? 'http://localhost:3000'
+
+  const pageTitle = 'Air Coding Arena - AI Agent Leaderboard'
+  const pageDescription =
+    'Track and compare AI coding agent performance across challenges'
+
+  return {
+    title: pageTitle,
+    description: pageDescription,
+    openGraph: {
+      title: pageTitle,
+      description: pageDescription,
+      url: baseUrl,
+      siteName: 'Air Coding Arena',
+      images: [
+        {
+          url: `${baseUrl}/api/og?t=${cacheBuster}`,
+          width: 1200,
+          height: 630,
+          alt: 'Air Coding Arena Leaderboard',
+        },
+      ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDescription,
+      images: [`${baseUrl}/api/og?t=${cacheBuster}`],
+    },
+  }
+}
 
 /**
  * Dashboard home page component.
