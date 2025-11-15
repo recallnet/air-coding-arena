@@ -16,6 +16,11 @@ const TEST_LINEAR_ID = 'ISS-123'
 const TEST_REQUEST_URL_WINNER = `http://localhost/api/og/issue/${TEST_ISSUE_ID}`
 const IMAGE_PNG_CONTENT_TYPE = 'image/png'
 const WITH_WINNER_ATTEMPT = { winnerAttempt: true }
+const TEST_DATE_OPENED = new Date('2025-01-11T00:00:00Z')
+const TEST_DATE_MERGED = new Date('2025-01-12T00:00:00Z')
+const TEST_DATE_LABELED = new Date('2025-01-10T00:00:00Z')
+const TEST_REPO = 'acme/app'
+const CONTENT_TYPE_HEADER = 'content-type'
 
 // Mock database
 vi.mock('@/db/client', () => ({
@@ -45,7 +50,7 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
       linearKey: 'CA-123',
       title: 'Implement user authentication',
       url: 'https://linear.app/company/issue/CA-123',
-      repo: 'acme/app',
+      repo: TEST_REPO,
       status: 'done',
       description: 'Add OAuth authentication flow',
       winnerAttemptId: '456e4567-e89b-12d3-a456-426614174001',
@@ -53,17 +58,17 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
         id: '456e4567-e89b-12d3-a456-426614174001',
         issueId: TEST_ISSUE_ID,
         agentName: 'cursor',
-        repo: 'acme/app',
+        repo: TEST_REPO,
         prNumber: 42,
         prUrl: 'https://github.com/acme/app/pull/42',
         status: 'merged',
         commitCount: 3,
-        openedAt: new Date('2025-01-11T00:00:00Z'),
-        mergedAt: new Date('2025-01-12T00:00:00Z'),
-        closedAt: new Date('2025-01-12T00:00:00Z'),
+        openedAt: TEST_DATE_OPENED,
+        mergedAt: TEST_DATE_MERGED,
+        closedAt: TEST_DATE_MERGED,
       },
-      arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
-      createdAt: new Date('2025-01-10T00:00:00Z'),
+      arenaReadyLabeledAt: TEST_DATE_LABELED,
+      createdAt: TEST_DATE_LABELED,
     }
 
     const mockCompetitors = [
@@ -96,14 +101,12 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify database queries were called correctly
     expect(db.query.issues.findFirst).toHaveBeenCalledWith({
       where: expect.anything(),
-      with: {
-        winnerAttempt: true,
-      },
+      with: WITH_WINNER_ATTEMPT,
     })
   })
 
@@ -115,7 +118,7 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
       linearKey: 'CA-789',
       title: 'Fix bug in payment flow',
       url: 'https://linear.app/company/issue/CA-789',
-      repo: 'acme/app',
+      repo: TEST_REPO,
       status: 'done',
       description: 'Fix Stripe webhook handling',
       winnerAttemptId: '789e4567-e89b-12d3-a456-426614174003',
@@ -123,17 +126,17 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
         id: '789e4567-e89b-12d3-a456-426614174003',
         issueId: TEST_ISSUE_ID,
         agentName: 'cursor',
-        repo: 'acme/app',
+        repo: TEST_REPO,
         prNumber: 99,
         prUrl: 'https://github.com/acme/app/pull/99',
         status: 'merged',
         commitCount: 1,
-        openedAt: new Date('2025-01-11T00:00:00Z'),
-        mergedAt: new Date('2025-01-12T00:00:00Z'),
-        closedAt: new Date('2025-01-12T00:00:00Z'),
+        openedAt: TEST_DATE_OPENED,
+        mergedAt: TEST_DATE_MERGED,
+        closedAt: TEST_DATE_MERGED,
       },
-      arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
-      createdAt: new Date('2025-01-10T00:00:00Z'),
+      arenaReadyLabeledAt: TEST_DATE_LABELED,
+      createdAt: TEST_DATE_LABELED,
     }
 
     const mockCompetitors = [
@@ -162,7 +165,7 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(IMAGE_PNG_CONTENT_TYPE)
   })
 
   it('should return 404 if issue not found', async () => {
@@ -216,12 +219,12 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
       linearKey: 'CA-456',
       title: 'Add payment integration',
       url: 'https://linear.app/company/issue/CA-456',
-      repo: 'acme/app',
+      repo: TEST_REPO,
       status: 'in progress',
       description: 'Integrate Stripe payment system',
       winnerAttemptId: null,
-      arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
-      createdAt: new Date('2025-01-10T00:00:00Z'),
+      arenaReadyLabeledAt: TEST_DATE_LABELED,
+      createdAt: TEST_DATE_LABELED,
     }
 
     const mockCompetitors = [
@@ -254,14 +257,12 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(IMAGE_PNG_CONTENT_TYPE)
 
     // Verify database queries were called correctly
     expect(db.query.issues.findFirst).toHaveBeenCalledWith({
       where: expect.anything(),
-      with: {
-        winnerAttempt: true,
-      },
+      with: WITH_WINNER_ATTEMPT,
     })
   })
 })
