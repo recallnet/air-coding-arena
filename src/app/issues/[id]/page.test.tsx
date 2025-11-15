@@ -927,7 +927,7 @@ describe('IssuePage', () => {
         expect(screen.getByText('closed')).toBeInTheDocument()
       })
 
-      it('should display secondary variant for invalid status', async () => {
+      it('should display open status when mergedAt and closedAt are null', async () => {
         const mockAttempt: Attempt = {
           id: MOCK_ATTEMPT_ID_1,
           issueId: MOCK_ISSUE_ID,
@@ -939,7 +939,7 @@ describe('IssuePage', () => {
           openedAt: MOCK_OPENED_DATE,
           mergedAt: null,
           closedAt: null,
-          status: 'invalid-status' as 'open', // Type assertion to test invalid status
+          status: 'open',
           commitCount: 3,
           lastCommitSha: MOCK_COMMIT_SHA,
           ciStatus: null,
@@ -969,7 +969,7 @@ describe('IssuePage', () => {
 
         render(await IssuePage({ params: { id: MOCK_ISSUE_ID } }))
 
-        expect(screen.getByText('invalid-status')).toBeInTheDocument()
+        expect(screen.getByText('open')).toBeInTheDocument()
       })
     })
   })
