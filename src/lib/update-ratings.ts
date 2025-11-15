@@ -23,8 +23,8 @@ import {
  * Returns grouped ranking: [[winners], [losers]]
  *
  * Winner = agent whose PR was merged
- * Losers = ALL other agents who submitted PRs (tied for 2nd place)
- * DNF = agents with < 2 commits (excluded entirely)
+ * Losers = agents with closed PRs (participated but lost, regardless of commit count)
+ * Excluded = agents with open PRs (competition not over yet)
  *
  * @param issueAttempts - All attempts for the issue
  * @returns Array of arrays: [[winner], [loser1, loser2, ...]]
@@ -47,13 +47,12 @@ export function determineRanking(
     // Skip winner
     if (attempt.status === 'merged') return false
 
-    // Skip DNF (< 2 commits = minimal effort)
-    if (attempt.commitCount < 2) return false
+    // Closed PRs are always losses (regardless of commit count)
+    // The competition is over for them - they participated and lost
+    if (attempt.status === 'closed') return true
 
-    // Must be closed
-    if (attempt.status !== 'closed') return false
-
-    return true
+    // Open PRs are excluded - competition not over yet
+    return false
   })
 
   // Build grouped ranking

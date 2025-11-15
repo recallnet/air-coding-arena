@@ -178,7 +178,6 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     const consoleSpy = vi.spyOn(globalThis.console, 'log')
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
-    const shortCloseTime = new Date('2024-01-01T10:02:00Z') // 2 minutes
 
     const mockAttempts = [
       {
@@ -191,9 +190,9 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         branch: MOCK_FIX_TEST_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
-        closedAt: shortCloseTime,
-        status: MOCK_STATUS_CLOSED,
-        commitCount: 1, // DNF: too few commits
+        closedAt: null,
+        status: MOCK_STATUS_OPEN, // Open with < 2 commits = DNF
+        commitCount: 1,
         lastCommitSha: MOCK_COMMIT_SHA_ABC123,
         ciStatus: null,
         ciLastCheckedAt: null,
@@ -322,11 +321,10 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     )
   })
 
-  it('should detect DNF for low-effort PRs (< 2 commits)', async () => {
+  it('should detect DNF for low-effort open PRs (< 2 commits)', async () => {
     const mockIssue = createMockIssue()
     const baseTime = new Date(MOCK_BASE_TIME)
     const mergedTime = new Date(MOCK_MERGED_TIME)
-    const closedTime = new Date(MOCK_CLOSED_TIME)
 
     const mockAttempts = [
       {
@@ -358,9 +356,9 @@ describe('updateRatingsForIssue - Unit Tests', () => {
         branch: MOCK_FIX_TEST_2_BRANCH,
         openedAt: baseTime,
         mergedAt: null,
-        closedAt: closedTime,
-        status: MOCK_STATUS_CLOSED,
-        commitCount: 1, // DNF: too few commits
+        closedAt: null,
+        status: MOCK_STATUS_OPEN, // Open with < 2 commits = DNF
+        commitCount: 1,
         lastCommitSha: MOCK_COMMIT_SHA_DEF456,
         ciStatus: null,
         ciLastCheckedAt: null,
@@ -401,7 +399,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
 
     await updateRatingsForIssue(MOCK_ISSUE_ID)
 
-    // Only cursor should be updated (engine DNF'd)
+    // Only cursor should be updated (engine DNF'd - open PR with < 2 commits)
     expect(mockDb.insert).toHaveBeenCalled()
 
     // Verify only cursor was passed to openskill (engine filtered out)
@@ -1246,7 +1244,7 @@ describe('determineRanking - win/loss model', () => {
     expect(ranking[1]).toContain(MOCK_AGENT_LOSER_CLOSED_LATE)
   })
 
-  it('should exclude DNF agents (< 2 commits) from all ranking positions', () => {
+  it('should exclude DNF agents (open PRs with < 2 commits) from all ranking positions', () => {
     const attempts = [
       {
         agentName: MOCK_AGENT_WINNER,
@@ -1266,11 +1264,11 @@ describe('determineRanking - win/loss model', () => {
       },
       {
         agentName: MOCK_AGENT_DNF,
-        status: MOCK_STATUS_CLOSED,
+        status: MOCK_STATUS_OPEN, // Open PR with < 2 commits = DNF
         mergedAt: null,
-        closedAt: new Date(),
+        closedAt: null,
         openedAt: new Date(),
-        commitCount: 1, // DNF
+        commitCount: 1,
       },
     ]
 
@@ -1279,5 +1277,42 @@ describe('determineRanking - win/loss model', () => {
     expect(ranking).toHaveLength(2) // Only 2 positions: [winner], [loser]
     expect(ranking[0]).toEqual([MOCK_AGENT_WINNER])
     expect(ranking[1]).toEqual([MOCK_AGENT_LOSER])
+  })
+
+  it('should count closed PRs as losses regardless of commit count', () => {
+    const attempts = [
+      {
+        agentName: MOCK_AGENT_WINNER,
+        status: MOCK_STATUS_MERGED,
+        mergedAt: new Date(),
+        closedAt: null,
+        openedAt: new Date(),
+        commitCount: 5,
+      },
+      {
+        agentName: 'loser-1-commit',
+        status: MOCK_STATUS_CLOSED,
+        mergedAt: null,
+        closedAt: new Date(),
+        openedAt: new Date(),
+        commitCount: 1, // Closed PR = loss, even with 1 commit
+      },
+      {
+        agentName: 'loser-many-commits',
+        status: MOCK_STATUS_CLOSED,
+        mergedAt: null,
+        closedAt: new Date(),
+        openedAt: new Date(),
+        commitCount: 10,
+      },
+    ]
+
+    const ranking = determineRanking(attempts)
+
+    expect(ranking).toHaveLength(2) // [winner], [losers]
+    expect(ranking[0]).toEqual([MOCK_AGENT_WINNER])
+    expect(ranking[1]).toHaveLength(2)
+    expect(ranking[1]).toContain('loser-1-commit')
+    expect(ranking[1]).toContain('loser-many-commits')
   })
 })
