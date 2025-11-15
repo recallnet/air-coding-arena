@@ -454,6 +454,51 @@ describe('getIssueById', () => {
         agents: [],
       })
     })
+
+    it('should throw error for invalid agent status in issue_agents', async () => {
+      const mockIssue: Issue = createMockIssue({
+        id: '1',
+        linearId: 'linear-1',
+        linearKey: 'ISSUE-1',
+        title: 'Issue 1',
+        url: 'https://linear.app/1',
+        repo: MOCK_REPO,
+        status: 'In Progress',
+        arenaReadyLabeledAt: MOCK_DATE_1,
+        createdAt: MOCK_DATE_1,
+      })
+
+      const mockIssueSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([mockIssue]),
+      }
+
+      const mockAttemptsSelect = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue([]),
+      }
+
+      const mockAgentsResult = [
+        {
+          agent_name: 'cursor',
+          status: 'invalid_status', // Invalid status
+          avatar_url: null,
+          display_name: null,
+          slug: null,
+        },
+      ]
+
+      mockDb.select
+        .mockReturnValueOnce(mockIssueSelect as never)
+        .mockReturnValueOnce(mockAttemptsSelect as never)
+
+      mockDb.execute.mockResolvedValueOnce(mockAgentsResult as never)
+
+      await expect(getIssueById('1')).rejects.toThrow(
+        'Invalid agent status: invalid_status'
+      )
+    })
   })
 
   describe('when issue does not exist', () => {
@@ -1432,6 +1477,109 @@ describe('getIssuesWithAgents', () => {
       expect(result[0]?.arenaReadyLabeledAt).toBeInstanceOf(Date)
       expect(result[0]?.arenaReadyLabeledAt?.toISOString()).toBe(
         '2024-01-01T00:00:00.000Z'
+      )
+    })
+
+    it('should handle arena_ready_labeled_at as null', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue with null arena_ready_labeled_at',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: null,
+          last_activity_at: MOCK_DATE_1,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result[0]?.arenaReadyLabeledAt).toBeNull()
+    })
+
+    it('should handle last_activity_at as string timestamp', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue with string last_activity_at',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: '2024-01-02T00:00:00Z', // String instead of Date
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result[0]?.lastActivityAt).toBeInstanceOf(Date)
+      expect(result[0]?.lastActivityAt?.toISOString()).toBe(
+        '2024-01-02T00:00:00.000Z'
+      )
+    })
+
+    it('should handle agents as non-array (null or undefined)', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue with non-array agents',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_1,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: null, // Non-array value
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      const result = await getIssuesWithAgents()
+
+      expect(result[0]?.agents).toEqual([])
+    })
+
+    it('should throw error for invalid agent status', async () => {
+      const mockDbResult = [
+        {
+          id: 'issue-1',
+          linear_key: 'ISSUE-1',
+          title: 'Issue with invalid agent status',
+          status: 'Todo',
+          url: MOCK_LINEAR_URL,
+          arena_ready_labeled_at: MOCK_DATE_1,
+          last_activity_at: MOCK_DATE_1,
+          open_pr_count: 0,
+          merged_pr_count: 0,
+          agents: [
+            {
+              agent_name: 'cursor',
+              status: 'invalid_status', // Invalid status
+              avatar_url: null,
+              display_name: null,
+              slug: null,
+            },
+          ],
+        },
+      ]
+
+      mockDb.execute.mockResolvedValue(mockDbResult as never)
+
+      await expect(getIssuesWithAgents()).rejects.toThrow(
+        'Invalid agent status: invalid_status'
       )
     })
   })
