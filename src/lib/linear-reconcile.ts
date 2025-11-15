@@ -148,6 +148,49 @@ export async function reconcileLinearIssues(): Promise<number> {
 }
 
 /**
+ * Handles errors when syncing PR status from GitHub
+ * Specifically handles 404 errors for deleted PRs
+ *
+ * @param error - Error from GitHub API
+ * @param attempt - Attempt being synced
+ * @returns true if error was handled, false if it should be re-thrown
+ */
+async function handlePRSyncError(
+  error: unknown,
+  attempt: { id: string; repo: string; prNumber: number }
+): Promise<boolean> {
+  // Check if this is a 404 error (PR deleted or not found)
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    error.status === 404
+  ) {
+    // PR has been deleted from GitHub - mark as closed
+    console.warn(
+      `[Reconcile] PR ${attempt.repo}#${attempt.prNumber} not found on GitHub (deleted) - marking as closed`
+    )
+
+    await db
+      .update(attempts)
+      .set({
+        status: 'closed',
+        closedAt: new Date(),
+      })
+      .where(eq(attempts.id, attempt.id))
+
+    return true
+  }
+
+  // Not a 404 error - log and continue
+  console.error(
+    `[Reconcile] Failed to sync PR status for ${attempt.repo}#${attempt.prNumber}:`,
+    error
+  )
+  return true
+}
+
+/**
  * Syncs PR status from GitHub for all attempts in an issue
  * Safety net for missed webhooks - fetches current status from GitHub API
  *
@@ -222,11 +265,7 @@ async function syncPRStatusFromGitHub(issueId: string): Promise<void> {
         )
       }
     } catch (error) {
-      // Log but continue - don't fail reconciliation if GitHub API errors
-      console.error(
-        `[Reconcile] Failed to sync PR status for ${attempt.repo}#${attempt.prNumber}:`,
-        error
-      )
+      await handlePRSyncError(error, attempt)
     }
   }
 }

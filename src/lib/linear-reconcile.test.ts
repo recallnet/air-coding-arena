@@ -567,20 +567,17 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
-    // Mock db.select for getting issue ID after insert
-    const mockLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
-    const mockWhere = vi.fn().mockReturnValue({
-      limit: mockLimit,
+    // Mock db.select - needs to handle two different queries:
+    // 1. Getting issue ID after insert (with .limit())
+    // 2. Getting attempts for an issue (without .limit())
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
     })
-    const mockFrom = vi.fn().mockReturnValue({
-      where: mockWhere,
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
     })
-    const mockSelect = vi.fn().mockReturnValue({
-      from: mockFrom,
-    })
-    vi.mocked(db).select = mockSelect as never
 
-    // Mock db.select for getting attempts (empty for this test)
     const mockAttemptsWhere = vi.fn().mockResolvedValue([
       {
         id: 'attempt-1',
@@ -591,11 +588,20 @@ describe('reconcileLinearIssues', () => {
         closedAt: null,
       },
     ])
-    vi.mocked(db).select = vi.fn().mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: mockAttemptsWhere,
-      }),
-    }) as never
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    // db.select is called twice - once for getting issue ID, once for getting attempts
+    // We need to return different mocks based on the call
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      }) as never
 
     // Mock db.update chain for both PR status update and deletion marking
     const mockReturning = vi.fn().mockResolvedValue([])
