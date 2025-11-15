@@ -101,7 +101,9 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify database queries were called correctly
     expect(db.query.issues.findFirst).toHaveBeenCalledWith({
@@ -165,7 +167,9 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
   })
 
   it('should return 404 if issue not found', async () => {
@@ -257,7 +261,9 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify database queries were called correctly
     expect(db.query.issues.findFirst).toHaveBeenCalledWith({

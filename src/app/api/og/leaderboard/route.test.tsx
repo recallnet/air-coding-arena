@@ -17,6 +17,9 @@ const { getAgentStats } = await import('@/lib/queries')
 
 // Test constants
 const IMAGE_PNG_CONTENT_TYPE = 'image/png'
+const MOCK_AVATAR_URL = 'https://example.com/cursor.png'
+const CONTENT_TYPE_HEADER = 'content-type'
+const AGENT_NAME_CURSOR = 'cursor'
 
 describe('GET /api/og/leaderboard', () => {
   beforeEach(() => {
@@ -26,9 +29,9 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with top 3 agents', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: 'Cursor',
-        avatarUrl: 'https://example.com/cursor.png',
+        avatarUrl: MOCK_AVATAR_URL,
         ordinal: 1600,
         issues: 10,
         prs: 15,
@@ -85,7 +88,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -98,7 +103,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -129,7 +136,7 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with 1 agent', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: 'Cursor',
         avatarUrl: null,
         ordinal: 1600,
@@ -149,7 +156,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -158,7 +167,7 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with 2 agents without avatars', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: 'Cursor',
         avatarUrl: null,
         ordinal: 1600,
@@ -191,7 +200,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -200,7 +211,7 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with agent without displayName', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: null,
         avatarUrl: null,
         ordinal: 1600,
@@ -220,7 +231,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -229,7 +242,7 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with agent with zero ordinal', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: 'Cursor',
         avatarUrl: null,
         ordinal: 0,
@@ -249,7 +262,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -258,9 +273,9 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with mixed avatars', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: 'Cursor',
-        avatarUrl: 'https://example.com/cursor.png',
+        avatarUrl: MOCK_AVATAR_URL,
         ordinal: 1600,
         issues: 10,
         prs: 15,
@@ -291,7 +306,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
@@ -300,9 +317,9 @@ describe('GET /api/og/leaderboard', () => {
   it('should render OG image with avatar but no displayName', async () => {
     const mockAgents = [
       {
-        agentName: 'cursor',
+        agentName: AGENT_NAME_CURSOR,
         displayName: null,
-        avatarUrl: 'https://example.com/cursor.png',
+        avatarUrl: MOCK_AVATAR_URL,
         ordinal: 1600,
         issues: 10,
         prs: 15,
@@ -320,7 +337,9 @@ describe('GET /api/og/leaderboard', () => {
 
     // Verify response is an image
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe(IMAGE_PNG_CONTENT_TYPE)
+    expect(response.headers.get(CONTENT_TYPE_HEADER)).toBe(
+      IMAGE_PNG_CONTENT_TYPE
+    )
 
     // Verify getAgentStats was called
     expect(getAgentStats).toHaveBeenCalledOnce()
