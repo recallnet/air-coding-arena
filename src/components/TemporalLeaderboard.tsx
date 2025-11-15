@@ -194,16 +194,11 @@ export function TemporalLeaderboard({
   }
 
   // Calculate separate max values for dual Y-axis
-  // For ratings: filter out zeros and calculate min/max range to zoom into actual data
-  const ratingsWithData = stats.map((s) => s.ordinal).filter((r) => r > 0)
-  const minRating =
-    ratingsWithData.length > 0 ? Math.min(...ratingsWithData) : 0
-  const maxRating =
-    ratingsWithData.length > 0 ? Math.max(...ratingsWithData) : 1
-  // Add 5% padding to rating range for visual clarity
-  const ratingPadding = (maxRating - minRating) * 0.05 || 50
-  const ratingRangeMin = Math.max(0, minRating - ratingPadding)
-  const ratingRangeMax = maxRating + ratingPadding
+  // For ratings: use fixed range centered on 1500 (starting rating)
+  const RATING_CENTER = 1500
+  const RATING_RANGE = 200 // ±100 points from center (1400-1600)
+  const ratingRangeMin = RATING_CENTER - RATING_RANGE / 2 // 1400
+  const ratingRangeMax = RATING_CENTER + RATING_RANGE / 2 // 1600
   const ratingRange = ratingRangeMax - ratingRangeMin
 
   const maxCount = Math.max(
@@ -431,18 +426,25 @@ export function TemporalLeaderboard({
                 <g transform={`translate(${padding.left}, ${padding.top})`}>
                   {agents.map((agent, agentIndex) => {
                     const colors = getAgentColors(agentIndex)
+                    // Check if agent has any ratings > 0
+                    const hasRating = stats.some(
+                      (s) => s.agentName === agent && s.ordinal > 0
+                    )
                     return (
                       <g key={agent}>
                         {/* Ordinal line (primary metric, thicker and prominent) */}
-                        <path
-                          d={generateLinePath(agent, 'ordinal')}
-                          fill="none"
-                          stroke={colors.base}
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          opacity="0.9"
-                        />
+                        {/* Only show rating line if agent has a rating */}
+                        {hasRating ? (
+                          <path
+                            d={generateLinePath(agent, 'ordinal')}
+                            fill="none"
+                            stroke={colors.base}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity="0.9"
+                          />
+                        ) : null}
                         {/* Attempts line */}
                         <path
                           d={generateLinePath(agent, 'attempts')}
