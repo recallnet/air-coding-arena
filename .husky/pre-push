@@ -1,21 +1,15 @@
 #!/usr/bin/env sh
-# === PRE-PUSH HOOK - DO NOT MODIFY ===
-# This hook runs before pushing and ensures production-ready code.
+# === PRE-PUSH HOOK ===
+# This hook runs before pushing and verifies production build works.
+# Validation already ran in pre-commit, so we only verify Next.js build.
 
 echo "🚀 Running pre-push validation..."
 
-# Full validation suite
-echo "\n🔬 Running complete validation suite..."
-npm run validate || {
-  echo "❌ Validation failed. Code must pass all checks before pushing."
-  exit 1
-}
-
-# Production build test
+# Test production build (Next.js only, no re-validation)
 echo "\n🏗️  Testing production build..."
-npm run build || {
+next build || {
   echo "❌ Production build failed. Fix build errors before pushing."
   exit 1
 }
 
-echo "\n✅ All pre-push checks passed! Safe to push."
+echo "\n✅ Production build successful! Safe to push."

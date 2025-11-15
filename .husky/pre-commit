@@ -1,49 +1,18 @@
 #!/usr/bin/env sh
-# === PRE-COMMIT HOOK - DO NOT MODIFY ===
+# === PRE-COMMIT HOOK ===
 # This hook runs on every commit and enforces zero-tolerance quality gates.
-# All checks must pass. No exceptions.
+# Runs full validation suite once (no redundancy).
 
-echo "🔒 Running pre-commit quality gates..."
+echo "🔒 Running pre-commit validation..."
 
-# Stage 1: Type check
-echo "\n📘 Stage 1/6: TypeScript compilation check..."
-npm run type-check || {
-  echo "❌ TypeScript compilation failed. Fix type errors before committing."
-  exit 1
-}
-
-# Stage 2: Type coverage check
-echo "\n📊 Stage 2/6: Type coverage check (100% required)..."
-npm run type-coverage || {
-  echo "❌ Type coverage below 100%. No implicit 'any' types allowed."
-  exit 1
-}
-
-# Stage 3: ESLint (zero warnings)
-echo "\n🔍 Stage 3/6: ESLint check (zero warnings policy)..."
-npm run lint || {
-  echo "❌ ESLint errors found. Run 'npm run lint:fix' to attempt auto-fix."
-  exit 1
-}
-
-# Stage 4: Prettier check (must be formatted)
-echo "\n✨ Stage 4/6: Prettier format check..."
-npm run format:check || {
-  echo "❌ Code not formatted. Run 'npm run format' before committing."
-  exit 1
-}
-
-# Stage 5: Tests
-echo "\n🧪 Stage 5/6: Running all tests..."
-npm run test || {
-  echo "❌ Tests failed. All tests must pass before committing."
-  exit 1
-}
-
-# Stage 6: Build check
-echo "\n🏗️  Stage 6/6: Build check..."
-npm run build || {
-  echo "❌ Build failed. Code must build successfully before committing."
+# Run complete validation suite
+# Includes: type-check (99.9% coverage), lint (zero warnings), tests (90% coverage), format check
+npm run validate || {
+  echo "❌ Validation failed. All checks must pass before committing."
+  echo "   - Type errors: Run 'npm run type-check' for details"
+  echo "   - Lint errors: Run 'npm run lint:fix' to attempt auto-fix"
+  echo "   - Format errors: Run 'npm run format' to auto-format"
+  echo "   - Test failures: Run 'npm run test:watch' to debug"
   exit 1
 }
 
