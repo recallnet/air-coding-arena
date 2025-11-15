@@ -168,7 +168,13 @@ export function TemporalLeaderboard({
   }
 
   // Get unique agents and sort alphabetically for consistent ordering
-  const agents = Array.from(new Set(stats.map((s) => s.agentName))).sort()
+  // Filter to only include agents with at least one rating > 0
+  const allAgents = Array.from(new Set(stats.map((s) => s.agentName)))
+  const agents = allAgents
+    .filter((agent) =>
+      stats.some((s) => s.agentName === agent && s.ordinal > 0)
+    )
+    .sort()
 
   // Get unique dates in chronological order (oldest to newest)
   const dates = Array.from(new Set(stats.map((s) => s.date))).sort()
@@ -226,27 +232,58 @@ export function TemporalLeaderboard({
   const yScaleCount = (value: number): number =>
     innerHeight - (value / maxCount) * innerHeight
 
+  // Extract metric value from stat
+  const getMetricValue = (
+    stat: AgentTemporalStat | undefined,
+    metric: 'attempts' | 'wins' | 'failures' | 'ordinal'
+  ): number => {
+    if (!stat) return 0
+    if (metric === 'attempts') return stat.cumulativeAttempts
+    if (metric === 'wins') return stat.cumulativeWins
+    if (metric === 'failures') return stat.cumulativeFailures
+    return stat.ordinal
+  }
+
+  // Check if we need to add a synthetic 1500 starting point for rating
+  const needsSyntheticStart = (
+    agentName: string,
+    currentValue: number,
+    index: number
+  ): boolean => {
+    if (currentValue === 0 || index === 0) return false
+    const prevDate = dates[index - 1]
+    if (!prevDate) return false
+    const prevStat = groupedStats[prevDate]?.[agentName]
+    const prevValue = prevStat?.ordinal ?? 0
+    return prevValue === 0
+  }
+
   // Generate line path for a metric
   const generateLinePath = (
     agentName: string,
     metric: 'attempts' | 'wins' | 'failures' | 'ordinal'
   ): string => {
-    const points = dates.map((date, index) => {
+    const points: string[] = []
+
+    for (const [index, date] of dates.entries()) {
       const stat = groupedStats[date]?.[agentName]
-      const value = stat
-        ? metric === 'attempts'
-          ? stat.cumulativeAttempts
-          : metric === 'wins'
-            ? stat.cumulativeWins
-            : metric === 'failures'
-              ? stat.cumulativeFailures
-              : stat.ordinal
-        : 0
+      const value = getMetricValue(stat, metric)
+
+      // For ordinal (rating), add synthetic starting point at 1500 when agent first gets rated
+      if (
+        metric === 'ordinal' &&
+        needsSyntheticStart(agentName, value, index)
+      ) {
+        const syntheticY = yScaleRating(1500)
+        points.push(`${xScale(index - 1)},${syntheticY}`)
+      }
+
       // Use appropriate Y-scale: rating scale for ordinal, count scale for others
       const yValue =
         metric === 'ordinal' ? yScaleRating(value) : yScaleCount(value)
-      return `${xScale(index)},${yValue}`
-    })
+      points.push(`${xScale(index)},${yValue}`)
+    }
+
     return `M ${points.join(' L ')}`
   }
 
@@ -426,25 +463,18 @@ export function TemporalLeaderboard({
                 <g transform={`translate(${padding.left}, ${padding.top})`}>
                   {agents.map((agent, agentIndex) => {
                     const colors = getAgentColors(agentIndex)
-                    // Check if agent has any ratings > 0
-                    const hasRating = stats.some(
-                      (s) => s.agentName === agent && s.ordinal > 0
-                    )
                     return (
                       <g key={agent}>
                         {/* Ordinal line (primary metric, thicker and prominent) */}
-                        {/* Only show rating line if agent has a rating */}
-                        {hasRating ? (
-                          <path
-                            d={generateLinePath(agent, 'ordinal')}
-                            fill="none"
-                            stroke={colors.base}
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.9"
-                          />
-                        ) : null}
+                        <path
+                          d={generateLinePath(agent, 'ordinal')}
+                          fill="none"
+                          stroke={colors.base}
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          opacity="0.9"
+                        />
                         {/* Attempts line */}
                         <path
                           d={generateLinePath(agent, 'attempts')}
