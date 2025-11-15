@@ -268,6 +268,54 @@ async function handleCheckSuiteCompleted(
 }
 
 /**
+ * Handles PR reopened events
+ *
+ * Updates attempt status back to 'open' when a closed PR is reopened.
+ *
+ * @param payload - GitHub webhook payload
+ */
+async function handlePullRequestReopened(
+  payload: GitHubWebhookPayload
+): Promise<void> {
+  const pr = payload.pull_request
+  if (!pr) return
+
+  const repo = payload.repository?.full_name
+  if (!repo) return
+
+  const prNumber = pr.number
+
+  // Check if this PR is tracked
+  const attemptResult = await db
+    .select()
+    .from(attempts)
+    .where(and(eq(attempts.repo, repo), eq(attempts.prNumber, prNumber)))
+    .limit(1)
+
+  if (attemptResult.length === 0) {
+    console.log(`[GitHub] Ignoring PR ${repo}#${prNumber} - not tracked`)
+    return
+  }
+
+  const attempt = attemptResult[0]
+  if (!attempt) return
+
+  // Update attempt status back to open and clear closedAt
+  await db
+    .update(attempts)
+    .set({
+      status: 'open',
+      closedAt: null,
+    })
+    .where(eq(attempts.id, attempt.id))
+
+  console.log(`[GitHub] PR ${repo}#${prNumber} reopened`)
+
+  revalidatePath('/')
+  console.log(`[GitHub] Revalidated homepage for issue ${attempt.issueId}`)
+}
+
+/**
  * Handles PR closed events (merge or close)
  *
  * Updates attempt status based on whether PR was merged or closed without merge.
@@ -279,8 +327,8 @@ async function handleCheckSuiteCompleted(
  *   open --> open: synchronize (new commits)
  *   open --> merged: closed (merged=true)
  *   open --> closed: closed (merged=false)
+ *   closed --> open: reopened
  *   merged --> [*]
- *   closed --> [*]
  *
  *   note right of open
  *     Tracks commits via synchronize events
@@ -398,6 +446,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       await handlePullRequestSynchronize(payload)
     } else if (payload.action === 'closed' && payload.pull_request) {
       await handlePullRequestClosed(payload)
+    } else if (payload.action === 'reopened' && payload.pull_request) {
+      await handlePullRequestReopened(payload)
     } else if (payload.action === 'completed' && payload.check_suite) {
       await handleCheckSuiteCompleted(payload)
     } else {

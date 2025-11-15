@@ -1745,6 +1745,152 @@ describe('/api/github/webhook', () => {
     })
   })
 
+  describe('pull_request.reopened', () => {
+    beforeEach(() => {
+      vi.stubEnv('GITHUB_WEBHOOK_SECRET', TEST_SECRET)
+      vi.clearAllMocks()
+    })
+
+    it('should update attempt status to open and clear closedAt', async () => {
+      const payload = {
+        action: 'reopened',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: TEST_ATTEMPT_ID,
+                issueId: TEST_ISSUE_ID,
+                agentName: 'cursor',
+                repo: TEST_REPO,
+                prNumber: TEST_PR_NUMBER,
+                status: 'closed',
+                closedAt: new Date('2025-11-12T18:00:00Z'),
+              },
+            ]),
+          }),
+        }),
+      } as never)
+
+      // Mock update operation
+      const mockWhere = vi.fn().mockResolvedValue([{ id: TEST_ATTEMPT_ID }])
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere })
+      vi.mocked(db.update).mockReturnValue({ set: mockSet } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Verify update was called with open status and null closedAt
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'open',
+          closedAt: null,
+        })
+      )
+    })
+
+    it('should ignore untracked PRs', async () => {
+      const payload = {
+        action: 'reopened',
+        pull_request: {
+          number: 9999,
+          head: { sha: 'unknown-sha' },
+        },
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      // Mock attempt lookup (not found)
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should not call update for untracked PRs
+      expect(db.update).not.toHaveBeenCalled()
+    })
+
+    it('should handle missing pull_request in payload', async () => {
+      const payload = {
+        action: 'reopened',
+        repository: { full_name: TEST_REPO },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should not call select or update
+      expect(db.select).not.toHaveBeenCalled()
+      expect(db.update).not.toHaveBeenCalled()
+    })
+
+    it('should handle missing repository in payload', async () => {
+      const payload = {
+        action: 'reopened',
+        pull_request: {
+          number: TEST_PR_NUMBER,
+          head: { sha: TEST_SHA },
+        },
+      }
+
+      // Mock idempotency check
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+          }),
+        }),
+      } as never)
+
+      const response = await POST(createAuthenticatedRequest(payload))
+      expect(response.status).toBe(200)
+
+      // Should not call select or update
+      expect(db.select).not.toHaveBeenCalled()
+      expect(db.update).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Error Handling', () => {
     const secret = 'test-secret-key'
 
