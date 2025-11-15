@@ -112,4 +112,214 @@ describe('GET /api/og/leaderboard', () => {
     const data = (await response.json()) as { error: string }
     expect(data.error).toBe('Database connection failed')
   })
+
+  it('should return 500 with unknown error message for non-Error exceptions', async () => {
+    vi.mocked(getAgentStats).mockRejectedValue('String error thrown')
+
+    const response = await GET()
+
+    expect(response.status).toBe(500)
+    const data = (await response.json()) as { error: string }
+    expect(data.error).toBe('Unknown error')
+  })
+
+  it('should render OG image with 1 agent', async () => {
+    const mockAgents = [
+      {
+        agentName: 'cursor',
+        displayName: 'Cursor',
+        avatarUrl: null,
+        ordinal: 1600,
+        issues: 10,
+        prs: 15,
+        wins: 8,
+        dnf: 2,
+        attempts: 15,
+        acceptancePct: 80,
+        gamesPlayed: 10,
+      },
+    ]
+
+    vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
+
+    const response = await GET()
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify getAgentStats was called
+    expect(getAgentStats).toHaveBeenCalledOnce()
+  })
+
+  it('should render OG image with 2 agents without avatars', async () => {
+    const mockAgents = [
+      {
+        agentName: 'cursor',
+        displayName: 'Cursor',
+        avatarUrl: null,
+        ordinal: 1600,
+        issues: 10,
+        prs: 15,
+        wins: 8,
+        dnf: 2,
+        attempts: 15,
+        acceptancePct: 80,
+        gamesPlayed: 10,
+      },
+      {
+        agentName: 'copilot',
+        displayName: 'GitHub Copilot',
+        avatarUrl: null,
+        ordinal: 1500,
+        issues: 8,
+        prs: 12,
+        wins: 6,
+        dnf: 2,
+        attempts: 12,
+        acceptancePct: 75,
+        gamesPlayed: 8,
+      },
+    ]
+
+    vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
+
+    const response = await GET()
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify getAgentStats was called
+    expect(getAgentStats).toHaveBeenCalledOnce()
+  })
+
+  it('should render OG image with agent without displayName', async () => {
+    const mockAgents = [
+      {
+        agentName: 'cursor',
+        displayName: null,
+        avatarUrl: null,
+        ordinal: 1600,
+        issues: 10,
+        prs: 15,
+        wins: 8,
+        dnf: 2,
+        attempts: 15,
+        acceptancePct: 80,
+        gamesPlayed: 10,
+      },
+    ]
+
+    vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
+
+    const response = await GET()
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify getAgentStats was called
+    expect(getAgentStats).toHaveBeenCalledOnce()
+  })
+
+  it('should render OG image with agent with zero ordinal', async () => {
+    const mockAgents = [
+      {
+        agentName: 'cursor',
+        displayName: 'Cursor',
+        avatarUrl: null,
+        ordinal: 0,
+        issues: 0,
+        prs: 0,
+        wins: 0,
+        dnf: 0,
+        attempts: 0,
+        acceptancePct: 0,
+        gamesPlayed: 0,
+      },
+    ]
+
+    vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
+
+    const response = await GET()
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify getAgentStats was called
+    expect(getAgentStats).toHaveBeenCalledOnce()
+  })
+
+  it('should render OG image with mixed avatars', async () => {
+    const mockAgents = [
+      {
+        agentName: 'cursor',
+        displayName: 'Cursor',
+        avatarUrl: 'https://example.com/cursor.png',
+        ordinal: 1600,
+        issues: 10,
+        prs: 15,
+        wins: 8,
+        dnf: 2,
+        attempts: 15,
+        acceptancePct: 80,
+        gamesPlayed: 10,
+      },
+      {
+        agentName: 'copilot',
+        displayName: null,
+        avatarUrl: null,
+        ordinal: 1500,
+        issues: 8,
+        prs: 12,
+        wins: 6,
+        dnf: 2,
+        attempts: 12,
+        acceptancePct: 75,
+        gamesPlayed: 8,
+      },
+    ]
+
+    vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
+
+    const response = await GET()
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify getAgentStats was called
+    expect(getAgentStats).toHaveBeenCalledOnce()
+  })
+
+  it('should render OG image with avatar but no displayName', async () => {
+    const mockAgents = [
+      {
+        agentName: 'cursor',
+        displayName: null,
+        avatarUrl: 'https://example.com/cursor.png',
+        ordinal: 1600,
+        issues: 10,
+        prs: 15,
+        wins: 8,
+        dnf: 2,
+        attempts: 15,
+        acceptancePct: 80,
+        gamesPlayed: 10,
+      },
+    ]
+
+    vi.mocked(getAgentStats).mockResolvedValue(mockAgents)
+
+    const response = await GET()
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify getAgentStats was called
+    expect(getAgentStats).toHaveBeenCalledOnce()
+  })
 })

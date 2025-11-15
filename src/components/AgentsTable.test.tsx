@@ -154,5 +154,102 @@ describe('AgentsTable', () => {
       )
       expect(hasTimeInfo).toBe(true)
     })
+
+    it('should show "Just now" for very recent times', () => {
+      const now = new Date()
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: now.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('Just now')).toBeInTheDocument()
+    })
+
+    it('should show minutes for times under 1 hour (singular)', () => {
+      const now = new Date()
+      const oneMinuteAgo = new Date(now.getTime() - 60000)
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: oneMinuteAgo.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('1 minute ago')).toBeInTheDocument()
+    })
+
+    it('should show minutes for times under 1 hour (plural)', () => {
+      const now = new Date()
+      const twoMinutesAgo = new Date(now.getTime() - 120000)
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: twoMinutesAgo.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('2 minutes ago')).toBeInTheDocument()
+    })
+
+    it('should show hours for times under 24 hours (singular)', () => {
+      const now = new Date()
+      const oneHourAgo = new Date(now.getTime() - 3600000)
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: oneHourAgo.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('1 hour ago')).toBeInTheDocument()
+    })
+
+    it('should show hours for times under 24 hours (plural)', () => {
+      const now = new Date()
+      const twoHoursAgo = new Date(now.getTime() - 7200000)
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: twoHoursAgo.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('2 hours ago')).toBeInTheDocument()
+    })
+
+    it('should show days for times under 7 days (singular)', () => {
+      const now = new Date()
+      const oneDayAgo = new Date(now.getTime() - 86400000)
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: oneDayAgo.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('1 day ago')).toBeInTheDocument()
+    })
+
+    it('should show days for times under 7 days (plural)', () => {
+      const now = new Date()
+      const twoDaysAgo = new Date(now.getTime() - 172800000)
+      const baseAgent = mockAgents[0]
+      if (!baseAgent) throw new Error('Mock agent not found')
+      const recentAgent: Agent = {
+        ...baseAgent,
+        lastSeenAt: twoDaysAgo.toISOString(),
+      }
+      render(<AgentsTable initialAgents={[recentAgent]} />)
+
+      expect(screen.getByText('2 days ago')).toBeInTheDocument()
+    })
   })
 })

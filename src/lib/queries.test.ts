@@ -47,6 +47,7 @@ const MOCK_DB_ERROR = 'Database connection failed'
 const MOCK_DATE_3 = new Date('2024-01-03')
 const MOCK_PR_URL = 'https://github.com/pr/1'
 const MOCK_PR_URL_2 = 'https://github.com/pr/2'
+const MOCK_ISO_DATE_2 = '2024-01-02T00:00:00Z'
 const MOCK_BRANCH = 'fix/issue-1'
 // eslint-disable-next-line sonarjs/no-duplicate-string -- Constant definition for reuse
 const MOCK_LINEAR_URL = 'https://linear.app/1'
@@ -369,7 +370,7 @@ describe('getIssueById', () => {
         title: 'Issue 1',
         url: 'https://linear.app/1',
         repo: MOCK_REPO,
-        status: 'In Progress',
+        status: MOCK_STATUS_IN_PROGRESS,
         arenaReadyLabeledAt: MOCK_DATE_1,
         createdAt: MOCK_DATE_1,
       })
@@ -463,7 +464,7 @@ describe('getIssueById', () => {
         title: 'Issue 1',
         url: 'https://linear.app/1',
         repo: MOCK_REPO,
-        status: 'In Progress',
+        status: MOCK_STATUS_IN_PROGRESS,
         arenaReadyLabeledAt: MOCK_DATE_1,
         createdAt: MOCK_DATE_1,
       })
@@ -1228,7 +1229,7 @@ describe('getRecentActivity', () => {
           pr_url: MOCK_PR_URL,
           pr_number: 1,
           status: 'merged',
-          opened_at: '2024-01-02T00:00:00Z',
+          opened_at: MOCK_ISO_DATE_2,
         },
       ]
 
@@ -1236,7 +1237,7 @@ describe('getRecentActivity', () => {
 
       const result = await getRecentActivity()
 
-      expect(result[0]?.openedAt).toBe('2024-01-02T00:00:00Z')
+      expect(result[0]?.openedAt).toBe(MOCK_ISO_DATE_2)
     })
   })
 
@@ -1512,7 +1513,7 @@ describe('getIssuesWithAgents', () => {
           status: 'Todo',
           url: MOCK_LINEAR_URL,
           arena_ready_labeled_at: MOCK_DATE_1,
-          last_activity_at: '2024-01-02T00:00:00Z', // String instead of Date
+          last_activity_at: MOCK_ISO_DATE_2, // String instead of Date
           open_pr_count: 0,
           merged_pr_count: 0,
           agents: [],

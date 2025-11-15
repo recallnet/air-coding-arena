@@ -310,17 +310,6 @@ export default [
     },
   },
   {
-    files: ['src/instrumentation.ts'],
-    languageOptions: {
-      globals: {
-        console: 'readonly',
-      },
-    },
-    rules: {
-      'no-console': 'off',
-    },
-  },
-  {
     files: [
       'src/lib/agent-dispatch.ts',
       'src/lib/linear-reconcile.ts',

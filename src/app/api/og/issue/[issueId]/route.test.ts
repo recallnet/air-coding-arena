@@ -47,22 +47,21 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
       status: 'done',
       description: 'Add OAuth authentication flow',
       winnerAttemptId: '456e4567-e89b-12d3-a456-426614174001',
+      winnerAttempt: {
+        id: '456e4567-e89b-12d3-a456-426614174001',
+        issueId: TEST_ISSUE_ID,
+        agentName: 'cursor',
+        repo: 'acme/app',
+        prNumber: 42,
+        prUrl: 'https://github.com/acme/app/pull/42',
+        status: 'merged',
+        commitCount: 3,
+        openedAt: new Date('2025-01-11T00:00:00Z'),
+        mergedAt: new Date('2025-01-12T00:00:00Z'),
+        closedAt: new Date('2025-01-12T00:00:00Z'),
+      },
       arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
       createdAt: new Date('2025-01-10T00:00:00Z'),
-    }
-
-    const mockWinnerAttempt = {
-      id: '456e4567-e89b-12d3-a456-426614174001',
-      issueId: TEST_ISSUE_ID,
-      agentName: 'cursor',
-      repo: 'acme/app',
-      prNumber: 42,
-      prUrl: 'https://github.com/acme/app/pull/42',
-      status: 'merged',
-      commitCount: 3,
-      openedAt: new Date('2025-01-11T00:00:00Z'),
-      mergedAt: new Date('2025-01-12T00:00:00Z'),
-      closedAt: new Date('2025-01-12T00:00:00Z'),
     }
 
     const mockCompetitors = [
@@ -78,9 +77,6 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
 
     // Mock database queries
     vi.mocked(db.query.issues.findFirst).mockResolvedValue(mockIssue as never)
-    vi.mocked(db.query.attempts.findMany).mockResolvedValue([
-      mockWinnerAttempt,
-    ] as never)
 
     const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
@@ -109,6 +105,64 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
     })
   })
 
+  it('should render OG image for issue with winner and single competitor', async () => {
+    // Mock issue with winner and only 1 competitor
+    const mockIssue = {
+      id: TEST_ISSUE_ID,
+      linearId: TEST_LINEAR_ID,
+      linearKey: 'CA-789',
+      title: 'Fix bug in payment flow',
+      url: 'https://linear.app/company/issue/CA-789',
+      repo: 'acme/app',
+      status: 'done',
+      description: 'Fix Stripe webhook handling',
+      winnerAttemptId: '789e4567-e89b-12d3-a456-426614174003',
+      winnerAttempt: {
+        id: '789e4567-e89b-12d3-a456-426614174003',
+        issueId: TEST_ISSUE_ID,
+        agentName: 'cursor',
+        repo: 'acme/app',
+        prNumber: 99,
+        prUrl: 'https://github.com/acme/app/pull/99',
+        status: 'merged',
+        commitCount: 1,
+        openedAt: new Date('2025-01-11T00:00:00Z'),
+        mergedAt: new Date('2025-01-12T00:00:00Z'),
+        closedAt: new Date('2025-01-12T00:00:00Z'),
+      },
+      arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
+      createdAt: new Date('2025-01-10T00:00:00Z'),
+    }
+
+    const mockCompetitors = [
+      {
+        agentName: 'cursor',
+        attemptCount: 1,
+      },
+    ]
+
+    // Mock database queries
+    vi.mocked(db.query.issues.findFirst).mockResolvedValue(mockIssue as never)
+
+    const mockSelect = vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          groupBy: vi.fn().mockResolvedValue(mockCompetitors),
+        }),
+      }),
+    })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+
+    const request = new Request(TEST_REQUEST_URL_WINNER)
+    const response = await GET(request, {
+      params: Promise.resolve({ issueId: TEST_ISSUE_ID }),
+    })
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+  })
+
   it('should return 404 if issue not found', async () => {
     vi.mocked(db.query.issues.findFirst).mockResolvedValue(undefined)
 
@@ -135,5 +189,77 @@ describe('GET /api/og/issue/[issueId] - Task 3: Winner View', () => {
     expect(response.status).toBe(500)
     const data = (await response.json()) as { error: string }
     expect(data.error).toBe('Database connection failed')
+  })
+
+  it('should return 500 with unknown error message for non-Error exceptions', async () => {
+    vi.mocked(db.query.issues.findFirst).mockRejectedValue(
+      'String error thrown'
+    )
+
+    const request = new Request(TEST_REQUEST_URL_WINNER)
+    const response = await GET(request, {
+      params: Promise.resolve({ issueId: TEST_ISSUE_ID }),
+    })
+
+    expect(response.status).toBe(500)
+    const data = (await response.json()) as { error: string }
+    expect(data.error).toBe('Unknown error')
+  })
+
+  it('should render active competition view when no winner', async () => {
+    // Mock issue without winner
+    const mockIssue = {
+      id: TEST_ISSUE_ID,
+      linearId: TEST_LINEAR_ID,
+      linearKey: 'CA-456',
+      title: 'Add payment integration',
+      url: 'https://linear.app/company/issue/CA-456',
+      repo: 'acme/app',
+      status: 'in progress',
+      description: 'Integrate Stripe payment system',
+      winnerAttemptId: null,
+      arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
+      createdAt: new Date('2025-01-10T00:00:00Z'),
+    }
+
+    const mockCompetitors = [
+      {
+        agentName: 'cursor',
+        attemptCount: 2,
+      },
+      {
+        agentName: 'copilot',
+        attemptCount: 1,
+      },
+    ]
+
+    // Mock database queries
+    vi.mocked(db.query.issues.findFirst).mockResolvedValue(mockIssue as never)
+
+    const mockSelect = vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          groupBy: vi.fn().mockResolvedValue(mockCompetitors),
+        }),
+      }),
+    })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+
+    const request = new Request(TEST_REQUEST_URL_WINNER)
+    const response = await GET(request, {
+      params: Promise.resolve({ issueId: TEST_ISSUE_ID }),
+    })
+
+    // Verify response is an image
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+
+    // Verify database queries were called correctly
+    expect(db.query.issues.findFirst).toHaveBeenCalledWith({
+      where: expect.anything(),
+      with: {
+        winnerAttempt: true,
+      },
+    })
   })
 })
