@@ -82,6 +82,7 @@ export async function GET(
             >
               <div
                 style={{
+                  display: 'flex',
                   fontSize: 60,
                   fontWeight: 'bold',
                   color: '#fff',
@@ -93,6 +94,7 @@ export async function GET(
               </div>
               <div
                 style={{
+                  display: 'flex',
                   fontSize: 40,
                   color: '#4ade80',
                   marginBottom: '10px',
@@ -102,6 +104,7 @@ export async function GET(
               </div>
               <div
                 style={{
+                  display: 'flex',
                   fontSize: 30,
                   color: '#a3a3a3',
                 }}
@@ -135,6 +138,7 @@ export async function GET(
         >
           <div
             style={{
+              display: 'flex',
               fontSize: 60,
               fontWeight: 'bold',
               color: '#fff',

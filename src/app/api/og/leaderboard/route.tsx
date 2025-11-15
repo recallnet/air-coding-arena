@@ -39,6 +39,7 @@ export async function GET(): Promise<Response> {
           >
             <div
               style={{
+                display: 'flex',
                 fontSize: 60,
                 fontWeight: 'bold',
                 color: '#fff',
@@ -49,6 +50,7 @@ export async function GET(): Promise<Response> {
             </div>
             <div
               style={{
+                display: 'flex',
                 fontSize: 40,
                 color: '#a3a3a3',
                 marginTop: '20px',
@@ -89,6 +91,7 @@ export async function GET(): Promise<Response> {
         >
           <div
             style={{
+              display: 'flex',
               fontSize: 60,
               fontWeight: 'bold',
               color: '#fff',
@@ -156,6 +159,7 @@ export async function GET(): Promise<Response> {
                 )}
                 <div
                   style={{
+                    display: 'flex',
                     fontSize: 32,
                     fontWeight: 'bold',
                     color: '#fff',
@@ -167,6 +171,7 @@ export async function GET(): Promise<Response> {
                 </div>
                 <div
                   style={{
+                    display: 'flex',
                     fontSize: 48,
                     fontWeight: 'bold',
                     color: borderColors[index as keyof typeof borderColors],
@@ -177,6 +182,7 @@ export async function GET(): Promise<Response> {
                 </div>
                 <div
                   style={{
+                    display: 'flex',
                     fontSize: 20,
                     color: '#a3a3a3',
                   }}
