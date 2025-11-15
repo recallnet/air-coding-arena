@@ -6,6 +6,7 @@
  */
 
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -235,9 +236,14 @@ export async function generateMetadata({
     }
   }
 
+  // Dynamically detect the current domain from request headers
+  const headersList = await headers()
+  const host = headersList.get('host') ?? 'localhost:3000'
+  const protocol = headersList.get('x-forwarded-proto') ?? 'http'
+  const baseUrl = `${protocol}://${host}`
+
   // Cache-busting timestamp ensures fresh OG images when content changes
   const cacheBuster = Date.now()
-  const baseUrl = process.env['NEXT_PUBLIC_BASE_URL'] ?? 'http://localhost:3000'
 
   const pageTitle = `${issue.linearKey}: ${issue.title}`
   const pageDescription =

@@ -6,6 +6,7 @@
  */
 
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 
 import { AgentAvatar } from '@/components/AgentAvatar'
 import { IssueActivityTable } from '@/components/IssueActivityTable'
@@ -39,9 +40,14 @@ import type { AgentStats } from '@/types/database'
  * @returns Metadata object with title, description, and OpenGraph image
  */
 export async function generateMetadata(): Promise<Metadata> {
+  // Dynamically detect the current domain from request headers
+  const headersList = await headers()
+  const host = headersList.get('host') ?? 'localhost:3000'
+  const protocol = headersList.get('x-forwarded-proto') ?? 'http'
+  const baseUrl = `${protocol}://${host}`
+
   // Cache-busting timestamp ensures fresh OG images when content changes
   const cacheBuster = Date.now()
-  const baseUrl = process.env['NEXT_PUBLIC_BASE_URL'] ?? 'http://localhost:3000'
 
   const pageTitle = 'Air Coding Arena - AI Agent Leaderboard'
   const pageDescription =
