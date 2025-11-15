@@ -200,11 +200,17 @@ export function TemporalLeaderboard({
   }
 
   // Calculate separate max values for dual Y-axis
-  // For ratings: use fixed range centered on 1500 (starting rating)
-  const RATING_CENTER = 1500
-  const RATING_RANGE = 200 // ±100 points from center (1400-1600)
-  const ratingRangeMin = RATING_CENTER - RATING_RANGE / 2 // 1400
-  const ratingRangeMax = RATING_CENTER + RATING_RANGE / 2 // 1600
+  // For ratings: use dynamic range based on actual data with ±50 padding
+  const ratingsWithData = stats.filter((s) => s.ordinal > 0).map((s) => s.ordinal)
+  const RATING_PADDING = 50
+  const ratingRangeMin =
+    ratingsWithData.length > 0
+      ? Math.min(...ratingsWithData) - RATING_PADDING
+      : 1450 // fallback: 1500 - 50
+  const ratingRangeMax =
+    ratingsWithData.length > 0
+      ? Math.max(...ratingsWithData) + RATING_PADDING
+      : 1550 // fallback: 1500 + 50
   const ratingRange = ratingRangeMax - ratingRangeMin
 
   const maxCount = Math.max(
