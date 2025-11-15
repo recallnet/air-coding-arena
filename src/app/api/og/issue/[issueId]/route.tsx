@@ -11,9 +11,6 @@ import { ImageResponse } from 'next/og'
 import { db } from '@/db/client'
 import { attempts, issues } from '@/db/schema'
 
-// Image metadata
-export const runtime = 'edge'
-
 /**
  * GET handler for issue OG image endpoint.
  * Returns an ImageResponse with competition status or error JSON.

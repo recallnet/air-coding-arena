@@ -9,9 +9,6 @@ import { ImageResponse } from 'next/og'
 
 import { getAgentStats } from '@/lib/queries'
 
-// Image metadata
-export const runtime = 'edge'
-
 /**
  * GET handler for leaderboard OG image endpoint.
  * Returns an ImageResponse with top 3 agents in podium layout.
