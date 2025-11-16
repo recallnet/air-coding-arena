@@ -8,6 +8,7 @@ import { db } from '@/db/client'
 import { updateAgentStatusOnPRClose } from '@/lib/agent-status'
 import { getInstallationToken } from '@/lib/github-app-auth'
 import { updateRatingsForIssue } from '@/lib/update-ratings'
+import { updateWinner } from '@/lib/update-winner'
 
 import { POST } from './route'
 
@@ -38,6 +39,11 @@ vi.mock('@/lib/agent-status', () => ({
 // Mock rating updates
 vi.mock('@/lib/update-ratings', () => ({
   updateRatingsForIssue: vi.fn(),
+}))
+
+// Mock winner updates
+vi.mock('@/lib/update-winner', () => ({
+  updateWinner: vi.fn(),
 }))
 
 // Mock GitHub App auth
@@ -1531,10 +1537,13 @@ describe('/api/github/webhook', () => {
       // Verify update was called with merged status
       expect(db.update).toHaveBeenCalled()
 
-      // Agent status updates moved to Linear webhook - should NOT be called here
+      // updateWinner() should be called to set winner and update ratings
+      expect(updateWinner).toHaveBeenCalledWith(TEST_ISSUE_ID)
+
+      // Agent status updates are handled by updateWinner() - should NOT be called directly here
       expect(updateAgentStatusOnPRClose).not.toHaveBeenCalled()
 
-      // Rating updates moved to Linear webhook - should NOT be called here
+      // Rating updates are handled by updateWinner() - should NOT be called directly here
       expect(updateRatingsForIssue).not.toHaveBeenCalled()
     })
 
