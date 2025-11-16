@@ -146,47 +146,26 @@ function formatDate(date: Date | null): string {
 
 /**
  * Maps agent status to display text.
- * For completed issues, shows outcome-based labels (won/lost/dnf).
- * For in-progress issues, shows process-based labels (pending/submitted/etc).
+ * Simple mapping: accepted→won, rejected→lost, etc.
  *
- * @param agentName - Name of the agent
  * @param status - Agent status from database
- * @param issueStatus - Issue status from database
- * @param winnerAgentName - Name of the winning agent, if any
  * @returns Display text for the agent status
  */
-function getAgentStatusDisplayText(
-  agentName: string,
-  status: string,
-  issueStatus: string | null,
-  winnerAgentName: string | null
-): string {
-  // For completed issues (Done or Canceled), show outcome
-  const isCompleted = issueStatus === 'Done' || issueStatus === 'Canceled'
-
-  if (isCompleted) {
-    // Check if this agent is the winner
-    if (winnerAgentName && agentName === winnerAgentName) {
+function getAgentStatusDisplayText(status: string): string {
+  switch (status) {
+    case 'accepted':
       return 'won'
-    }
-
-    // Not the winner - determine if they participated or not
-    switch (status) {
-      case 'accepted':
-      case 'rejected':
-      case 'submitted':
-        return 'lost' // Participated but didn't win
-      case 'pending':
-      case 'ignored':
-      case 'dispatch_failed':
-        return 'dnf' // Never participated
-      default:
-        return 'dnf' // Unknown status = didn't participate
-    }
+    case 'rejected':
+      return 'lost'
+    case 'submitted':
+      return 'submitted'
+    case 'pending':
+      return 'pending'
+    case 'ignored':
+      return 'dnf'
+    default:
+      return status
   }
-
-  // For in-progress issues, show process status as-is
-  return status
 }
 
 /**
@@ -207,10 +186,8 @@ function getAgentStatusBadgeVariant(
       return 'outline'
     case 'submitted':
       return 'warning'
-    case 'accepted':
-      return 'success'
-    case 'rejected':
-      return 'error'
+    case 'pending':
+      return 'outline'
     default:
       return 'outline'
   }
@@ -410,20 +387,10 @@ export default async function IssuePage({
                   </Link>
                   <Badge
                     variant={getAgentStatusBadgeVariant(
-                      getAgentStatusDisplayText(
-                        agent.agentName,
-                        agent.status,
-                        issue.status,
-                        winnerAttempt?.agentName ?? null
-                      )
+                      getAgentStatusDisplayText(agent.status)
                     )}
                   >
-                    {getAgentStatusDisplayText(
-                      agent.agentName,
-                      agent.status,
-                      issue.status,
-                      winnerAttempt?.agentName ?? null
-                    )}
+                    {getAgentStatusDisplayText(agent.status)}
                   </Badge>
                 </div>
               ))}
