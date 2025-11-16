@@ -212,17 +212,12 @@ describe('AgentDiscovery', () => {
 
       render(<AgentDiscovery />)
 
-      await waitFor(
-        () => {
-          // Should show formatted date like "Jan 1" or "Dec 31, 2024"
-          const text = screen.getByText(/Last discovered:/)
-          expect(text).toBeInTheDocument()
-        },
+      const text = await screen.findByText(
+        /Last discovered: (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/,
+        undefined,
         { timeout: 2000 }
       )
 
-      // Additional check for date format in separate assertion
-      const text = screen.getByText(/Last discovered:/)
       expect(text.textContent).toMatch(
         /Last discovered: (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/
       )

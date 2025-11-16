@@ -20,19 +20,81 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        id: setup-node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Prepare cache directories
+        run: |
+          mkdir -p ~/.npm
+          mkdir -p .next/cache
+
+      - name: Restore npm cache
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            npm-${{ runner.os }}-
+      - name: npm cache status
+        run: |
+          echo "npm cache hit: ${{ steps.npm-cache.outputs.cache-hit }}"
+
+      - name: Restore node_modules cache
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            node-modules-${{ runner.os }}-
+      - name: node_modules cache status
+        run: |
+          echo "node_modules cache hit: ${{ steps.node-modules-cache.outputs.cache-hit }}"
+
+      - name: Restore Next.js cache
+        id: next-cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-cache-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'next.config.js', 'tsconfig.json') }}
+          restore-keys: |
+            next-cache-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            next-cache-${{ runner.os }}-
+      - name: Next.js cache status
+        run: |
+          echo "Next.js cache hit: ${{ steps.next-cache.outputs.cache-hit }}"
+
+      - name: Install dependencies (npm ci)
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: |
+          start=$(date +%s)
+          npm ci --prefer-offline --no-audit --no-fund
+          end=$(date +%s)
+          echo "npm ci duration: $((end - start)) seconds"
+
+      - name: Reuse cached dependencies
+        if: steps.node-modules-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Using cached node_modules - npm ci skipped."
 
       - name: Run type check
-        run: npm run type-check
+        run: |
+          start=$(date +%s)
+          npm run type-check
+          end=$(date +%s)
+          echo "Type check duration: $((end - start)) seconds"
 
       - name: Run format check
-        run: npm run format:check
+        run: |
+          start=$(date +%s)
+          npm run format:check
+          end=$(date +%s)
+          echo "Format check duration: $((end - start)) seconds"
 
   tests:
     name: Tests (Vitest Shard ${{ matrix.shard }}/4)
@@ -46,16 +108,74 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        id: setup-node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Prepare cache directories
+        run: |
+          mkdir -p ~/.npm
+          mkdir -p .next/cache
+
+      - name: Restore npm cache
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            npm-${{ runner.os }}-
+      - name: npm cache status
+        run: |
+          echo "npm cache hit: ${{ steps.npm-cache.outputs.cache-hit }}"
+
+      - name: Restore node_modules cache
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            node-modules-${{ runner.os }}-
+      - name: node_modules cache status
+        run: |
+          echo "node_modules cache hit: ${{ steps.node-modules-cache.outputs.cache-hit }}"
+
+      - name: Restore Next.js cache
+        id: next-cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-cache-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'next.config.js', 'tsconfig.json') }}
+          restore-keys: |
+            next-cache-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            next-cache-${{ runner.os }}-
+      - name: Next.js cache status
+        run: |
+          echo "Next.js cache hit: ${{ steps.next-cache.outputs.cache-hit }}"
+
+      - name: Install dependencies (npm ci)
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: |
+          start=$(date +%s)
+          npm ci --prefer-offline --no-audit --no-fund
+          end=$(date +%s)
+          echo "npm ci duration: $((end - start)) seconds"
+
+      - name: Reuse cached dependencies
+        if: steps.node-modules-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Using cached node_modules - npm ci skipped."
 
       - name: Run tests with coverage (shard ${{ matrix.shard }}/4)
-        run: npx vitest run --coverage --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0 --coverage.thresholds.statements=0 --shard=${{ matrix.shard }}/4
+        run: |
+          start=$(date +%s)
+          npx vitest run --coverage --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0 --coverage.thresholds.statements=0 --shard=${{ matrix.shard }}/4
+          end=$(date +%s)
+          echo "Vitest duration for shard ${{ matrix.shard }}/4: $((end - start)) seconds"
 
       - name: Upload coverage reports (shard ${{ matrix.shard }})
         uses: actions/upload-artifact@v4
