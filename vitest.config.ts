@@ -1,3 +1,4 @@
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,19 +8,27 @@ import { defineConfig } from 'vitest/config'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const cpuCount = os.cpus().length
+const maxThreads = cpuCount <= 2 ? cpuCount : Math.min(8, cpuCount - 1)
+const minThreads = Math.min(2, maxThreads)
+
 export default defineConfig({
   plugins: [react()],
   test: {
     // === TEST ENVIRONMENT ===
-    environment: 'jsdom',
+    environment: 'node',
+    environmentMatchGlobs: [
+      ['src/app/**/*.test.tsx', 'jsdom'],
+      ['src/components/**/*.test.tsx', 'jsdom'],
+    ],
     setupFiles: ['./src/__tests__/vitest-setup.ts'],
 
     // === WORKER POOL CONFIGURATION ===
     pool: 'threads',
     poolOptions: {
       threads: {
-        maxThreads: 8,
-        minThreads: 1,
+        maxThreads,
+        minThreads,
       },
     },
     testTimeout: 10000, // 10s max per test
