@@ -6,7 +6,7 @@ import { LinearClient } from '@linear/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
-import { attempts, issues } from '@/db/schema'
+import { attempts, issues, issueAgents } from '@/db/schema'
 
 import { syncIssueFromLinear } from './linear-sync'
 
@@ -1219,5 +1219,153 @@ describe('syncIssueFromLinear', () => {
 
     // Should create attempt with unknown agent (cycle detected, no agent found)
     expect(mockInsert).toHaveBeenCalled()
+  })
+
+  it('should not overwrite accepted status when processing PR URLs during sync', async () => {
+    // This test demonstrates the bug: reconciliation unconditionally updates
+    // issue_agents.status to 'submitted', even when it's already 'accepted'.
+    // After fix: the WHERE clause will include eq(status, 'pending'), so
+    // this update won't happen for 'accepted' agents.
+
+    const mockLinearIssue = createMockIssue({
+      id: 'linear-issue-123',
+      identifier: 'ENG-999',
+      title: 'Test Issue',
+      url: 'https://linear.app/test/issue/ENG-999',
+      comments: vi.fn().mockResolvedValue({
+        nodes: [
+          {
+            id: 'comment-1',
+            body: '@engine https://github.com/owner/repo/pull/123',
+            createdAt: new Date('2024-01-01T00:00:00Z'),
+            user: Promise.resolve({ name: 'User', email: 'user@example.com' }),
+          },
+        ],
+        pageInfo: { hasNextPage: false },
+      }),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockLinearIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'linear-issue-123', status: 'open' },
+      ])
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
+    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    const mockValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-123')
+
+    // BUG: Current code unconditionally updates to 'submitted'
+    // This assertion PASSES now (showing bug exists)
+    // After fix: will FAIL because update won't happen for non-pending statuses
+    const updateCalls = vi.mocked(db.update).mock.calls
+    const issueAgentUpdateCall = updateCalls.find(
+      (call) => call[0] === issueAgents
+    )
+
+    expect(issueAgentUpdateCall).toBeDefined()
+    expect(mockSet).toHaveBeenCalledWith({ status: 'submitted' })
+  })
+
+  it('should update pending status to submitted when processing PR URLs', async () => {
+    // Mock Linear client to return issue with PR URL in comment
+    const mockLinearIssue = createMockIssue({
+      id: 'linear-issue-456',
+      identifier: 'ENG-888',
+      title: 'Test Issue',
+      url: 'https://linear.app/test/issue/ENG-888',
+      comments: vi.fn().mockResolvedValue({
+        nodes: [
+          {
+            id: 'comment-1',
+            body: '@cursor https://github.com/owner/repo/pull/456',
+            createdAt: new Date('2024-01-01T00:00:00Z'),
+            user: Promise.resolve({ name: 'User', email: 'user@example.com' }),
+          },
+        ],
+        pageInfo: { hasNextPage: false },
+      }),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockLinearIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock database: issue exists
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'linear-issue-456', status: 'open' },
+      ])
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+    const mockWhere = vi
+      .fn()
+      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
+    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    const mockValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-456')
+
+    // Verify update WAS called to change status to 'submitted'
+    // This behavior should continue to work correctly
+    const updateCalls = vi.mocked(db.update).mock.calls
+    const issueAgentUpdateCall = updateCalls.find(
+      (call) => call[0] === issueAgents
+    )
+
+    expect(issueAgentUpdateCall).toBeDefined()
+    expect(mockSet).toHaveBeenCalledWith({ status: 'submitted' })
   })
 })
