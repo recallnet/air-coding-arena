@@ -369,4 +369,101 @@ describe('IssueActivityTable', () => {
       expect(buttons.length).toBeGreaterThan(0)
     })
   })
+
+  describe('agent progress counting', () => {
+    it('should count both accepted and rejected agents as complete, excluding pending from denominator', () => {
+      const issueWithMixedOutcomes: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'accepted' },
+          { agentName: 'engine', status: 'rejected' },
+          { agentName: 'windsurf', status: 'submitted' },
+          { agentName: 'aider', status: 'pending' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithMixedOutcomes]} />)
+      // 2 complete (accepted + rejected) out of 3 engaged (excludes pending)
+      expect(screen.getByText('2/3 complete')).toBeInTheDocument()
+    })
+
+    it('should exclude pending agents from denominator', () => {
+      const issueWithAccepted: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'accepted' },
+          { agentName: 'engine', status: 'pending' },
+          { agentName: 'windsurf', status: 'pending' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithAccepted]} />)
+      // 1 complete out of 1 engaged (2 pending not counted)
+      expect(screen.getByText('1/1 complete')).toBeInTheDocument()
+    })
+
+    it('should exclude ignored agents from denominator', () => {
+      const issueWithRejected: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'rejected' },
+          { agentName: 'engine', status: 'ignored' },
+          { agentName: 'windsurf', status: 'ignored' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithRejected]} />)
+      // 1 complete out of 1 engaged (2 ignored not counted)
+      expect(screen.getByText('1/1 complete')).toBeInTheDocument()
+    })
+
+    it('should show in review for submitted agents, excluding pending from denominator', () => {
+      const issueWithSubmitted: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'submitted' },
+          { agentName: 'engine', status: 'pending' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithSubmitted]} />)
+      // 1 submitted out of 1 engaged (1 pending not counted)
+      expect(screen.getByText('1/1 in review')).toBeInTheDocument()
+    })
+
+    it('should show assigned when all agents are pending', () => {
+      const issueWithPending: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'pending' },
+          { agentName: 'engine', status: 'pending' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithPending]} />)
+      // No engaged agents, show total assigned
+      expect(screen.getByText('2 assigned')).toBeInTheDocument()
+    })
+
+    it('should show assigned when all agents are ignored', () => {
+      const issueWithIgnored: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'ignored' },
+          { agentName: 'engine', status: 'ignored' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithIgnored]} />)
+      // No engaged agents, show total assigned
+      expect(screen.getByText('2 assigned')).toBeInTheDocument()
+    })
+
+    it('should show in progress when no completed or submitted but has engaged agents', () => {
+      const issueInProgress: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'cursor', status: 'submitted' },
+          { agentName: 'engine', status: 'submitted' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueInProgress]} />)
+      // All agents submitted but none completed yet
+      expect(screen.getByText('2/2 in review')).toBeInTheDocument()
+    })
+  })
 })

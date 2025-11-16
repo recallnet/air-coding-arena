@@ -243,6 +243,8 @@ function isIssueOpen(status: string | null): boolean {
 
 /**
  * Generates agent progress text like "2/3 in progress" or "1/3 complete".
+ * Counts both accepted (merged) and rejected (closed) PRs as complete.
+ * Only counts engaged agents (excludes pending and ignored) in the denominator.
  *
  * @param agents - Array of agents assigned to the issue
  * @returns Progress string or null if no agents
@@ -252,20 +254,24 @@ function getAgentProgress(
 ): string | null {
   if (agents.length === 0) return null
 
-  const total = agents.length
-  const accepted = agents.filter((a) => a.status === 'accepted').length
-  const submitted = agents.filter((a) => a.status === 'submitted').length
-  const inProgress = agents.filter(
-    (a) => a.status === 'pending' || a.status === 'submitted'
-  ).length
+  // Only count agents who have been engaged (exclude pending and ignored)
+  const engagedAgents = agents.filter(
+    (a) => a.status !== 'pending' && a.status !== 'ignored'
+  )
 
-  if (accepted > 0) {
-    return `${accepted}/${total} complete`
+  if (engagedAgents.length === 0) return `${agents.length} assigned`
+
+  const total = engagedAgents.length
+  const completed = engagedAgents.filter(
+    (a) => a.status === 'accepted' || a.status === 'rejected'
+  ).length
+  const submitted = engagedAgents.filter((a) => a.status === 'submitted').length
+
+  if (completed > 0) {
+    return `${completed}/${total} complete`
   } else if (submitted > 0) {
     return `${submitted}/${total} in review`
-  } else if (inProgress > 0) {
-    return `${inProgress}/${total} in progress`
   }
 
-  return `${total} assigned`
+  return `${total} in progress`
 }
