@@ -1222,10 +1222,16 @@ describe('syncIssueFromLinear', () => {
   })
 
   it('should not overwrite accepted status when processing PR URLs during sync', async () => {
-    // This test demonstrates the bug: reconciliation unconditionally updates
-    // issue_agents.status to 'submitted', even when it's already 'accepted'.
-    // After fix: the WHERE clause will include eq(status, 'pending'), so
-    // this update won't happen for 'accepted' agents.
+    // TEST STRATEGY:
+    // This test demonstrates the bug exists NOW, and will fail AFTER the fix.
+    //
+    // CURRENT BEHAVIOR (BUG): Unconditionally sets status='submitted',
+    // overwriting 'accepted' status. This assertion currently PASSES.
+    //
+    // AFTER FIX: WHERE clause will include eq(status, 'pending'), so the
+    // update won't happen for 'accepted' agents. This assertion will FAIL.
+    //
+    // The bug is that we're checking the update DOES happen when it SHOULDN'T.
 
     const mockLinearIssue = createMockIssue({
       id: 'linear-issue-123',
@@ -1252,11 +1258,14 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'linear-issue-123', status: 'open' },
-      ])
+    // Mock database state: issue exists, engine agent has status='accepted'
+    const mockLimit = vi.fn().mockResolvedValue([
+      {
+        id: 'db-issue-id',
+        linearId: 'linear-issue-123',
+        status: 'completed',
+      },
+    ])
     const mockOrderBy = vi.fn().mockResolvedValue([
       { name: 'cursor', displayName: 'Cursor', isEnabled: true },
       { name: 'engine', displayName: 'Engine', isEnabled: true },
@@ -1269,7 +1278,15 @@ describe('syncIssueFromLinear', () => {
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
-    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    // Simulate that engine agent already exists with status='accepted' in DB
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([
+      {
+        id: 'agent-id',
+        issueId: 'db-issue-id',
+        agentName: 'engine',
+        status: 'accepted',
+      },
+    ])
     const mockValues = vi
       .fn()
       .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
@@ -1285,9 +1302,12 @@ describe('syncIssueFromLinear', () => {
 
     await syncIssueFromLinear('linear-issue-123')
 
-    // BUG: Current code unconditionally updates to 'submitted'
-    // This assertion PASSES now (showing bug exists)
-    // After fix: will FAIL because update won't happen for non-pending statuses
+    // BUG DEMONSTRATION:
+    // Currently, this assertion PASSES because the code unconditionally
+    // calls .set({ status: 'submitted' }), overwriting the 'accepted' status.
+    //
+    // After fix (Task 3), this will FAIL because the WHERE clause will
+    // include eq(status, 'pending'), preventing the overwrite.
     const updateCalls = vi.mocked(db.update).mock.calls
     const issueAgentUpdateCall = updateCalls.find(
       (call) => call[0] === issueAgents
@@ -1298,7 +1318,12 @@ describe('syncIssueFromLinear', () => {
   })
 
   it('should update pending status to submitted when processing PR URLs', async () => {
-    // Mock Linear client to return issue with PR URL in comment
+    // TEST STRATEGY:
+    // This test verifies the correct behavior: status='pending' should be
+    // updated to 'submitted' when a PR URL is found.
+    //
+    // This should PASS both before AND after the fix in Task 3.
+
     const mockLinearIssue = createMockIssue({
       id: 'linear-issue-456',
       identifier: 'ENG-888',
@@ -1324,7 +1349,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    // Mock database: issue exists
+    // Mock database state: issue exists, cursor agent has status='pending'
     const mockLimit = vi
       .fn()
       .mockResolvedValue([
@@ -1342,7 +1367,15 @@ describe('syncIssueFromLinear', () => {
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
 
-    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    // Simulate that cursor agent exists with status='pending' in DB
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([
+      {
+        id: 'agent-id',
+        issueId: 'db-issue-id',
+        agentName: 'cursor',
+        status: 'pending',
+      },
+    ])
     const mockValues = vi
       .fn()
       .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
@@ -1358,8 +1391,9 @@ describe('syncIssueFromLinear', () => {
 
     await syncIssueFromLinear('linear-issue-456')
 
-    // Verify update WAS called to change status to 'submitted'
-    // This behavior should continue to work correctly
+    // CORRECT BEHAVIOR:
+    // Status should be updated from 'pending' to 'submitted'
+    // This works both before and after the fix.
     const updateCalls = vi.mocked(db.update).mock.calls
     const issueAgentUpdateCall = updateCalls.find(
       (call) => call[0] === issueAgents
