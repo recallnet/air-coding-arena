@@ -69,6 +69,21 @@ jobs:
         run: |
           echo "Next.js cache hit: ${{ steps.next-cache.outputs.cache-hit }}"
 
+      - name: Restore TypeScript build info cache
+        id: tsbuild-cache
+        uses: actions/cache@v4
+        with:
+          path: .tsbuildinfo
+          key: tsbuildinfo-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('tsconfig.json', 'package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            tsbuildinfo-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-${{ hashFiles('tsconfig.json', 'package-lock.json') }}-
+            tsbuildinfo-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-
+            tsbuildinfo-${{ runner.os }}-
+
+      - name: TypeScript cache status
+        run: |
+          echo "tsbuildinfo cache hit: ${{ steps.tsbuild-cache.outputs.cache-hit }}"
+
       - name: Install dependencies (npm ci)
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: |

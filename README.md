@@ -53,6 +53,10 @@ Open [http://localhost:3109](http://localhost:3109) to view the application.
 - `npm run docs` - Generate API documentation
 - `npm run docs:serve` - Generate and serve documentation
 
+### TypeScript Incremental Compilation
+
+Repeated `npm run type-check` runs reuse the cached `.tsbuildinfo` file to avoid full recompilation. The cache is stored at the project root (ignored by git) and is restored automatically in CI. See [docs/typescript-incremental-compilation.md](docs/typescript-incremental-compilation.md) for configuration details and benchmarks.
+
 ## 🛡️ Quality Gates
 
 ### Pre-Commit Hook (7 Stages)
