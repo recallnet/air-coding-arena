@@ -17,9 +17,13 @@ export type AgentAvatarGroupProps = {
    * Array of agents to display.
    */
   agents: Array<{
+    /** Agent's unique name identifier */
     agentName: string
+    /** Current status of the agent (e.g., 'pending', 'submitted', 'accepted') */
     status: AgentStatus
+    /** URL to agent's avatar image, or null if not available */
     avatarUrl?: string | null
+    /** Human-readable display name for the agent, or null if not available */
     displayName?: string | null
   }>
   /**

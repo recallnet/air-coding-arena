@@ -30,24 +30,26 @@ import {
 } from '@/components/ui/Table'
 import { generateMockPRComparison } from '@/lib/mock-pr-data'
 import { getIssueById } from '@/lib/queries'
-import type { AttemptStatus, IssueStatus } from '@/types/database'
+import type { AttemptStatus, LinearIssueStatus } from '@/types/database'
 
 /**
  * Page props type for dynamic route parameter.
  */
-type PageProps = {
+export type PageProps = {
+  /** Dynamic route parameters */
   params: {
+    /** Issue UUID from URL path */
     id: string
   }
 }
 
 /**
- * Type guard to check if a string is a valid IssueStatus.
+ * Type guard to check if a string is a valid LinearIssueStatus.
  *
  * @param status - Status string to check
- * @returns True if status is a valid IssueStatus, false otherwise
+ * @returns True if status is a valid LinearIssueStatus, false otherwise
  */
-function isIssueStatus(status: string | null): status is IssueStatus {
+function isIssueStatus(status: string | null): status is LinearIssueStatus {
   if (status === null) {
     return false
   }

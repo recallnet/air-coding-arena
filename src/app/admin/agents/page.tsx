@@ -16,22 +16,37 @@ import {
   CardTitle,
 } from '@/components/ui/Card'
 
-// Force dynamic rendering - admin pages should always show fresh data
+/**
+ * Forces dynamic rendering (no static generation).
+ * Required for admin pages that fetch real-time data from database.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#dynamic
+ */
 export const dynamic = 'force-dynamic'
 
 /**
  * Agent type from API response
  */
 export type Agent = {
+  /** Unique database identifier for the agent */
   id: string
+  /** Unique name identifier for the agent (lowercase, no spaces) */
   name: string
+  /** Human-readable display name for the agent */
   displayName: string
+  /** Linear user ID for the agent */
   linearUserId: string
+  /** Agent's email address, or null if not available */
   email: string | null
+  /** URL to agent's avatar image, or null if not available */
   avatarUrl: string | null
+  /** Whether agent is currently active in Linear workspace */
   isActive: boolean
+  /** Whether agent is enabled to participate in the arena */
   isEnabled: boolean
+  /** ISO 8601 timestamp when agent was first discovered */
   discoveredAt: string
+  /** ISO 8601 timestamp when agent was last seen */
   lastSeenAt: string
 }
 

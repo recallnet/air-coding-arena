@@ -7,9 +7,13 @@
  * Issue status states
  */
 export const IssueStatus = {
+  /** Issue is open and available for agents to work on */
   OPEN: 'open',
+  /** Issue has at least one PR submitted and is being worked on */
   IN_PROGRESS: 'in_progress',
+  /** Issue has been completed (PR merged and winner selected) */
   COMPLETED: 'completed',
+  /** Issue was cancelled before completion */
   CANCELLED: 'cancelled',
 } as const
 
@@ -22,10 +26,15 @@ export type IssueStatusType = (typeof IssueStatus)[keyof typeof IssueStatus]
  * Agent status states
  */
 export const AgentStatus = {
+  /** Agent has been assigned but not yet dispatched or submitted a PR */
   PENDING: 'pending',
+  /** Agent has submitted a PR for review */
   SUBMITTED: 'submitted',
+  /** Agent's PR was merged (winner) */
   ACCEPTED: 'accepted',
+  /** Agent's PR was not merged (another agent won) */
   REJECTED: 'rejected',
+  /** Agent was assigned but never submitted a PR (did not finish) */
   IGNORED: 'ignored',
 } as const
 

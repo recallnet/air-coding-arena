@@ -16,8 +16,20 @@ import {
 import { getGitHubAppInstallations } from '@/lib/queries'
 import type { GitHubInstallation } from '@/lib/queries'
 
-// Force dynamic rendering - admin pages should always show fresh data
+/**
+ * Forces dynamic rendering (no static generation).
+ * Required for admin pages that fetch real-time data from database.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#dynamic
+ */
 export const dynamic = 'force-dynamic'
+
+/**
+ * Cache revalidation interval in seconds.
+ * 0 means no caching - always fetch fresh data.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#revalidate
+ */
 export const revalidate = 0
 
 /**

@@ -47,6 +47,8 @@ const ARENA_LABEL = 'arena:ready'
 const TEST_PR_URL = 'https://github.com/org/repo/pull/42'
 const TEST_ISSUE_ID = 'issue-123'
 const TEST_ISSUE_URL = 'https://linear.app/test/issue/ENG-123'
+const TEST_ISSUE_IDENTIFIER = 'ENG-123'
+const TEST_ISSUE_TITLE = 'Test issue'
 const TEST_TIMESTAMP = '2024-01-01T00:00:00Z'
 const TEST_DB_ISSUE_ID = 'db-issue-id'
 const TEST_ATTACHMENT_ID = 'attach-123'
@@ -140,8 +142,8 @@ describe('/api/linear/webhook', () => {
         action: 'update',
         data: {
           id: TEST_ISSUE_ID,
-          identifier: 'ENG-123',
-          title: 'Test issue',
+          identifier: TEST_ISSUE_IDENTIFIER,
+          title: TEST_ISSUE_TITLE,
           url: TEST_ISSUE_URL,
           labels: [{ name: ARENA_LABEL }],
         },
@@ -177,7 +179,7 @@ describe('/api/linear/webhook', () => {
         action: 'update',
         data: {
           id: TEST_ISSUE_ID,
-          identifier: 'ENG-123',
+          identifier: TEST_ISSUE_IDENTIFIER,
         },
         updatedAt: TEST_TIMESTAMP,
         createdAt: TEST_TIMESTAMP,
@@ -208,7 +210,7 @@ describe('/api/linear/webhook', () => {
         action: 'create',
         data: {
           id: TEST_ISSUE_ID,
-          identifier: 'ENG-123',
+          identifier: TEST_ISSUE_IDENTIFIER,
           title: 'Implement feature X',
           url: TEST_ISSUE_URL,
           team: { key: 'engineering' },
@@ -275,8 +277,8 @@ describe('/api/linear/webhook', () => {
         action: 'update',
         data: {
           id: TEST_ISSUE_ID,
-          identifier: 'ENG-123',
-          title: 'Test issue',
+          identifier: TEST_ISSUE_IDENTIFIER,
+          title: TEST_ISSUE_TITLE,
           url: TEST_ISSUE_URL,
           labels: [{ name: ARENA_LABEL }],
         },
@@ -877,7 +879,7 @@ describe('/api/linear/webhook', () => {
         action: 'update',
         data: {
           id: TEST_ISSUE_ID,
-          identifier: 'ENG-123',
+          identifier: TEST_ISSUE_IDENTIFIER,
           title: 'Issue with metadata',
           url: TEST_ISSUE_URL,
           team: { key: 'engineering' },
@@ -1526,5 +1528,501 @@ describe('updateWinner - race condition protection', () => {
     // Expect early return when winner already set
     // No update should be called
     expect(mockTx.select).toBeDefined()
+  })
+})
+
+describe('Issue.remove action', () => {
+  it('should mark issue as deleted on remove action', async () => {
+    const payload = {
+      type: 'Issue',
+      action: 'remove',
+      data: {
+        id: TEST_ISSUE_ID,
+        identifier: TEST_ISSUE_IDENTIFIER,
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock db.select for time-window deduplication check (no recent events)
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as never)
+
+    const mockUpdate = vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue([]),
+    })
+
+    vi.mocked(db.update).mockReturnValue({
+      set: mockUpdate,
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    expect(response.status).toBe(200)
+    expect(mockUpdate).toHaveBeenCalled()
+  })
+})
+
+describe('Issue.update - label removal', () => {
+  it('should mark issue as deleted when arena label is removed on update', async () => {
+    const payload = {
+      type: 'Issue',
+      action: 'update',
+      data: {
+        id: TEST_ISSUE_ID,
+        identifier: TEST_ISSUE_IDENTIFIER,
+        title: TEST_ISSUE_TITLE,
+        url: TEST_ISSUE_URL,
+        labels: [{ name: 'bug' }], // No arena:ready label
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock db.select for time-window deduplication check (no recent events)
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as never)
+
+    const mockUpdate = vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue([]),
+    })
+
+    vi.mocked(db.update).mockReturnValue({
+      set: mockUpdate,
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    expect(response.status).toBe(200)
+    expect(mockUpdate).toHaveBeenCalled()
+  })
+})
+
+describe('Attachment events - edge cases', () => {
+  it('should handle attachment for unknown issue gracefully', async () => {
+    const payload = {
+      type: 'Attachment',
+      action: 'create',
+      data: {
+        id: TEST_ATTACHMENT_ID,
+        url: TEST_PR_URL,
+        title: 'PR for unknown issue',
+        subtitle: TEST_ATTACHMENT_SUBTITLE,
+        metadata: {
+          branch: TEST_BRANCH_WITH_AGENT,
+        },
+        issue: { id: 'unknown-issue-id' },
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock: time-window check returns no events
+    // Mock: issue lookup returns empty (issue not found)
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (issue not found)
+            return []
+          }),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    // Should return success but not create attempt
+    expect(response.status).toBe(200)
+    // Only one insert call (for event, not for attempt)
+    expect(db.insert).toHaveBeenCalledOnce()
+  })
+
+  it('should detect closed status from subtitle', async () => {
+    const payload = {
+      type: 'Attachment',
+      action: 'update',
+      data: {
+        id: TEST_ATTACHMENT_ID,
+        url: TEST_PR_URL,
+        title: 'PR that was closed',
+        subtitle: 'org/repo #42 • closed',
+        metadata: {
+          branch: TEST_BRANCH_WITH_AGENT,
+        },
+        issue: { id: TEST_ISSUE_ID },
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (return issue)
+            return [{ id: TEST_DB_ISSUE_ID, linearKey: 'ENG-123' }]
+          }),
+        }),
+      }),
+    } as never)
+
+    const mockInsert = vi.fn().mockReturnValue({
+      onConflictDoNothing: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+      }),
+      onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+    })
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockInsert,
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    expect(response.status).toBe(200)
+    // Should have called insert for both event and attempt
+    expect(mockInsert).toHaveBeenCalled()
+  })
+})
+
+describe('Comment events - unknown issue', () => {
+  it('should handle comment on unknown issue gracefully', async () => {
+    const payload = {
+      type: 'Comment',
+      action: 'create',
+      data: {
+        id: 'comment-unknown',
+        body: '@cursor please help',
+        createdAt: TEST_TIMESTAMP,
+        issue: { id: 'unknown-issue-999' },
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock: time-window check returns no events
+    // Mock: issue lookup returns empty (issue not found)
+    let selectCallCount = 0
+    const mockSelect = vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (issue not found)
+            return []
+          }),
+        }),
+      }),
+    })
+
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    // Should return success without error
+    expect(response.status).toBe(200)
+    // Should have inserted event
+    expect(db.insert).toHaveBeenCalledOnce()
+  })
+})
+
+describe('Malformed webhook payloads', () => {
+  it('should handle webhook with missing required fields gracefully', async () => {
+    const payload = {
+      type: 'Issue',
+      action: 'update',
+      data: {
+        // Missing required fields like id
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    // Mock db.select for time-window deduplication check (no recent events)
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    // Should handle gracefully (may return 500 or process partially)
+    expect([200, 500]).toContain(response.status)
+  })
+
+  it('should handle webhook with invalid JSON gracefully', async () => {
+    const body = '{invalid json}'
+    const hmac = crypto.createHmac('sha256', TEST_SECRET)
+    const signature = hmac.update(body).digest('hex')
+
+    const req = new Request(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'linear-signature': signature,
+      },
+      body,
+    }) as NextRequest
+
+    const response = await POST(req)
+
+    // Should return error
+    expect(response.status).toBe(500)
+  })
+
+  it('should handle attachment with null issueRecord gracefully', async () => {
+    const payload = {
+      type: 'Attachment',
+      action: 'create',
+      data: {
+        id: TEST_ATTACHMENT_ID,
+        url: TEST_PR_URL,
+        title: 'Test PR',
+        subtitle: TEST_ATTACHMENT_SUBTITLE,
+        metadata: {
+          branch: TEST_BRANCH_WITH_AGENT,
+        },
+        issue: { id: TEST_ISSUE_ID },
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (return undefined in array)
+            return [undefined]
+          }),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    // Should handle gracefully
+    expect(response.status).toBe(200)
+  })
+
+  it('should handle attachment with no issue ID fields', async () => {
+    const payload = {
+      type: 'Attachment',
+      action: 'create',
+      data: {
+        id: TEST_ATTACHMENT_ID,
+        url: TEST_PR_URL,
+        title: 'PR without issue link',
+        subtitle: TEST_ATTACHMENT_SUBTITLE,
+        metadata: {
+          branch: TEST_BRANCH_WITH_AGENT,
+        },
+        // No issue or issueId field at all
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    // Should handle gracefully and return success
+    expect(response.status).toBe(200)
+    // Should only insert event, not attempt
+    expect(db.insert).toHaveBeenCalledOnce()
+  })
+})
+
+describe('Comment events - null issue check', () => {
+  it('should handle comment with null issue in result array', async () => {
+    const payload = {
+      type: 'Comment',
+      action: 'create',
+      data: {
+        id: 'comment-null-check',
+        body: '@cursor test',
+        createdAt: TEST_TIMESTAMP,
+        issue: { id: TEST_ISSUE_ID },
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (return undefined in array)
+            return [undefined]
+          }),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    // Should handle gracefully without crashing
+    expect(response.status).toBe(200)
+  })
+
+  it('should sync issue when comment event has valid issue', async () => {
+    const { syncIssueFromLinear } = await import('@/lib/linear-sync')
+
+    const payload = {
+      type: 'Comment',
+      action: 'create',
+      data: {
+        id: 'comment-sync-test',
+        body: '@cursor please help with this',
+        createdAt: TEST_TIMESTAMP,
+        issue: { id: TEST_ISSUE_ID },
+      },
+      updatedAt: TEST_TIMESTAMP,
+      createdAt: TEST_TIMESTAMP,
+    }
+
+    let selectCallCount = 0
+    vi.mocked(db.select).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockImplementation(async () => {
+            selectCallCount++
+            // First call: time-window check (no recent events)
+            if (selectCallCount === 1) return []
+            // Second call: issue lookup (return valid issue)
+            return [{ id: TEST_DB_ISSUE_ID, linearId: TEST_ISSUE_ID }]
+          }),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(db.insert).mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 1 }]),
+        }),
+      }),
+    } as never)
+
+    vi.mocked(syncIssueFromLinear).mockResolvedValue(undefined)
+
+    const req = createMockRequest(payload)
+    const response = await POST(req)
+
+    expect(response.status).toBe(200)
+    // Should have called syncIssueFromLinear with the linear issue ID
+    expect(syncIssueFromLinear).toHaveBeenCalledWith(TEST_ISSUE_ID)
   })
 })

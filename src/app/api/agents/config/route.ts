@@ -12,6 +12,26 @@ import { db } from '@/db/client'
 import { agentConfig } from '@/db/schema'
 
 /**
+ * Agent configuration response
+ */
+export type AgentConfigResponse = {
+  /** Agent selection mode: 'all' | 'max_n' | 'manual' */
+  mode: string
+  /** Maximum number of agents when mode is 'max_n' */
+  maxAgents: number | null
+  /** ISO timestamp of last agent discovery run */
+  lastDiscoveryAt: Date | null
+}
+
+/**
+ * Error response for GET /api/agents/config
+ */
+export type ErrorResponse = {
+  /** Error message describing what went wrong */
+  error: string
+}
+
+/**
  * GET /api/agents/config
  * Returns the current agent configuration (mode, maxAgents, lastDiscoveryAt)
  *
@@ -27,32 +47,36 @@ export async function GET() {
 
     if (config.length === 0) {
       // Return default config if none exists
-      return NextResponse.json({
+      const response: AgentConfigResponse = {
         mode: 'all',
         maxAgents: null,
         lastDiscoveryAt: null,
-      })
+      }
+      return NextResponse.json(response)
     }
 
     const firstConfig = config[0]
     if (!firstConfig) {
       // Return default config if none exists
-      return NextResponse.json({
+      const response: AgentConfigResponse = {
         mode: 'all',
         maxAgents: null,
         lastDiscoveryAt: null,
-      })
+      }
+      return NextResponse.json(response)
     }
 
-    return NextResponse.json({
+    const response: AgentConfigResponse = {
       mode: firstConfig.mode,
       maxAgents: firstConfig.maxAgents,
       lastDiscoveryAt: firstConfig.lastDiscoveryAt,
-    })
+    }
+    return NextResponse.json(response)
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to fetch config'
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    const errorResponse: ErrorResponse = { error: errorMessage }
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

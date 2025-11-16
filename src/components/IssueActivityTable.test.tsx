@@ -371,7 +371,7 @@ describe('IssueActivityTable', () => {
   })
 
   describe('agent progress counting', () => {
-    it('should count both accepted and rejected agents as complete, excluding pending from denominator', () => {
+    it('should count both accepted and rejected agents as complete, including pending in denominator', () => {
       const issueWithMixedOutcomes: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -382,11 +382,11 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithMixedOutcomes]} />)
-      // 2 complete (accepted + rejected) out of 3 engaged (excludes pending)
-      expect(screen.getByText('2/3 complete')).toBeInTheDocument()
+      // 2 complete (accepted + rejected) out of 4 total (includes pending)
+      expect(screen.getByText('2/4 complete')).toBeInTheDocument()
     })
 
-    it('should exclude pending agents from denominator', () => {
+    it('should include pending agents in denominator', () => {
       const issueWithAccepted: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -396,8 +396,8 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithAccepted]} />)
-      // 1 complete out of 1 engaged (2 pending not counted)
-      expect(screen.getByText('1/1 complete')).toBeInTheDocument()
+      // 1 complete out of 3 total (pending agents counted)
+      expect(screen.getByText('1/3 complete')).toBeInTheDocument()
     })
 
     it('should include ignored agents in denominator', () => {
@@ -429,7 +429,7 @@ describe('IssueActivityTable', () => {
       expect(screen.getByText('1/3 complete')).toBeInTheDocument()
     })
 
-    it('should show in review for submitted agents, excluding pending from denominator', () => {
+    it('should show in review for submitted agents, including pending in denominator', () => {
       const issueWithSubmitted: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -438,11 +438,11 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithSubmitted]} />)
-      // 1 submitted out of 1 engaged (1 pending not counted)
-      expect(screen.getByText('1/1 in review')).toBeInTheDocument()
+      // 1 submitted out of 2 total (pending counted)
+      expect(screen.getByText('1/2 in review')).toBeInTheDocument()
     })
 
-    it('should show assigned when all agents are pending', () => {
+    it('should show in progress when all agents are pending', () => {
       const issueWithPending: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -451,8 +451,8 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithPending]} />)
-      // No engaged agents, show total assigned
-      expect(screen.getByText('2 assigned')).toBeInTheDocument()
+      // All pending agents count, none completed or submitted, so show in progress
+      expect(screen.getByText('2 in progress')).toBeInTheDocument()
     })
 
     it('should show in progress when all agents are ignored', () => {

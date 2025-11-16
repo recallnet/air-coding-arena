@@ -1,10 +1,23 @@
 import { ImageResponse } from 'next/og'
 
-// Image metadata
+/**
+ * Favicon dimensions in pixels.
+ * Standard size for browser tabs and bookmarks.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons
+ */
 export const size = {
+  /** Icon width in pixels */
   width: 32,
+  /** Icon height in pixels */
   height: 32,
 }
+
+/**
+ * MIME type for the generated favicon.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons
+ */
 export const contentType = 'image/png'
 
 /**

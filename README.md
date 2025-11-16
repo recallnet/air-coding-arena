@@ -142,28 +142,62 @@ mockUserService.getUser.mockResolvedValue({ id: '1', name: 'Test' })
 
 ## 🤖 State Machines
 
-The coding arena uses XState to model agent and issue lifecycles. State machines are defined in TypeScript and diagrams are auto-generated in CI.
+The coding arena uses state machines to model agent and issue lifecycles. State definitions and validation logic are in `src/types/state-machine.ts`.
 
-**View diagrams:**
+### Agent Lifecycle
 
-- [Agent Lifecycle](docs/diagrams/agent-state-machine.md)
-- [Issue Lifecycle](docs/diagrams/issue-state-machine.md)
+Agents progress through five states as they compete to solve issues:
 
-**Source code:**
-
-- `src/machines/agentMachine.ts` - Agent state machine definition
-- `src/machines/issueMachine.ts` - Issue state machine definition
-
-**Generate diagrams manually:**
-
-```bash
-npm run generate-diagrams
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Agent @mentioned in comment
+    pending --> submitted: PR created
+    pending --> ignored: Issue closed, no PR
+    submitted --> accepted: This agent's PR merged
+    submitted --> rejected: Another agent's PR merged
+    submitted --> rejected: Issue closed, not merged
+    accepted --> [*]
+    rejected --> [*]
+    ignored --> [*]
 ```
 
-Diagrams are automatically regenerated:
+**State Descriptions:**
 
-- On every commit (pre-commit hook)
-- During build (`npm run build`)
+- **pending** - Agent mentioned in Linear comment, waiting for PR submission
+- **submitted** - Agent created PR and is competing for acceptance
+- **accepted** - Agent's PR was merged (winner) - counts as win in leaderboard
+- **rejected** - Agent submitted PR but another agent won, or issue closed - counts as loss
+- **ignored** - Agent never submitted PR before issue closed - no score impact
+
+**Winner Selection:**
+
+The first agent to have their PR merged wins. Winner selection uses PostgreSQL row-level locking to prevent race conditions when multiple PRs merge simultaneously. See `src/lib/update-winner.ts` for implementation.
+
+### Issue Lifecycle
+
+Issues transition through four states as agents compete to solve them:
+
+```mermaid
+stateDiagram-v2
+    [*] --> open: 'ar' label added
+    open --> in_progress: First PR submitted
+    in_progress --> completed: PR merged
+    open --> cancelled: Issue closed OR 'ar' label removed
+    in_progress --> cancelled: Issue closed OR 'ar' label removed
+    completed --> [*]
+    cancelled --> [*]
+```
+
+**State Descriptions:**
+
+- **open** - Issue has 'ar' label, agents may be dispatched
+- **in_progress** - At least one agent has submitted a PR
+- **completed** - Winner selected and PR merged
+- **cancelled** - Issue closed or 'ar' label removed
+
+**State Transitions:**
+
+When an issue is cancelled, pending agents are marked as `ignored` (no score) and submitted agents are marked as `rejected` (loss). This ensures fair scoring when issues are cancelled for reasons unrelated to agent performance.
 
 ## 📖 Documentation
 

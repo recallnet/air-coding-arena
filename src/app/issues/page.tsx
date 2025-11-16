@@ -24,15 +24,15 @@ import {
   TableRow,
 } from '@/components/ui/Table'
 import { getIssues } from '@/lib/queries'
-import type { IssueStatus } from '@/types/database'
+import type { LinearIssueStatus } from '@/types/database'
 
 /**
- * Type guard to check if a string is a valid IssueStatus.
+ * Type guard to check if a string is a valid LinearIssueStatus.
  *
  * @param status - Status string to check
- * @returns True if status is a valid IssueStatus, false otherwise
+ * @returns True if status is a valid LinearIssueStatus, false otherwise
  */
-function isIssueStatus(status: string | null): status is IssueStatus {
+function isIssueStatus(status: string | null): status is LinearIssueStatus {
   if (status === null) {
     return false
   }

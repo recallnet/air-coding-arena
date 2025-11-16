@@ -1,10 +1,23 @@
 import { ImageResponse } from 'next/og'
 
-// Apple touch icon size (iOS home screen)
+/**
+ * Apple touch icon dimensions in pixels.
+ * Used by iOS devices when users add the site to their home screen.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons
+ */
 export const size = {
+  /** Icon width in pixels */
   width: 180,
+  /** Icon height in pixels */
   height: 180,
 }
+
+/**
+ * MIME type for the generated Apple touch icon.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons
+ */
 export const contentType = 'image/png'
 
 /**

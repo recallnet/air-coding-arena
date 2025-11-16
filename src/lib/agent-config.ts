@@ -12,9 +12,13 @@ import { agents } from '@/db/schema'
  * Agent configuration object
  */
 export type AgentConfig = {
+  /** Lowercase agent name used as unique identifier (e.g., 'cursor', 'engine') */
   name: string
+  /** Agent display handle for mentions (e.g., '@Cursor', '@Engine') */
   handle: string
+  /** Human-readable display name from Linear workspace */
   displayName: string
+  /** Unique Linear user ID for this agent */
   linearUserId: string
 }
 

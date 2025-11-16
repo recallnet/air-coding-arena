@@ -13,6 +13,15 @@ import { db } from '@/db/client'
 import { githubAppInstallations } from '@/db/schema'
 import { generateAppJWT } from '@/lib/github-app-auth'
 
+/**
+ * GET /api/github/app/callback
+ *
+ * Handles GitHub App installation callback after user installs the app.
+ * Processes installation, update, and suspend actions.
+ *
+ * @param request - Next.js request with installation_id and setup_action query params
+ * @returns Redirect to admin GitHub setup page with status
+ */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const searchParams = request.nextUrl.searchParams
   const installationId = searchParams.get('installation_id')

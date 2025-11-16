@@ -10,6 +10,14 @@ import { NextResponse } from 'next/server'
 import { discoverAgents } from '@/lib/agent-discovery'
 
 /**
+ * Error response for POST /api/agents/discover
+ */
+export type ErrorResponse = {
+  /** Error message describing what went wrong */
+  error: string
+}
+
+/**
  * POST /api/agents/discover
  * Calls discoverAgents() to fetch agents from Linear API
  * and update the database
@@ -25,6 +33,7 @@ export async function POST() {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to discover agents'
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    const errorResponse: ErrorResponse = { error: errorMessage }
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

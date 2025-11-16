@@ -12,12 +12,18 @@ import { agents, agentConfig } from '@/db/schema'
 /**
  * Linear user type from SDK
  */
-type LinearUser = {
+export type LinearUser = {
+  /** Unique Linear user ID */
   id: string
+  /** User's name */
   name: string
+  /** User's email address */
   email?: string | null
+  /** Display name shown in Linear UI */
   displayName?: string | null
+  /** URL to user's avatar image */
   avatarUrl?: string | null
+  /** Whether user is a guest (external collaborator) */
   guest?: boolean | null
 }
 
@@ -75,17 +81,25 @@ function getKnownAgents(): string[] {
 }
 
 /**
+ * Agent discovery result statistics
+ */
+export type AgentDiscoveryResult = {
+  /** Number of new agents discovered and added to database */
+  discovered: number
+  /** Number of existing agents updated with new information */
+  updated: number
+  /** Number of agents marked as inactive (no longer in workspace) */
+  deactivated: number
+}
+
+/**
  * Discovers agents from Linear API workspace
  * Filters users to identify coding agents
  * Updates agents table with active status
  *
  * @returns Discovery stats: discovered, updated, deactivated
  */
-export async function discoverAgents(): Promise<{
-  discovered: number
-  updated: number
-  deactivated: number
-}> {
+export async function discoverAgents(): Promise<AgentDiscoveryResult> {
   const apiKey = process.env['LINEAR_API_KEY']
   if (!apiKey) {
     throw new Error('LINEAR_API_KEY not configured')

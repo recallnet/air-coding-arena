@@ -16,6 +16,7 @@ import {
   agents,
   githubAppInstallations,
 } from '@/db/schema'
+import type { Agent } from '@/db/schema'
 import type {
   AgentStats,
   Attempt,
@@ -38,7 +39,9 @@ import type {
  * const agent2 = await getAgentBySlugOrName('github copilot')
  * ```
  */
-export async function getAgentBySlugOrName(slugOrName: string) {
+export async function getAgentBySlugOrName(
+  slugOrName: string
+): Promise<Agent | null> {
   // Try to find by slug first, then by name (in case input is actually a name with spaces)
   const agent = await db.query.agents.findFirst({
     where: or(eq(agents.slug, slugOrName), eq(agents.name, slugOrName)),
@@ -208,6 +211,16 @@ export async function getIssues(): Promise<IssueWithAttemptData[]> {
 }
 
 /**
+ * Issue with all attempts and participating agents.
+ */
+export type IssueWithDetails = Issue & {
+  /** All PR attempts submitted for this issue */
+  attempts: Attempt[]
+  /** All agents that were dispatched for this issue */
+  agents: IssueAgent[]
+}
+
+/**
  * Fetches a single issue by ID with all its attempts.
  * Returns null if the issue is not found.
  *
@@ -224,7 +237,7 @@ export async function getIssues(): Promise<IssueWithAttemptData[]> {
  */
 export async function getIssueById(
   id: string
-): Promise<(Issue & { attempts: Attempt[]; agents: IssueAgent[] }) | null> {
+): Promise<IssueWithDetails | null> {
   const issueResult = await db.select().from(issues).where(eq(issues.id, id))
 
   if (issueResult.length === 0) {
@@ -318,6 +331,7 @@ export async function getAttemptsByIssue(issueId: string): Promise<Attempt[]> {
  * Attempt with issue information for agent detail page.
  */
 export type AttemptWithIssue = Attempt & {
+  /** Human-readable Linear issue key (e.g., 'CA-123') */
   issueLinearKey: string
 }
 
@@ -408,9 +422,13 @@ export async function getAttemptsByAgent(
  * Temporal statistics for a single day.
  */
 export type TemporalStat = {
+  /** Date in YYYY-MM-DD format */
   date: string
+  /** Number of PR attempts opened on this date */
   attempts: number
+  /** Number of PRs merged (wins) on this date */
   wins: number
+  /** Number of arena:ready issues with no attempts on this date */
   failures: number
 }
 
@@ -487,13 +505,21 @@ export async function getTemporalStats(
  * Temporal statistics for a single agent on a single day.
  */
 export type AgentTemporalStat = {
+  /** Date in YYYY-MM-DD format */
   date: string
+  /** Unique identifier for the agent */
   agentName: string
+  /** Cumulative number of attempts up to this date */
   cumulativeAttempts: number
+  /** Cumulative number of wins up to this date */
   cumulativeWins: number
+  /** Cumulative number of failures up to this date */
   cumulativeFailures: number
+  /** OpenSkill rating ordinal score on this date */
   ordinal: number
+  /** URL to the agent's avatar image */
   avatarUrl?: string | null
+  /** Human-readable display name for the agent */
   displayName?: string | null
 }
 
@@ -617,14 +643,23 @@ export async function getAgentTemporalStats(
  * Recent activity entry with issue details.
  */
 export type RecentActivity = {
+  /** Unique attempt identifier */
   id: string
+  /** Agent who created this attempt */
   agentName: string
+  /** Issue database ID this attempt is for */
   issueId: string
+  /** Issue title */
   issueTitle: string
+  /** Human-readable Linear issue key (e.g., 'CA-123') */
   issueLinearKey: string
+  /** Direct URL to the pull request */
   prUrl: string
+  /** GitHub pull request number */
   prNumber: number
+  /** Attempt status (open, merged, closed) */
   status: string
+  /** ISO 8601 timestamp when PR was opened */
   openedAt: string
 }
 
@@ -632,10 +667,15 @@ export type RecentActivity = {
  * Agent information within an issue.
  */
 export type IssueAgent = {
+  /** Unique identifier for the agent */
   agentName: string
+  /** Current participation status of the agent on this issue */
   status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
+  /** URL to the agent's avatar image */
   avatarUrl?: string | null
+  /** Human-readable display name for the agent */
   displayName?: string | null
+  /** URL-friendly slug for the agent */
   slug?: string | null
 }
 
@@ -643,15 +683,25 @@ export type IssueAgent = {
  * Issue with associated agents and PR counts.
  */
 export type IssueWithAgents = {
+  /** Unique database identifier for this issue */
   id: string
+  /** Human-readable Linear issue key (e.g., 'CA-123') */
   linearKey: string
+  /** Issue title */
   title: string
+  /** Current Linear workflow state */
   status: string | null
+  /** Direct URL to view issue in Linear */
   url: string
+  /** When the arena:ready label was added */
   arenaReadyLabeledAt: Date | null
+  /** All agents participating on this issue */
   agents: IssueAgent[]
+  /** Most recent activity timestamp (attempt or label) */
   lastActivityAt: Date
+  /** Number of open pull requests for this issue */
   openPRCount: number
+  /** Number of merged pull requests for this issue */
   mergedPRCount: number
 }
 
@@ -951,11 +1001,17 @@ export async function getAgentScoreHistory(
  * Issue participation record with latest attempt details.
  */
 export type IssueParticipationRecord = {
+  /** Unique identifier for the agent */
   agentName: string
+  /** Agent's participation status (pending, submitted, accepted, rejected, ignored) */
   status: string
+  /** When the agent was dispatched/triggered for this issue */
   triggeredAt: Date | null
+  /** URL to the agent's most recent pull request */
   latestPrUrl: string | null
+  /** Status of the agent's most recent PR (open, merged, closed) */
   latestPrStatus: string | null
+  /** Number of commits in the agent's most recent PR */
   commitCount: number | null
 }
 
@@ -1063,12 +1119,19 @@ export async function getAgentAttempts(
  * GitHub App installation from database.
  */
 export type GitHubInstallation = {
+  /** Unique database identifier for this installation */
   id: string
+  /** GitHub App installation ID */
   installationId: string
+  /** GitHub account login name (org or user) */
   accountLogin: string
+  /** Type of GitHub account (Organization or User) */
   accountType: string
+  /** Whether this installation is currently active */
   isActive: boolean
+  /** When the app was installed */
   installedAt: Date
+  /** When the installation was suspended, if applicable */
   suspendedAt: Date | null
 }
 

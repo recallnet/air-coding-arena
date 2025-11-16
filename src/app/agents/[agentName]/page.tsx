@@ -36,8 +36,10 @@ import type { AttemptStatus } from '@/types/database'
 /**
  * Page props type for dynamic route parameter.
  */
-type PageProps = {
+export type PageProps = {
+  /** Dynamic route parameters */
   params: {
+    /** Agent name or slug from URL (e.g., 'cursor' or 'claude-sonnet') */
     agentName: string
   }
 }

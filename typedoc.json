@@ -9,6 +9,7 @@
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "**/__tests__/**",
+    "**/test-utils/**",
     "**/node_modules/**"
   ],
   "excludePrivate": true,

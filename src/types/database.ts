@@ -60,9 +60,13 @@ export type NewCiMetric = typeof ciMetrics.$inferInsert
 export type AgentName = 'cursor' | 'engine' | 'cyrus'
 
 /**
- * Issue status values.
+ * Linear issue status values (from Linear workflow states).
+ *
+ * These are distinct from IssueStatusType in state-machine.ts.
+ * Linear statuses represent the Linear workflow (Backlog, Todo, etc.),
+ * while state machine statuses represent arena competition states (open, in_progress, etc.).
  */
-export type IssueStatus =
+export type LinearIssueStatus =
   | 'Backlog'
   | 'Todo'
   | 'In Progress'
@@ -77,6 +81,9 @@ export type AttemptStatus = 'open' | 'merged' | 'closed'
 
 /**
  * Issue agent status values.
+ *
+ * Extends AgentStatusType from state machine with additional database-specific state.
+ * Most values come from the canonical state machine; 'dispatch_failed' is database-only.
  */
 export type IssueAgentStatus =
   | 'pending'
@@ -84,23 +91,34 @@ export type IssueAgentStatus =
   | 'accepted'
   | 'rejected'
   | 'ignored'
-  | 'dispatch_failed'
+  | 'dispatch_failed' // Database-specific: agent dispatch operation failed
 
 /**
  * Agent stats from the agent_stats view.
  * Aggregates performance metrics per agent.
  */
 export type AgentStats = {
+  /** The unique name identifier for the agent */
   agentName: string
+  /** Total number of issues the agent has worked on */
   issues: number
+  /** Total number of PRs submitted by the agent */
   prs: number
+  /** Number of PRs that were accepted/merged */
   wins: number
+  /** Number of issues where the agent did not finish (no PR submitted) */
   dnf: number
+  /** Total number of attempts made by the agent */
   attempts: number
+  /** Percentage of PRs accepted (wins / prs * 100) */
   acceptancePct: number
+  /** OpenSkill rating ordinal score for the agent */
   ordinal: number
+  /** Total number of completed games/issues the agent participated in */
   gamesPlayed: number
+  /** URL to the agent's avatar image */
   avatarUrl?: string | null
+  /** The agent's display name */
   displayName?: string | null
 }
 
@@ -109,7 +127,9 @@ export type AgentStats = {
  * Used by the issues list page to display summary data.
  */
 export type IssueWithAttemptData = Issue & {
+  /** The total number of PR attempts submitted for this issue */
   attemptCount: number
+  /** The name of the agent whose PR was accepted as the winner, or null if no winner yet */
   winnerAgentName: string | null
 }
 

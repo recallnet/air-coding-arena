@@ -12,6 +12,42 @@ import { db } from '@/db/client'
 import { agents } from '@/db/schema'
 
 /**
+ * Agent information returned by GET /api/agents
+ */
+export type AgentInfo = {
+  /** Unique agent identifier (UUID) */
+  id: string
+  /** Agent name (lowercase) */
+  name: string
+  /** URL-friendly slug derived from name */
+  slug: string
+  /** Display name for UI */
+  displayName: string
+  /** Linear user ID for this agent */
+  linearUserId: string
+  /** Agent email address */
+  email: string | null
+  /** URL to agent avatar image */
+  avatarUrl: string | null
+  /** Whether agent is currently active in Linear workspace */
+  isActive: boolean
+  /** Whether agent is enabled for arena participation */
+  isEnabled: boolean
+  /** Timestamp when agent was first discovered */
+  discoveredAt: Date
+  /** Timestamp when agent was last seen in Linear workspace */
+  lastSeenAt: Date | null
+}
+
+/**
+ * Response type for GET /api/agents
+ */
+export type AgentsResponse = {
+  /** List of all agents with their metadata and status */
+  agents: AgentInfo[]
+}
+
+/**
  * GET /api/agents
  * Returns all agents with their metadata and status
  *
@@ -35,7 +71,8 @@ export async function GET() {
     .from(agents)
     .orderBy(asc(agents.name))
 
-  return NextResponse.json({
+  const response: AgentsResponse = {
     agents: allAgents,
-  })
+  }
+  return NextResponse.json(response)
 }

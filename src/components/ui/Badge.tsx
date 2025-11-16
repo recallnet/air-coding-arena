@@ -12,6 +12,11 @@ import { cn } from '@/lib/utils'
  * Badge component props.
  */
 export type BadgeProps = React.HTMLAttributes<HTMLDivElement> & {
+  /**
+   * Visual style variant for the badge.
+   * Controls background color, text color, and border styling.
+   * @default 'default'
+   */
   variant?:
     | 'default'
     | 'secondary'

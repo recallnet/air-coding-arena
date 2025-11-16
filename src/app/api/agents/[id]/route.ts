@@ -19,6 +19,14 @@ type UpdateAgentRequest = {
 }
 
 /**
+ * Error response for PATCH /api/agents/[id]
+ */
+export type ErrorResponse = {
+  /** Error message describing what went wrong */
+  error: string
+}
+
+/**
  * PATCH /api/agents/[id]
  * Updates the enabled status of an agent
  *
@@ -36,34 +44,28 @@ export async function PATCH(
     try {
       body = (await request.json()) as unknown
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
-      )
+      const errorResponse: ErrorResponse = { error: 'Invalid request body' }
+      return NextResponse.json(errorResponse, { status: 400 })
     }
 
     // Validate request body
     if (typeof body !== 'object' || body === null) {
-      return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
-      )
+      const errorResponse: ErrorResponse = { error: 'Invalid request body' }
+      return NextResponse.json(errorResponse, { status: 400 })
     }
 
     const updateRequest = body as Record<string, unknown>
 
     if (!('isEnabled' in updateRequest)) {
-      return NextResponse.json(
-        { error: 'isEnabled is required' },
-        { status: 400 }
-      )
+      const errorResponse: ErrorResponse = { error: 'isEnabled is required' }
+      return NextResponse.json(errorResponse, { status: 400 })
     }
 
     if (typeof updateRequest['isEnabled'] !== 'boolean') {
-      return NextResponse.json(
-        { error: 'isEnabled must be a boolean' },
-        { status: 400 }
-      )
+      const errorResponse: ErrorResponse = {
+        error: 'isEnabled must be a boolean',
+      }
+      return NextResponse.json(errorResponse, { status: 400 })
     }
 
     const validatedBody = updateRequest as UpdateAgentRequest
@@ -83,7 +85,8 @@ export async function PATCH(
       .returning()
 
     if (updatedAgents.length === 0) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
+      const errorResponse: ErrorResponse = { error: 'Agent not found' }
+      return NextResponse.json(errorResponse, { status: 404 })
     }
 
     return NextResponse.json(updatedAgents[0])
@@ -91,6 +94,7 @@ export async function PATCH(
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to update agent'
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    const errorResponse: ErrorResponse = { error: errorMessage }
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

@@ -46,3 +46,4 @@ node_modules/.cache
 
 # docs output
 docs/api
+dev.db

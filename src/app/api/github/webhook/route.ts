@@ -407,6 +407,15 @@ async function handlePullRequestClosed(
   }
 }
 
+/**
+ * POST /api/github/webhook
+ *
+ * Handles GitHub webhook events for PR tracking and CI status updates.
+ * Processes pull_request events (synchronize, closed, reopened) and check_suite events (completed).
+ *
+ * @param req - Next.js request with GitHub webhook payload and signature header
+ * @returns JSON response with success status or error
+ */
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // 1. Verify signature
