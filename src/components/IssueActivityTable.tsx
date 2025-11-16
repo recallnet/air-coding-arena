@@ -91,7 +91,7 @@ export function IssueActivityTable({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Badge variant={getStatusBadgeVariant(issue.status)}>
-                      {issue.status ?? 'Unknown'}
+                      {normalizeIssueStatus(issue.status)}
                     </Badge>
                     <Link
                       href={`/issues/${issue.id}`}
@@ -175,6 +175,42 @@ function filterIssues(
 }
 
 /**
+ * Normalizes Linear status values to consistent display strings.
+ * Linear sends inconsistent status values (e.g., "Done" vs "completed").
+ *
+ * @param status - Raw status from Linear
+ * @returns Normalized status string
+ */
+function normalizeIssueStatus(status: string | null): string {
+  if (!status) return 'Unknown'
+
+  // Normalize to consistent casing and terminology
+  const normalized = status.toLowerCase()
+
+  if (normalized === 'done' || normalized === 'completed') {
+    return 'Done'
+  }
+  if (normalized === 'canceled' || normalized === 'cancelled') {
+    return 'Canceled'
+  }
+  if (normalized === 'in progress') {
+    return 'In Progress'
+  }
+  if (normalized === 'in review') {
+    return 'In Review'
+  }
+  if (normalized === 'todo') {
+    return 'Todo'
+  }
+  if (normalized === 'backlog') {
+    return 'Backlog'
+  }
+
+  // Return original if no normalization needed
+  return status
+}
+
+/**
  * Maps issue status to badge variant for consistent styling.
  * Matches the pattern used in issues/page.tsx.
  *
@@ -185,7 +221,11 @@ function getStatusBadgeVariant(
   status: string | null
 ): 'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline' {
   if (!status) return 'outline'
-  switch (status) {
+
+  // Normalize first, then map to variant
+  const normalized = normalizeIssueStatus(status)
+
+  switch (normalized) {
     case 'Done':
       return 'success'
     case 'In Progress':
@@ -196,7 +236,6 @@ function getStatusBadgeVariant(
     case 'Backlog':
       return 'outline'
     case 'Canceled':
-    case 'deleted':
       return 'error'
     default:
       return 'outline'
