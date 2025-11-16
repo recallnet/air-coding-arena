@@ -406,13 +406,16 @@ async function processPRURLs(
         })
 
       if (agentName !== 'unknown') {
+        // Only update to 'submitted' if currently 'pending'
+        // Preserve 'accepted'/'rejected' statuses set by updateWinner()
         await db
           .update(issueAgents)
           .set({ status: 'submitted' })
           .where(
             and(
               eq(issueAgents.issueId, issueId),
-              eq(issueAgents.agentName, agentName)
+              eq(issueAgents.agentName, agentName),
+              eq(issueAgents.status, 'pending')
             )
           )
       }
