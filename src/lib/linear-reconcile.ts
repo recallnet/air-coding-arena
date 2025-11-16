@@ -9,7 +9,12 @@ import { Octokit } from '@octokit/rest'
 import { eq, notInArray } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { issues, attempts, githubAppInstallations } from '@/db/schema'
+import {
+  issues,
+  attempts,
+  githubAppInstallations,
+  issueAgents,
+} from '@/db/schema'
 
 import { getInstallationToken } from './github-app-auth'
 import { syncIssueFromLinear } from './linear-sync'
@@ -110,6 +115,23 @@ export async function reconcileLinearIssues(): Promise<number> {
         .limit(1)
       if (dbIssueForSync[0]) {
         await syncPRStatusFromGitHub(dbIssueForSync[0].id)
+
+        // Validation: If issue has zero agent assignments, remove from arena
+        // This prevents issues from entering arena before agents are assigned
+        const agentAssignments = await db
+          .select()
+          .from(issueAgents)
+          .where(eq(issueAgents.issueId, dbIssueForSync[0].id))
+
+        if (agentAssignments.length === 0) {
+          await db
+            .update(issues)
+            .set({ arenaReadyLabeledAt: null })
+            .where(eq(issues.id, dbIssueForSync[0].id))
+          console.log(
+            `[Reconcile] ${issue.identifier} has no agent assignments - removed from arena`
+          )
+        }
       }
 
       // Check if issue needs winner determination and rating calculation

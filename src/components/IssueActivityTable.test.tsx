@@ -400,7 +400,22 @@ describe('IssueActivityTable', () => {
       expect(screen.getByText('1/1 complete')).toBeInTheDocument()
     })
 
-    it('should exclude ignored agents from denominator', () => {
+    it('should include ignored agents in denominator', () => {
+      const issueWithIgnored: IssueWithAgents = {
+        ...mockIssue,
+        agents: [
+          { agentName: 'engine', status: 'accepted' },
+          { agentName: 'cursor', status: 'rejected' },
+          { agentName: 'githubcopilot', status: 'ignored' },
+          { agentName: 'factory', status: 'ignored' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueWithIgnored]} />)
+      // 2 complete (accepted + rejected) out of 4 (includes ignored, excludes pending)
+      expect(screen.getByText('2/4 complete')).toBeInTheDocument()
+    })
+
+    it('should include ignored in denominator with single rejection', () => {
       const issueWithRejected: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -410,8 +425,8 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithRejected]} />)
-      // 1 complete out of 1 engaged (2 ignored not counted)
-      expect(screen.getByText('1/1 complete')).toBeInTheDocument()
+      // 1 complete out of 3 total (ignored agents counted in denominator)
+      expect(screen.getByText('1/3 complete')).toBeInTheDocument()
     })
 
     it('should show in review for submitted agents, excluding pending from denominator', () => {
@@ -440,7 +455,7 @@ describe('IssueActivityTable', () => {
       expect(screen.getByText('2 assigned')).toBeInTheDocument()
     })
 
-    it('should show assigned when all agents are ignored', () => {
+    it('should show in progress when all agents are ignored', () => {
       const issueWithIgnored: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -449,8 +464,8 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithIgnored]} />)
-      // No engaged agents, show total assigned
-      expect(screen.getByText('2 assigned')).toBeInTheDocument()
+      // Ignored agents are countable but not complete, so show in progress
+      expect(screen.getByText('2 in progress')).toBeInTheDocument()
     })
 
     it('should show in progress when no completed or submitted but has engaged agents', () => {

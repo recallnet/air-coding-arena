@@ -1128,7 +1128,10 @@ describe('reconcileLinearIssues', () => {
       values: mockValues,
     } as never)
 
-    // Mock db.select chain
+    // Mock db.select chain - multiple calls:
+    // 1. Getting issue ID for sync
+    // 2. Getting attempts for PR sync (empty)
+    // 3. Getting issue agents (has agents - prevents removal from arena)
     const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
     const mockIssueWhere = vi.fn().mockReturnValue({
       limit: mockIssueLimit,
@@ -1142,6 +1145,14 @@ describe('reconcileLinearIssues', () => {
       where: mockAttemptsWhere,
     })
 
+    // Mock issueAgents query - return some agents (prevent arena removal)
+    const mockAgentsWhere = vi
+      .fn()
+      .mockResolvedValue([{ agentName: 'engine', status: 'submitted' }])
+    const mockAgentsFrom = vi.fn().mockReturnValue({
+      where: mockAgentsWhere,
+    })
+
     vi.mocked(db).select = vi
       .fn()
       .mockReturnValueOnce({
@@ -1149,6 +1160,9 @@ describe('reconcileLinearIssues', () => {
       })
       .mockReturnValueOnce({
         from: mockAttemptsFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAgentsFrom,
       }) as never
 
     // Mock db.query.issues.findFirst to return issue with merged attempts but no winner
@@ -1528,5 +1542,104 @@ describe('reconcileLinearIssues', () => {
 
     // Should NOT have updated the PR status (no change from 'open' to 'open')
     expect(mockSetForPRStatus).not.toHaveBeenCalled()
+  })
+
+  it('should not mark issue as arena-ready if no agents assigned', async () => {
+    const issueWithNoAgents = createMockLinearIssue({
+      id: 'linear-no-agents',
+      identifier: 'ENG-999',
+      title: 'Issue with no agents',
+      url: 'https://linear.app/test/issue/eng-999',
+    })
+
+    const mockIssues = vi.fn().mockResolvedValue({ nodes: [issueWithNoAgents] })
+    const mockClient = { issues: mockIssues }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock db.insert chain
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
+    const mockValues = vi.fn().mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    })
+    vi.mocked(db.insert).mockReturnValue({
+      values: mockValues,
+    } as never)
+
+    // Mock db.select chain - called multiple times:
+    // 1. Getting issue ID for sync (with .limit())
+    // 2. Getting attempts for PR sync (returns empty - no PRs)
+    // 3. Getting issue agents (returns empty array - no agents!)
+    const mockIssueLimit = vi.fn().mockResolvedValue([{ id: 'db-issue-id' }])
+    const mockIssueWhere = vi.fn().mockReturnValue({
+      limit: mockIssueLimit,
+    })
+    const mockIssueFrom = vi.fn().mockReturnValue({
+      where: mockIssueWhere,
+    })
+
+    // Mock attempts query - returns empty array (no PRs)
+    const mockAttemptsWhere = vi.fn().mockResolvedValue([])
+    const mockAttemptsFrom = vi.fn().mockReturnValue({
+      where: mockAttemptsWhere,
+    })
+
+    // Mock issueAgents query - returns empty array (no agents assigned)
+    const mockAgentsWhere = vi.fn().mockResolvedValue([])
+    const mockAgentsFrom = vi.fn().mockReturnValue({
+      where: mockAgentsWhere,
+    })
+
+    vi.mocked(db).select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: mockIssueFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAttemptsFrom,
+      })
+      .mockReturnValueOnce({
+        from: mockAgentsFrom,
+      }) as never
+
+    // Mock db.update chain - should be called to set arenaReadyLabeledAt to null
+    const mockUpdateReturning = vi.fn().mockResolvedValue([])
+    const mockUpdateWhere = vi.fn().mockReturnValue({
+      returning: mockUpdateReturning,
+    })
+    const mockSet = vi.fn().mockReturnValue({
+      where: mockUpdateWhere,
+    })
+    vi.mocked(db.update).mockReturnValue({
+      set: mockSet,
+    } as never)
+
+    // Mock db.query.issues.findFirst for winner check
+    vi.mocked(db).query = {
+      issues: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    } as never
+
+    const { syncIssueFromLinear } = await import('./linear-sync')
+
+    await reconcileLinearIssues()
+
+    // Issue should be initially created with arena timestamp
+    expect(mockValues).toHaveBeenCalledWith({
+      linearId: 'linear-no-agents',
+      linearKey: 'ENG-999',
+      title: 'Issue with no agents',
+      url: 'https://linear.app/test/issue/eng-999',
+      repo: MOCK_TEAM_KEY,
+      status: MOCK_STATUS,
+      arenaReadyLabeledAt: expect.any(Date), // Initially set
+    })
+
+    // Should still sync the issue (to detect agent mentions)
+    expect(syncIssueFromLinear).toHaveBeenCalledWith('linear-no-agents')
+
+    // Should then NULL out arenaReadyLabeledAt after sync when no agents found
+    expect(mockSet).toHaveBeenCalledWith({ arenaReadyLabeledAt: null })
   })
 })

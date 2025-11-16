@@ -24,6 +24,9 @@ SELECT
   ) AS acceptance_pct
 FROM issue_agents ia
 LEFT JOIN attempts a ON ia.issue_id = a.issue_id AND ia.agent_name = a.agent_name
+-- ONLY exclude pending agents from denominator
+-- ignored agents (assigned but didn't submit) should be counted
+WHERE ia.status != 'pending'
 GROUP BY ia.agent_name;
 
 -- ============================================================================
