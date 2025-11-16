@@ -1340,14 +1340,14 @@ describe('updateWinner - issue completion and agent status', () => {
 
     expect(db.transaction).toHaveBeenCalled()
 
-    // Verify issue status was set to 'completed' in the update call
+    // Verify winner was set in the update call
+    // Note: We no longer set status in updateWinner - status comes from Linear's workflow
     expect(mockTx.update).toHaveBeenCalled()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const updateCall = mockTx.update().set
     expect(updateCall).toHaveBeenCalledWith(
       expect.objectContaining({
         winnerAttemptId: 'winner-id',
-        status: 'completed',
       })
     )
   })

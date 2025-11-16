@@ -58,12 +58,13 @@ export async function updateWinner(issueId: string): Promise<void> {
     const winner = winnerResult[0]
     if (!winner) return
 
-    // 4. Set winner and mark issue as completed (atomic with lock)
+    // 4. Set winner (atomic with lock)
+    // NOTE: We do NOT set status here - status comes from Linear's workflow
+    // The presence of winnerAttemptId indicates the arena competition is complete
     await tx
       .update(issues)
       .set({
         winnerAttemptId: winner.id,
-        status: 'completed',
       })
       .where(eq(issues.id, issueId))
 
