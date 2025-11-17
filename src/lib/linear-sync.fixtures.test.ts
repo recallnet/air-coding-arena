@@ -611,20 +611,35 @@ describe('Linear Sync - Fixture-Based Tests', () => {
       const { db } = await import('@/db/client')
 
       // Mock db.select() - returns issue exists in database with linearId
+      // Also handles attempts pre-fetch query
+      // Pattern: each syncIssueFromLinear call makes 2 select queries:
+      // 1. select issue by linearId (has .limit())
+      // 2. select attempts for pre-fetch (direct await, no .limit())
+      let callCount = 0
       vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: 'mock-db-issue-id',
-                linearId: 'mock-linear-id',
-                linearKey: 'ENG-000',
-                title: 'Mock Issue',
-                url: 'https://linear.app/mock',
-                status: 'open',
-              },
-            ]),
-          }),
+        from: vi.fn().mockImplementation(() => {
+          callCount++
+          // Odd calls (1st, 3rd, 5th...): query for issue (returns issue with .limit())
+          if (callCount % 2 === 1) {
+            return {
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: 'mock-db-issue-id',
+                    linearId: 'mock-linear-id',
+                    linearKey: 'ENG-000',
+                    title: 'Mock Issue',
+                    url: 'https://linear.app/mock',
+                    status: 'open',
+                  },
+                ]),
+              }),
+            }
+          }
+          // Even calls (2nd, 4th, 6th...): pre-fetch attempts (returns empty array directly)
+          return {
+            where: vi.fn().mockImplementation(() => Promise.resolve([])),
+          }
         }),
       } as never)
 

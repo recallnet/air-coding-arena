@@ -62,6 +62,52 @@ function createMockIssue(overrides?: Record<string, unknown>) {
   }
 }
 
+/**
+ * Create database query mocks that handle the attempts pre-fetch query
+ * @returns Mock select, from, where, orderBy, limit functions
+ */
+function createDBQueryMocks() {
+  const mockLimit = vi
+    .fn()
+    .mockResolvedValue([
+      { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+    ])
+
+  const mockOrderBy = vi.fn().mockResolvedValue([
+    { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+    { name: 'engine', displayName: 'Engine', isEnabled: true },
+    { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+    { name: 'factory', displayName: 'Factory', isEnabled: true },
+  ])
+
+  const mockWhere = vi.fn().mockReturnValue({
+    orderBy: mockOrderBy,
+    limit: mockLimit,
+  })
+
+  const mockFrom = vi.fn().mockImplementation((table) => {
+    // Check if this is the attempts table query (pre-fetch)
+    if (table === attempts) {
+      // Return object that resolves to empty array when awaited
+      return {
+        where: vi.fn().mockImplementation(() => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          then: (resolve: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+            resolve([]) // Empty array = no existing attempts
+          },
+        })),
+      }
+    }
+    // For other tables, return normal chain
+    return { where: mockWhere }
+  })
+
+  const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+  return { mockSelect, mockFrom, mockWhere, mockOrderBy, mockLimit }
+}
+
 describe('syncIssueFromLinear', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -104,22 +150,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -203,22 +234,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -265,22 +281,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -337,22 +338,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -414,22 +400,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -481,22 +452,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -553,22 +509,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -615,22 +556,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -677,22 +603,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -753,22 +664,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -834,22 +730,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -898,22 +779,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -962,22 +828,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -1052,22 +903,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockUpdateWhere = vi.fn().mockResolvedValue([])
     const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
@@ -1116,17 +952,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockUpdateWhere = vi.fn().mockResolvedValue([])
     const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
@@ -1183,21 +1009,7 @@ describe('syncIssueFromLinear', () => {
 
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
-      ])
-    const mockOrderBy = vi
-      .fn()
-      .mockResolvedValue([
-        { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
     const mockValues = vi
@@ -1259,24 +1071,7 @@ describe('syncIssueFromLinear', () => {
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
     // Mock database state: issue exists, engine agent has status='accepted'
-    const mockLimit = vi.fn().mockResolvedValue([
-      {
-        id: 'db-issue-id',
-        linearId: 'linear-issue-123',
-        status: 'completed',
-      },
-    ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     // Simulate that engine agent already exists with status='accepted' in DB
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([
@@ -1350,22 +1145,7 @@ describe('syncIssueFromLinear', () => {
     vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
 
     // Mock database state: issue exists, cursor agent has status='pending'
-    const mockLimit = vi
-      .fn()
-      .mockResolvedValue([
-        { id: 'db-issue-id', linearId: 'linear-issue-456', status: 'open' },
-      ])
-    const mockOrderBy = vi.fn().mockResolvedValue([
-      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
-      { name: 'engine', displayName: 'Engine', isEnabled: true },
-      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
-      { name: 'factory', displayName: 'Factory', isEnabled: true },
-    ])
-    const mockWhere = vi
-      .fn()
-      .mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit })
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere })
-    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+    const { mockSelect } = createDBQueryMocks()
 
     // Simulate that cursor agent exists with status='pending' in DB
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([
@@ -1401,5 +1181,156 @@ describe('syncIssueFromLinear', () => {
 
     expect(issueAgentUpdateCall).toBeDefined()
     expect(mockSet).toHaveBeenCalledWith({ status: 'submitted' })
+  })
+
+  it('should NOT create duplicate attempts when same PR is referenced in multiple comment threads', async () => {
+    // TDD TEST - REPRODUCES BUG FROM PR #21 DUPLICATION ISSUE
+    //
+    // ROOT CAUSE:
+    // When the same PR URL appears in multiple comment threads:
+    // 1. Engine posts PR #21 in a comment (child of @engine mention)
+    // 2. Cursor later references the same PR #21 in a different comment (child of @cursor mention)
+    // 3. processPRURLs() creates TWO attempt records (one for engine, one for cursor)
+    // 4. The unique constraint (issueId, agentName, prNumber) allows both since agentName differs
+    //
+    // EXPECTED BEHAVIOR:
+    // Only ONE attempt record should exist for PR #21 (the first one - engine's)
+    //
+    // CURRENT BEHAVIOR (BUG):
+    // TWO attempt records are created
+    //
+    // This test should FAIL initially (RED phase) and PASS after fix
+
+    const mockComments = {
+      nodes: [
+        // Comment thread 1: @engine mention
+        {
+          id: 'comment-1-engine-mention',
+          body: '@engine can you fix this bug?',
+          createdAt: new Date('2024-01-01T10:00:00Z'),
+          parent: Promise.resolve(null),
+        },
+        // Comment thread 1: engine posts PR #21
+        {
+          id: 'comment-2-engine-pr',
+          body: 'Sure, here is my PR: https://github.com/owner/repo/pull/21',
+          createdAt: new Date('2024-01-01T11:00:00Z'),
+          parent: Promise.resolve({ id: 'comment-1-engine-mention' }),
+        },
+        // Comment thread 2: @cursor mention (unrelated thread)
+        {
+          id: 'comment-3-cursor-mention',
+          body: '@cursor what do you think?',
+          createdAt: new Date('2024-01-01T12:00:00Z'),
+          parent: Promise.resolve(null),
+        },
+        // Comment thread 2: cursor references the SAME PR #21
+        {
+          id: 'comment-4-cursor-reference',
+          body: 'I agree with https://github.com/owner/repo/pull/21',
+          createdAt: new Date('2024-01-01T13:00:00Z'),
+          parent: Promise.resolve({ id: 'comment-3-cursor-mention' }),
+        },
+      ],
+      pageInfo: { hasNextPage: false },
+    }
+
+    const mockIssue = createMockIssue({
+      comments: vi.fn().mockResolvedValue(mockComments),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    // Mock implementation needs to handle two different query patterns:
+    // 1. select().from(issues).where().limit() - for fetching issue
+    // 2. select().from(attempts).where() - for pre-fetching attempts (NEW - no limit!)
+    // 3. select().from(agents).where().orderBy() - for fetching agent configs
+
+    const mockLimit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'db-issue-id', linearId: 'test-linear-id', status: 'open' },
+      ])
+
+    const mockOrderBy = vi.fn().mockResolvedValue([
+      { name: 'cursor', displayName: 'Cursor', isEnabled: true },
+      { name: 'engine', displayName: 'Engine', isEnabled: true },
+      { name: 'cyrus', displayName: 'Cyrus', isEnabled: true },
+      { name: 'factory', displayName: 'Factory', isEnabled: true },
+    ])
+
+    const mockWhere = vi.fn().mockImplementation(() => {
+      // Return a chainable object that can handle both .limit() and direct await
+      const chainable = {
+        orderBy: mockOrderBy,
+        limit: mockLimit,
+        // For direct await (attempts pre-fetch): return empty array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        then: (resolve: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+          resolve([])
+        },
+      }
+      return chainable
+    })
+
+    const mockFrom = vi.fn().mockImplementation((table) => {
+      // Check if this is the attempts table query (pre-fetch)
+      if (table === attempts) {
+        // Return object that resolves to empty array when awaited
+        return {
+          where: vi.fn().mockImplementation(() => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            then: (resolve: any) => {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+              resolve([]) // Empty array = no existing attempts
+            },
+          })),
+        }
+      }
+      // For other tables, return normal chain
+      return { where: mockWhere }
+    })
+    const mockSelect = vi.fn().mockReturnValue({ from: mockFrom })
+
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    const mockValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-id')
+
+    // Find all the values passed to attempts insert
+    const attemptsValuesCalls = mockValues.mock.calls.filter((call) => {
+      const value = call[0]
+      // Check if this is an attempts insert (has prNumber field)
+      return value && typeof value === 'object' && 'prNumber' in value
+    })
+
+    // EXPECTED: Only ONE attempt for PR #21 (engine's)
+    // CURRENT BUG: TWO attempts created (one for engine, one for cursor)
+    expect(attemptsValuesCalls).toHaveLength(1)
+
+    // Verify the single attempt is attributed to engine (the first to post it)
+    const attemptValue = attemptsValuesCalls[0]?.[0]
+    expect(attemptValue).toMatchObject({
+      agentName: 'engine',
+      prNumber: 21,
+      repo: 'owner/repo',
+    })
   })
 })

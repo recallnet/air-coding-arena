@@ -347,6 +347,19 @@ async function processPRURLs(
   commentAgents: Map<string, string[]>,
   commentParents: Map<string, string | null>
 ): Promise<void> {
+  // PERFORMANCE FIX (N+1): Pre-fetch ALL attempts for the issue ONCE
+  // Build in-memory map: prNumber -> attempt for O(1) lookups
+  const existingAttempts = await db
+    .select()
+    .from(attempts)
+    .where(eq(attempts.issueId, issueId))
+
+  const attemptsByPR = new Map(existingAttempts.map((a) => [a.prNumber, a]))
+
+  console.log(
+    `[syncComments] Pre-fetched ${existingAttempts.length} existing attempts for issue ${issueId}`
+  )
+
   for (const comment of comments) {
     const body = comment.body ?? ''
     const createdAt = comment.createdAt
@@ -362,6 +375,7 @@ async function processPRURLs(
 
       const repo = `${org}/${repoName}`
       const prUrl = `https://github.com/${org}/${repoName}/pull/${prNumber}`
+      const prNum = Number.parseInt(prNumber, 10)
 
       console.log(
         `[syncComments] Found PR URL in comment ${commentId.substring(0, 8)}...: ${prUrl}`
@@ -372,6 +386,16 @@ async function processPRURLs(
       console.log(
         `[syncComments]   Parent ID: ${commentParents.get(commentId) ?? 'null'}`
       )
+
+      // LOGIC FIX: Check if ANY attempt already exists for this (issueId, prNumber) pair
+      // regardless of agent. This prevents different agents from claiming the same PR.
+      const existingAttempt = attemptsByPR.get(prNum)
+      if (existingAttempt) {
+        console.log(
+          `[syncComments] PR #${prNumber} already exists (owned by ${existingAttempt.agentName}), skipping`
+        )
+        continue
+      }
 
       const agentName = await determineAgentOwnershipFromThread(
         commentId,
@@ -390,7 +414,7 @@ async function processPRURLs(
           issueId,
           agentName,
           repo,
-          prNumber: Number.parseInt(prNumber, 10),
+          prNumber: prNum,
           prUrl,
           branch: null,
           openedAt: createdAt,
@@ -404,6 +428,27 @@ async function processPRURLs(
           target: [attempts.issueId, attempts.agentName, attempts.prNumber],
           set: { prUrl }, // Preserve status - GitHub webhook is source of truth
         })
+
+      // Add to in-memory map so subsequent PR references are also skipped
+      attemptsByPR.set(prNum, {
+        issueId,
+        agentName,
+        repo,
+        prNumber: prNum,
+        prUrl,
+        branch: null,
+        openedAt: createdAt,
+        mergedAt: null,
+        closedAt: null,
+        status: 'open',
+        commitCount: 1,
+        lastCommitSha: null,
+        ciStatus: null,
+        ciLastCheckedAt: null,
+        sourceAttachmentId: null,
+        sourceAttachmentUrl: null,
+        id: '', // Placeholder UUID - not used for deduplication
+      })
 
       if (agentName !== 'unknown') {
         // Only update to 'submitted' if currently 'pending'
