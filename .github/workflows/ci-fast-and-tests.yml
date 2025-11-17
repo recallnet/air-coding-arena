@@ -114,6 +114,26 @@ jobs:
   tests:
     name: Tests (Vitest Shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+      NODE_ENV: test
+
     strategy:
       fail-fast: false
       matrix:
@@ -184,6 +204,13 @@ jobs:
         if: steps.node-modules-cache.outputs.cache-hit == 'true'
         run: |
           echo "Using cached node_modules - npm ci skipped."
+
+      - name: Run database migrations
+        run: |
+          start=$(date +%s)
+          npm run db:push
+          end=$(date +%s)
+          echo "Migration duration: $((end - start)) seconds"
 
       - name: Run tests with coverage (shard ${{ matrix.shard }}/4)
         run: |

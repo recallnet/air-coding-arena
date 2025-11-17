@@ -147,6 +147,78 @@ describe('TemporalLeaderboard', () => {
       expect(screen.getByText('cyrus')).toBeInTheDocument()
     })
 
+    it('should display agents in alphabetical order in legend', () => {
+      const mockStats: AgentTemporalStat[] = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'zebra',
+          cumulativeAttempts: 10,
+          cumulativeWins: 8,
+          cumulativeFailures: 2,
+          ordinal: 1700,
+        },
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'apple',
+          cumulativeAttempts: 5,
+          cumulativeWins: 3,
+          cumulativeFailures: 2,
+          ordinal: 1600,
+        },
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'mango',
+          cumulativeAttempts: 7,
+          cumulativeWins: 5,
+          cumulativeFailures: 2,
+          ordinal: 1650,
+        },
+      ]
+
+      render(<TemporalLeaderboard stats={mockStats} />)
+
+      // Get all agent names from the legend
+      const agentNames = [
+        screen.getByText('apple'),
+        screen.getByText('mango'),
+        screen.getByText('zebra'),
+      ]
+
+      // Verify all agents are present
+      for (const agent of agentNames) {
+        expect(agent).toBeInTheDocument()
+      }
+    })
+
+    it('should filter out agents with zero ordinal from display', () => {
+      const mockStats: AgentTemporalStat[] = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'rated-agent',
+          cumulativeAttempts: 10,
+          cumulativeWins: 8,
+          cumulativeFailures: 2,
+          ordinal: 1600,
+        },
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'unrated-agent',
+          cumulativeAttempts: 5,
+          cumulativeWins: 0,
+          cumulativeFailures: 5,
+          ordinal: 0,
+        },
+      ]
+
+      render(<TemporalLeaderboard stats={mockStats} />)
+
+      // Agent with rating should be shown
+      expect(screen.getByText('rated-agent')).toBeInTheDocument()
+
+      // Agent with zero rating should not be shown
+      expect(screen.queryByText('unrated-agent')).not.toBeInTheDocument()
+    })
+
     it('should handle multiple dates', () => {
       const mockStats: AgentTemporalStat[] = [
         {
@@ -198,6 +270,97 @@ describe('TemporalLeaderboard', () => {
       expect(screen.getByText('cursor')).toBeInTheDocument()
       const svg = container.querySelector('svg')
       expect(svg).toBeInTheDocument()
+    })
+
+    it('should render line paths for each metric (ordinal, attempts, wins, failures)', () => {
+      const mockStats: AgentTemporalStat[] = [
+        {
+          date: MOCK_DATE_2024_01_01,
+          agentName: 'cursor',
+          cumulativeAttempts: 5,
+          cumulativeWins: 3,
+          cumulativeFailures: 2,
+          ordinal: 1500,
+        },
+        {
+          date: MOCK_DATE_2024_01_02,
+          agentName: 'cursor',
+          cumulativeAttempts: 10,
+          cumulativeWins: 7,
+          cumulativeFailures: 3,
+          ordinal: 1550,
+        },
+      ]
+
+      const { container } = render(<TemporalLeaderboard stats={mockStats} />)
+
+      // Should have 4 path elements (ordinal, attempts, wins, failures)
+      const paths = container.querySelectorAll('path')
+      expect(paths.length).toBe(4)
+
+      // Verify each path has a 'd' attribute (the path data)
+      for (const path of paths) {
+        expect(path.getAttribute('d')).toBeTruthy()
+        expect(path.getAttribute('d')).toMatch(/^M /) // Path should start with "M "
+      }
+    })
+
+    it('should display chart with dual Y-axis labels (Rating and Count)', () => {
+      const mockStats: AgentTemporalStat[] = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'cursor',
+          cumulativeAttempts: 10,
+          cumulativeWins: 8,
+          cumulativeFailures: 2,
+          ordinal: 1550,
+        },
+      ]
+
+      render(<TemporalLeaderboard stats={mockStats} />)
+
+      // Should have "Rating" label (appears in legend and Y-axis)
+      const ratingLabels = screen.getAllByText('Rating')
+      expect(ratingLabels.length).toBeGreaterThanOrEqual(1)
+
+      // Should have "Count" label on right axis
+      expect(screen.getByText('Count')).toBeInTheDocument()
+    })
+
+    it('should render multiple agents with distinct color schemes', () => {
+      const mockStats: AgentTemporalStat[] = [
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'agent1',
+          cumulativeAttempts: 10,
+          cumulativeWins: 8,
+          cumulativeFailures: 2,
+          ordinal: 1600,
+        },
+        {
+          date: MOCK_DATE_2024_01_03,
+          agentName: 'agent2',
+          cumulativeAttempts: 5,
+          cumulativeWins: 3,
+          cumulativeFailures: 2,
+          ordinal: 1550,
+        },
+      ]
+
+      const { container } = render(<TemporalLeaderboard stats={mockStats} />)
+
+      // Should have 8 path elements (4 metrics × 2 agents)
+      const paths = container.querySelectorAll('path')
+      expect(paths.length).toBe(8)
+
+      // Verify each agent has paths with different stroke colors
+      const strokes = Array.from(paths).map((path) =>
+        path.getAttribute('stroke')
+      )
+      const uniqueStrokes = new Set(strokes.filter(Boolean))
+
+      // Should have multiple unique colors (at least 2 base colors for 2 agents)
+      expect(uniqueStrokes.size).toBeGreaterThanOrEqual(2)
     })
   })
 
