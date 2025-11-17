@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/client'
 import { attempts, events, githubAppInstallations } from '@/db/schema'
 import { getInstallationToken } from '@/lib/github-app-auth'
+import { updateWinner } from '@/lib/update-winner'
 
 type GitHubWebhookPayload = {
   action: string
@@ -383,9 +384,9 @@ async function handlePullRequestClosed(
 
     console.log(`[GitHub] PR ${repo}#${prNumber} merged`)
 
-    // NOTE: Agent status updates are handled by Linear webhook's updateWinner()
-    // which uses transactions to avoid race conditions. GitHub webhook only
-    // tracks attempt status (merged/closed).
+    // Update winner when PR is merged
+    // This sets the issue winner, updates agent statuses, and updates ratings
+    await updateWinner(attempt.issueId)
 
     revalidatePath('/')
     console.log(`[GitHub] Revalidated homepage for issue ${attempt.issueId}`)
