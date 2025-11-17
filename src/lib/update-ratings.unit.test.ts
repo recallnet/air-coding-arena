@@ -88,6 +88,13 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     })
   })
 
+  // Helper to create idempotency check mock (returns no existing history)
+  const mockIdempotencyCheck = () => ({
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue([]), // Empty array = no existing history
+  })
+
   const createMockIssue = () => ({
     id: MOCK_ISSUE_ID,
     linearId: 'linear-1',
@@ -139,7 +146,9 @@ describe('updateRatingsForIssue - Unit Tests', () => {
       limit: vi.fn().mockResolvedValue([]),
     }
 
-    mockDb.select.mockReturnValue(mockSelect as never)
+    mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
+      .mockReturnValueOnce(mockSelect as never)
 
     await expect(updateRatingsForIssue('nonexistent-issue-id')).rejects.toThrow(
       'Issue nonexistent-issue-id not found'
@@ -162,6 +171,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
 
@@ -213,6 +223,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
 
@@ -299,6 +310,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -391,6 +403,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -485,6 +498,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -598,6 +612,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -693,6 +708,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -759,6 +775,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -906,6 +923,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -983,6 +1001,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -1070,6 +1089,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)
@@ -1182,6 +1202,7 @@ describe('updateRatingsForIssue - Unit Tests', () => {
     }
 
     mockDb.select
+      .mockReturnValueOnce(mockIdempotencyCheck() as never) // Idempotency check returns empty
       .mockReturnValueOnce(mockIssueSelect as never)
       .mockReturnValueOnce(mockAttemptsSelect as never)
       .mockReturnValueOnce(mockScoresSelect as never)

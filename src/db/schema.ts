@@ -264,30 +264,37 @@ export const agentScores = pgTable('agent_scores', {
  * Agent score history table - tracks rating changes over time.
  * Records mu, sigma, ordinal after each completed issue for analytics.
  */
-export const agentScoreHistory = pgTable('agent_score_history', {
-  /** The unique database identifier for this history record */
-  id: uuid('id').primaryKey().defaultRandom(),
-  /** The name of the agent this history record is for */
-  agentName: text('agent_name').notNull(),
-  /** Foreign key to the issue that caused this score update */
-  issueId: uuid('issue_id')
-    .notNull()
-    .references(() => issues.id, { onDelete: 'cascade' }),
-  /** OpenSkill mu parameter at this point in time */
-  mu: real('mu').notNull(),
-  /** OpenSkill sigma parameter at this point in time */
-  sigma: real('sigma').notNull(),
-  /** OpenSkill ordinal score at this point in time */
-  ordinal: real('ordinal').notNull(),
-  /** The agent's final rank in this issue (1 = winner, 2 = second place, etc.) */
-  rank: integer('rank').notNull(),
-  /** When the issue was completed */
-  completedAt: timestamp('completed_at', { withTimezone: true }).notNull(),
-  /** When this history record was created */
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+export const agentScoreHistory = pgTable(
+  'agent_score_history',
+  {
+    /** The unique database identifier for this history record */
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** The name of the agent this history record is for */
+    agentName: text('agent_name').notNull(),
+    /** Foreign key to the issue that caused this score update */
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    /** OpenSkill mu parameter at this point in time */
+    mu: real('mu').notNull(),
+    /** OpenSkill sigma parameter at this point in time */
+    sigma: real('sigma').notNull(),
+    /** OpenSkill ordinal score at this point in time */
+    ordinal: real('ordinal').notNull(),
+    /** The agent's final rank in this issue (1 = winner, 2 = second place, etc.) */
+    rank: integer('rank').notNull(),
+    /** When the issue was completed */
+    completedAt: timestamp('completed_at', { withTimezone: true }).notNull(),
+    /** When this history record was created */
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    // Prevent double-scoring: one score entry per agent per issue
+    uniqueAgentIssueScore: unique().on(table.issueId, table.agentName),
+  })
+)
 
 /**
  * Events table - Idempotency and audit log.

@@ -77,6 +77,20 @@ export function determineRanking(
  * @throws Error if issue not found or database update fails
  */
 export async function updateRatingsForIssue(issueId: string): Promise<void> {
+  // Idempotency check: skip if ratings already calculated
+  const existingHistory = await db
+    .select({ id: agentScoreHistory.id })
+    .from(agentScoreHistory)
+    .where(eq(agentScoreHistory.issueId, issueId))
+    .limit(1)
+
+  if (existingHistory.length > 0) {
+    globalThis.console.log(
+      `[updateRatingsForIssue] Ratings already exist for issue ${issueId}, skipping`
+    )
+    return
+  }
+
   // Fetch issue to verify it exists
   const [issue] = await db
     .select()

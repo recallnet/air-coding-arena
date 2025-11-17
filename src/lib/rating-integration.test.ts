@@ -865,4 +865,169 @@ describe('Rating Integration E2E Tests', () => {
       expect(history).toHaveLength(0)
     })
   })
+
+  describe('Idempotency', () => {
+    const testIssueId = '66666666-6666-6666-6666-666666666666'
+
+    beforeEach(async () => {
+      if (!isRealDatabase) return
+      await cleanupTestData([testIssueId])
+    })
+
+    afterAll(async () => {
+      if (!isRealDatabase) return
+      await cleanupTestData([testIssueId])
+    })
+
+    it('should be idempotent - calling updateRatingsForIssue twice does not double-score', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
+      // Setup: Create issue with winner and loser
+      await db.insert(issues).values({
+        id: testIssueId,
+        linearId: 'TEST-IDEMPOTENT',
+        linearKey: 'TEST-IDEMPOTENT',
+        title: 'Idempotency Test',
+        url: 'https://linear.app/test/TEST-IDEMPOTENT',
+        repo: TEST_REPO,
+        status: 'completed',
+        arenaReadyLabeledAt: new Date('2025-01-10T00:00:00Z'),
+        createdAt: new Date('2025-01-10T00:00:00Z'),
+      })
+
+      // Create 2 agents with attempts
+      await db.insert(attempts).values([
+        {
+          id: '66666666-1111-6666-6666-666666666666',
+          issueId: testIssueId,
+          agentName: 'winner',
+          repo: TEST_REPO,
+          prNumber: 100,
+          prUrl: 'https://github.com/test/repo/pull/100',
+          branch: 'winner/test',
+          status: 'merged',
+          openedAt: new Date('2024-01-01T10:00:00Z'),
+          mergedAt: new Date('2024-01-01T11:00:00Z'),
+          commitCount: 5,
+          lastCommitSha: 'winner123',
+        },
+        {
+          id: '66666666-2222-6666-6666-666666666666',
+          issueId: testIssueId,
+          agentName: 'loser',
+          repo: TEST_REPO,
+          prNumber: 101,
+          prUrl: 'https://github.com/test/repo/pull/101',
+          branch: 'loser/test',
+          status: 'closed',
+          openedAt: new Date('2024-01-01T10:00:00Z'),
+          closedAt: new Date('2024-01-01T12:00:00Z'),
+          commitCount: 3,
+          lastCommitSha: 'loser123',
+        },
+      ])
+
+      // First call - should update ratings
+      await updateRatingsForIssue(testIssueId)
+
+      const firstHistory = await db
+        .select()
+        .from(agentScoreHistory)
+        .where(eq(agentScoreHistory.issueId, testIssueId))
+
+      expect(firstHistory).toHaveLength(2)
+
+      const firstWinnerScore = await db
+        .select()
+        .from(agentScores)
+        .where(eq(agentScores.agentName, 'winner'))
+
+      const firstGamesPlayed = firstWinnerScore[0]?.gamesPlayed
+
+      // Second call - should be idempotent (skip)
+      await updateRatingsForIssue(testIssueId)
+
+      const secondHistory = await db
+        .select()
+        .from(agentScoreHistory)
+        .where(eq(agentScoreHistory.issueId, testIssueId))
+
+      // Should still be 2 entries, not 4
+      expect(secondHistory).toHaveLength(2)
+
+      const secondWinnerScore = await db
+        .select()
+        .from(agentScores)
+        .where(eq(agentScores.agentName, 'winner'))
+
+      // gamesPlayed should not increment twice
+      expect(secondWinnerScore[0]?.gamesPlayed).toBe(firstGamesPlayed)
+
+      // Clean up test agents
+      await db
+        .delete(agentScores)
+        .where(inArray(agentScores.agentName, ['winner', 'loser']))
+    })
+
+    it('should enforce unique constraint on (issueId, agentName) in agent_score_history', async () => {
+      if (!isRealDatabase) {
+        console.log(SKIP_MESSAGE)
+        return
+      }
+
+      // Clean up first
+      await cleanupTestData([testIssueId])
+
+      const issue = await db
+        .insert(issues)
+        .values({
+          id: testIssueId,
+          linearId: 'TEST-CONSTRAINT',
+          linearKey: 'TEST-CONSTRAINT',
+          title: 'Constraint Test',
+          url: 'https://linear.app/test/TEST-CONSTRAINT',
+          repo: TEST_REPO,
+          status: 'completed',
+          arenaReadyLabeledAt: new Date('2025-01-11T00:00:00Z'),
+          createdAt: new Date('2025-01-11T00:00:00Z'),
+        })
+        .returning()
+
+      const issueId = issue[0]?.id
+
+      if (!issueId) {
+        throw new Error('Failed to create test issue')
+      }
+
+      // Insert first history entry
+      await db.insert(agentScoreHistory).values({
+        issueId,
+        agentName: 'cursor',
+        mu: 25,
+        sigma: 8.333,
+        ordinal: 1500,
+        rank: 1,
+        completedAt: new Date(),
+      })
+
+      // Attempt to insert duplicate - should fail
+      await expect(
+        db.insert(agentScoreHistory).values({
+          issueId,
+          agentName: 'cursor',
+          mu: 27,
+          sigma: 8.0,
+          ordinal: 1520,
+          rank: 1,
+          completedAt: new Date(),
+        })
+      ).rejects.toThrow(/unique constraint/)
+
+      // Clean up
+      await db.delete(agentScores).where(eq(agentScores.agentName, 'cursor'))
+    })
+  })
 })
