@@ -118,11 +118,12 @@ function getAgentColors(agentIndex: number): AgentColorScheme {
 
 /**
  * Groups stats by date and organizes by agent.
+ * Exported for testing.
  *
  * @param stats - Array of agent temporal stats
  * @returns Object with dates as keys and agent data as values
  */
-function groupStatsByDate(
+export function groupStatsByDate(
   stats: AgentTemporalStat[]
 ): Record<string, Record<string, AgentTemporalStat>> {
   const grouped: Record<string, Record<string, AgentTemporalStat>> = {}
