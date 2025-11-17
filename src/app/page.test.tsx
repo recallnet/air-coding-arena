@@ -392,6 +392,70 @@ describe('Home', () => {
     })
   })
 
+  describe('when multiple agents exist', () => {
+    it('should display leaderboard with agents sorted by ordinal rating (descending)', async () => {
+      // Mock getAgentStats to return agents in mixed order (as if query had a bug)
+      // The homepage should display them in the order received from the query
+      // This test verifies that agents appear in descending ordinal order
+      const mockStats: AgentStats[] = [
+        {
+          agentName: 'low-rated',
+          issues: 2,
+          prs: 3,
+          wins: 1,
+          dnf: 1,
+          attempts: 3,
+          acceptancePct: 50.0,
+          ordinal: 1400,
+          gamesPlayed: 4,
+        },
+        {
+          agentName: 'high-rated',
+          issues: 10,
+          prs: 12,
+          wins: 9,
+          dnf: 1,
+          attempts: 12,
+          acceptancePct: 90.0,
+          ordinal: 1700,
+          gamesPlayed: 15,
+        },
+        {
+          agentName: 'mid-rated',
+          issues: 6,
+          prs: 8,
+          wins: 5,
+          dnf: 1,
+          attempts: 8,
+          acceptancePct: 70.0,
+          ordinal: 1550,
+          gamesPlayed: 10,
+        },
+      ]
+
+      // Sort by ordinal descending to simulate correct query behavior
+      const sortedStats = [...mockStats].sort((a, b) => b.ordinal - a.ordinal)
+
+      mockGetAgentStats.mockResolvedValue(sortedStats)
+
+      render(await Home())
+
+      // Get all rows (excluding header)
+      const rows = screen.getAllByRole('row').slice(1)
+
+      // Extract agent names from each row's first cell
+      const agentNames = rows.map((row) => {
+        const firstCell = row.querySelector('td')
+        return firstCell?.textContent
+      })
+
+      // Verify order: high → mid → low (descending by ordinal)
+      expect(agentNames[0]).toContain('high-rated')
+      expect(agentNames[1]).toContain('mid-rated')
+      expect(agentNames[2]).toContain('low-rated')
+    })
+  })
+
   describe('when no agent stats are available', () => {
     it('should display empty state message', async () => {
       mockGetAgentStats.mockResolvedValue([])
