@@ -1333,4 +1333,95 @@ describe('syncIssueFromLinear', () => {
       repo: 'owner/repo',
     })
   })
+
+  it('should process comments chronologically even when Linear API returns them out of order', async () => {
+    // TDD TEST - REPRODUCES OUT-OF-ORDER COMMENT BUG
+    //
+    // SCENARIO:
+    // 1. Engine posts PR #21 first (timestamp: 10:00)
+    // 2. Cursor references PR #21 later (timestamp: 11:00)
+    // 3. But Linear API returns cursor's comment BEFORE engine's comment
+    //
+    // EXPECTED: Engine's PR should be attributed to engine (posted first)
+    // CURRENT BUG: If cursor's comment processes first, cursor claims PR #21
+    //
+    // FIX: Sort comments by createdAt before processing
+
+    const mockComments = {
+      nodes: [
+        // Linear API returns cursor's comment FIRST (even though posted later!)
+        {
+          id: 'cursor-root',
+          body: '@cursor please work on this',
+          createdAt: new Date('2024-01-01T09:00:00Z'),
+          parent: Promise.resolve(null),
+        },
+        {
+          id: 'cursor-pr',
+          body: 'Here you go: https://github.com/owner/repo/pull/21',
+          createdAt: new Date('2024-01-01T11:00:00Z'), // Posted LATER
+          parent: Promise.resolve({ id: 'cursor-root' }),
+        },
+        // Engine's comments returned AFTER (but posted earlier!)
+        {
+          id: 'engine-root',
+          body: '@engine please work on this',
+          createdAt: new Date('2024-01-01T09:00:00Z'),
+          parent: Promise.resolve(null),
+        },
+        {
+          id: 'engine-pr',
+          body: 'Done: https://github.com/owner/repo/pull/21',
+          createdAt: new Date('2024-01-01T10:00:00Z'), // Posted FIRST
+          parent: Promise.resolve({ id: 'engine-root' }),
+        },
+      ],
+      pageInfo: { hasNextPage: false },
+    }
+
+    const mockIssue = createMockIssue({
+      comments: vi.fn().mockResolvedValue(mockComments),
+      attachments: vi.fn().mockResolvedValue({ nodes: [] }),
+    })
+
+    const mockClient = {
+      issue: vi.fn().mockResolvedValue(mockIssue),
+    }
+
+    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+
+    const { mockSelect } = createDBQueryMocks()
+
+    const mockOnConflictDoUpdate = vi.fn().mockResolvedValue([])
+    const mockValues = vi
+      .fn()
+      .mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate })
+    const mockInsert = vi.fn().mockReturnValue({ values: mockValues })
+
+    const mockUpdateWhere = vi.fn().mockResolvedValue([])
+    const mockSet = vi.fn().mockReturnValue({ where: mockUpdateWhere })
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet })
+
+    vi.mocked(db.select).mockImplementation(mockSelect as never)
+    vi.mocked(db.insert).mockImplementation(mockInsert as never)
+    vi.mocked(db.update).mockImplementation(mockUpdate as never)
+
+    await syncIssueFromLinear('linear-issue-id')
+
+    // Find all attempts created
+    const attemptsValuesCalls = mockValues.mock.calls.filter((call) => {
+      const value = call[0]
+      return value && typeof value === 'object' && 'prNumber' in value
+    })
+
+    // Should only create ONE attempt
+    expect(attemptsValuesCalls).toHaveLength(1)
+
+    // Should be attributed to engine (who posted FIRST chronologically)
+    const attemptValue = attemptsValuesCalls[0]?.[0]
+    expect(attemptValue).toMatchObject({
+      agentName: 'engine',
+      prNumber: 21,
+    })
+  })
 })

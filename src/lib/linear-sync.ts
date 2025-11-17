@@ -59,6 +59,12 @@ export async function syncIssueFromLinear(
     }
   }
 
+  // Sort comments chronologically to ensure correct PR attribution
+  // If comments are processed out of order, the wrong agent might claim a PR
+  allComments.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  )
+
   console.log(
     `[syncIssue] Fetched ${allComments.length} comments from Linear API for issue ${linearIssueId}`
   )
