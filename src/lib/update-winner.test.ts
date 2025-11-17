@@ -17,6 +17,7 @@ import { updateWinner } from './update-winner'
  */
 const isRealDatabase = process.env['IS_TEST_DB_URL'] !== 'true'
 const SKIP_MESSAGE = 'Skipping: dummy database'
+const TEST_REPO = 'owner/repo'
 
 describe('updateWinner', () => {
   let testIssueId: string
@@ -56,7 +57,7 @@ describe('updateWinner', () => {
         issueId: testIssueId,
         agentName: 'agent1',
         prNumber: 1,
-        repo: 'owner/repo',
+        repo: TEST_REPO,
         prUrl: 'https://github.com/owner/repo/pull/1',
         status: 'merged',
         openedAt: new Date('2024-01-01T10:00:00Z'),
@@ -67,7 +68,7 @@ describe('updateWinner', () => {
         issueId: testIssueId,
         agentName: 'agent2',
         prNumber: 2,
-        repo: 'owner/repo',
+        repo: TEST_REPO,
         prUrl: 'https://github.com/owner/repo/pull/2',
         status: 'merged',
         openedAt: new Date('2024-01-01T10:05:00Z'),
@@ -200,5 +201,135 @@ describe('updateWinner', () => {
     // agent1 merged first (11:00 vs 11:01)
     expect(winner.agentName).toBe('agent1')
     expect(winner.prNumber).toBe(1)
+  })
+
+  it('should handle agent submitting multiple PRs', async () => {
+    if (!isRealDatabase) {
+      console.log(SKIP_MESSAGE)
+      return
+    }
+
+    // agent1 submits TWO PRs, agent2 submits one
+    const issue = await db
+      .insert(issues)
+      .values({
+        linearId: 'TEST-MULTI-PR',
+        linearKey: 'TEST-MULTI-PR',
+        title: 'Multiple PRs Test',
+        url: 'https://linear.app/test/TEST-MULTI-PR',
+        status: 'in_progress',
+      })
+      .returning()
+
+    const multiPrIssueId = issue[0]?.id
+
+    if (!multiPrIssueId) {
+      throw new Error('Failed to create multi-PR test issue')
+    }
+
+    const multiPrAgentName = 'multi-pr-agent'
+    const singlePrAgentName = 'single-pr-agent'
+
+    await db.insert(issueAgents).values([
+      {
+        issueId: multiPrIssueId,
+        agentName: multiPrAgentName,
+        status: 'submitted',
+      },
+      {
+        issueId: multiPrIssueId,
+        agentName: singlePrAgentName,
+        status: 'submitted',
+      },
+    ])
+
+    // multi-pr-agent has 2 PRs
+    await db.insert(attempts).values([
+      {
+        issueId: multiPrIssueId,
+        agentName: multiPrAgentName,
+        prNumber: 10,
+        repo: TEST_REPO,
+        prUrl: 'https://github.com/owner/repo/pull/10',
+        status: 'open',
+        openedAt: new Date('2024-01-01T10:00:00Z'),
+        commitCount: 3,
+      },
+      {
+        issueId: multiPrIssueId,
+        agentName: multiPrAgentName,
+        prNumber: 11,
+        repo: TEST_REPO,
+        prUrl: 'https://github.com/owner/repo/pull/11',
+        status: 'merged', // This one wins
+        openedAt: new Date('2024-01-01T10:30:00Z'),
+        mergedAt: new Date('2024-01-01T12:00:00Z'),
+        commitCount: 5,
+      },
+      {
+        issueId: multiPrIssueId,
+        agentName: singlePrAgentName,
+        prNumber: 12,
+        repo: TEST_REPO,
+        prUrl: 'https://github.com/owner/repo/pull/12',
+        status: 'open',
+        openedAt: new Date('2024-01-01T10:15:00Z'),
+        commitCount: 4,
+      },
+    ])
+
+    await updateWinner(multiPrIssueId)
+
+    // multi-pr-agent should win with PR #11
+    const updatedIssue = await db
+      .select()
+      .from(issues)
+      .where(eq(issues.id, multiPrIssueId))
+
+    const winnerAttemptId = updatedIssue[0]?.winnerAttemptId
+
+    if (!winnerAttemptId) {
+      throw new Error('Winner attempt ID not set')
+    }
+
+    const winnerAttempt = await db
+      .select()
+      .from(attempts)
+      .where(eq(attempts.id, winnerAttemptId))
+
+    const winner = winnerAttempt[0]
+
+    if (!winner) {
+      throw new Error('Winner attempt not found')
+    }
+
+    expect(winner.agentName).toBe(multiPrAgentName)
+    expect(winner.prNumber).toBe(11)
+
+    // BOTH of multi-pr-agent's OTHER PRs should be closed (PR #10)
+    const allAttempts = await db
+      .select()
+      .from(attempts)
+      .where(eq(attempts.issueId, multiPrIssueId))
+    const multiPrAttempts = allAttempts.filter(
+      (a) => a.agentName === multiPrAgentName
+    )
+
+    expect(multiPrAttempts).toHaveLength(2)
+
+    const pr10 = multiPrAttempts.find((a) => a.prNumber === 10)
+    const pr11 = multiPrAttempts.find((a) => a.prNumber === 11)
+
+    expect(pr10?.status).toBe('closed')
+    expect(pr11?.status).toBe('merged')
+
+    // single-pr-agent's PR should also be closed
+    const pr12 = allAttempts.find((a) => a.prNumber === 12)
+    expect(pr12?.status).toBe('closed')
+
+    // Clean up
+    await db.delete(attempts).where(eq(attempts.issueId, multiPrIssueId))
+    await db.delete(issueAgents).where(eq(issueAgents.issueId, multiPrIssueId))
+    await db.delete(issues).where(eq(issues.id, multiPrIssueId))
   })
 })
