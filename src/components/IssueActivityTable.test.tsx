@@ -382,8 +382,8 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithMixedOutcomes]} />)
-      // 2 complete (accepted + rejected) out of 4 total (includes pending)
-      expect(screen.getByText('2/4 complete')).toBeInTheDocument()
+      // 3 agents with PRs (accepted + rejected + submitted) out of 4 total
+      expect(screen.getByText('3/4 complete')).toBeInTheDocument()
     })
 
     it('should include pending agents in denominator', () => {
@@ -429,7 +429,7 @@ describe('IssueActivityTable', () => {
       expect(screen.getByText('1/3 complete')).toBeInTheDocument()
     })
 
-    it('should show in review for submitted agents, including pending in denominator', () => {
+    it('should show complete for submitted agents, including pending in denominator', () => {
       const issueWithSubmitted: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -438,8 +438,8 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueWithSubmitted]} />)
-      // 1 submitted out of 2 total (pending counted)
-      expect(screen.getByText('1/2 in review')).toBeInTheDocument()
+      // 1 agent with PR (submitted) out of 2 total (pending counted)
+      expect(screen.getByText('1/2 complete')).toBeInTheDocument()
     })
 
     it('should show in progress when all agents are pending', () => {
@@ -468,7 +468,7 @@ describe('IssueActivityTable', () => {
       expect(screen.getByText('2 in progress')).toBeInTheDocument()
     })
 
-    it('should show in progress when no completed or submitted but has engaged agents', () => {
+    it('should show complete when all agents have submitted', () => {
       const issueInProgress: IssueWithAgents = {
         ...mockIssue,
         agents: [
@@ -477,8 +477,24 @@ describe('IssueActivityTable', () => {
         ],
       }
       render(<IssueActivityTable issues={[issueInProgress]} />)
-      // All agents submitted but none completed yet
-      expect(screen.getByText('2/2 in review')).toBeInTheDocument()
+      // All 2 agents have submitted PRs
+      expect(screen.getByText('2/2 complete')).toBeInTheDocument()
+    })
+
+    it('should count submitted + completed agents as having submitted PRs (ENG-980 scenario)', () => {
+      const issueENG980: IssueWithAgents = {
+        ...mockIssue,
+        linearKey: 'ENG-980',
+        agents: [
+          { agentName: 'cursor', status: 'accepted' }, // Has merged PR
+          { agentName: 'engine', status: 'submitted' }, // Has open PRs
+          { agentName: 'factory', status: 'ignored' },
+          { agentName: 'github copilot', status: 'ignored' },
+        ],
+      }
+      render(<IssueActivityTable issues={[issueENG980]} />)
+      // 2 agents have submitted PRs (cursor + engine) out of 4 total
+      expect(screen.getByText('2/4 complete')).toBeInTheDocument()
     })
   })
 })

@@ -281,10 +281,9 @@ function isIssueOpen(status: string | null): boolean {
 }
 
 /**
- * Generates agent progress text like "2/3 in progress" or "1/3 complete".
- * Counts both accepted (merged) and rejected (closed) PRs as complete.
- * All assigned agents count in the denominator, including pending and ignored.
- * Pending and ignored agents are both assigned but haven't completed work.
+ * Generates agent progress text like "2/4 complete".
+ * The numerator counts ALL agents who have submitted a PR (submitted + accepted + rejected).
+ * The denominator is all assigned agents (including pending and ignored).
  *
  * @param agents - Array of agents assigned to the issue
  * @returns Progress string or null if no agents
@@ -296,15 +295,17 @@ function getAgentProgress(
 
   // All assigned agents count in the denominator
   const total = agents.length
-  const completed = agents.filter(
-    (a) => a.status === 'accepted' || a.status === 'rejected'
-  ).length
-  const submitted = agents.filter((a) => a.status === 'submitted').length
 
-  if (completed > 0) {
-    return `${completed}/${total} complete`
-  } else if (submitted > 0) {
-    return `${submitted}/${total} in review`
+  // Count all agents who have submitted a PR (regardless of outcome)
+  const agentsWithPRs = agents.filter(
+    (a) =>
+      a.status === 'accepted' ||
+      a.status === 'rejected' ||
+      a.status === 'submitted'
+  ).length
+
+  if (agentsWithPRs > 0) {
+    return `${agentsWithPRs}/${total} complete`
   }
 
   return `${total} in progress`
