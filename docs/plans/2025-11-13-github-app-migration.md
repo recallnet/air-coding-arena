@@ -139,7 +139,7 @@ describe('GitHub App Auth', () => {
     process.env = {
       ...originalEnv,
       GITHUB_APP_ID: '123456',
-      GITHUB_APP_PRIVATE_KEY: `TEST_PRIVATE_KEY_REMOVED`,
+      GITHUB_APP_PRIVATE_KEY: `REPLACE_WITH_YOUR_OWN_GENERATED_PRIVATE_KEY`,
     }
   })
 
@@ -908,7 +908,7 @@ In `.env.local`, add:
 # GitHub App Configuration
 NEXT_PUBLIC_GITHUB_APP_ID=2287430
 GITHUB_APP_ID=2287430
-GITHUB_APP_PRIVATE_KEY="TEST_PRIVATE_KEY_REMOVED"
+GITHUB_APP_PRIVATE_KEY="REPLACE_WITH_YOUR_OWN_GENERATED_PRIVATE_KEY"
 ```
 
 **Step 6: Commit**
@@ -1179,9 +1179,7 @@ Add these to your `.env.local`:
 ```bash
 # GitHub App Configuration
 GITHUB_APP_ID=<your-app-id>
-GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-<your-private-key-contents-with-\n-for-newlines>
------END RSA PRIVATE KEY-----"
+GITHUB_APP_PRIVATE_KEY="REPLACE_WITH_YOUR_OWN_GENERATED_PRIVATE_KEY"
 GITHUB_WEBHOOK_SECRET=<your-webhook-secret>
 
 # For client-side (optional, for UI)
@@ -1321,7 +1319,7 @@ Create or modify `.env.example`:
 ```bash
 # GitHub App Configuration
 GITHUB_APP_ID=your_app_id_here
-GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nyour_private_key_here\n-----END RSA PRIVATE KEY-----"
+GITHUB_APP_PRIVATE_KEY="REPLACE_WITH_YOUR_OWN_GENERATED_PRIVATE_KEY"
 GITHUB_WEBHOOK_SECRET=your_webhook_secret_here
 
 # Optional: For client-side UI
@@ -1374,7 +1372,7 @@ describe('GitHub App Integration', () => {
   beforeAll(async () => {
     // Set up test environment
     process.env.GITHUB_APP_ID = '2287430'
-    process.env.GITHUB_APP_PRIVATE_KEY = `TEST_PRIVATE_KEY_REMOVED`
+    process.env.GITHUB_APP_PRIVATE_KEY = `REPLACE_WITH_YOUR_OWN_GENERATED_PRIVATE_KEY`
 
     // Insert test installation
     await db

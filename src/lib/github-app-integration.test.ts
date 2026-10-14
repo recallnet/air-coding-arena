@@ -1,3 +1,5 @@
+import { generateKeyPairSync } from 'node:crypto'
+
 import { eq } from 'drizzle-orm'
 import { describe, test, expect, beforeAll } from 'vitest'
 
@@ -6,10 +8,11 @@ import { githubAppInstallations } from '@/db/schema'
 
 import { generateAppJWT } from './github-app-auth'
 
-/* eslint-disable no-secrets/no-secrets */
-// Test private key - not a real secret, used only for unit testing JWT generation
-const TEST_PRIVATE_KEY = `TEST_PRIVATE_KEY_REMOVED`
-/* eslint-enable no-secrets/no-secrets */
+const { privateKey: TEST_PRIVATE_KEY } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+})
 
 describe('GitHub App Integration', () => {
   const testInstallationId = '12345'

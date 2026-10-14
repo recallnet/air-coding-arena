@@ -71,9 +71,7 @@ Add these to your `.env.local`:
 ```bash
 # GitHub App Configuration
 GITHUB_APP_ID=<your-app-id>
-GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-<your-private-key-contents-with-\n-for-newlines>
------END RSA PRIVATE KEY-----"
+GITHUB_APP_PRIVATE_KEY="REPLACE_WITH_YOUR_OWN_GENERATED_PRIVATE_KEY"
 GITHUB_WEBHOOK_SECRET=<your-webhook-secret>
 
 # For client-side (optional, for UI)

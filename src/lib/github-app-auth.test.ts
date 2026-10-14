@@ -1,3 +1,5 @@
+import { generateKeyPairSync } from 'node:crypto'
+
 /* eslint-disable no-undef */
 import jwt from 'jsonwebtoken'
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -8,10 +10,12 @@ import {
   clearTokenCache,
 } from './github-app-auth'
 
-/* eslint-disable no-secrets/no-secrets */
-// Test private key - not a real secret, used only for unit testing JWT generation
-const TEST_PRIVATE_KEY = `TEST_PRIVATE_KEY_REMOVED`
-/* eslint-enable no-secrets/no-secrets */
+const { privateKey: TEST_PRIVATE_KEY, publicKey: TEST_PUBLIC_KEY } =
+  generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  })
 
 describe('GitHub App Auth', () => {
   const originalEnv = process.env
@@ -33,6 +37,10 @@ describe('GitHub App Auth', () => {
 
     expect(token).toBeDefined()
     expect(typeof token).toBe('string')
+
+    expect(
+      jwt.verify(token, TEST_PUBLIC_KEY, { algorithms: ['RS256'] })
+    ).toMatchObject({ iss: '123456' })
 
     // Verify JWT structure
     const decoded = jwt.decode(token, { complete: true })

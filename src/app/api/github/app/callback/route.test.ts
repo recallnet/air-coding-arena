@@ -1,4 +1,5 @@
-/* eslint-disable no-secrets/no-secrets */
+import { generateKeyPairSync } from 'node:crypto'
+
 /* eslint-disable no-undef */
 import type { NextRequest } from 'next/server'
 import { describe, test, expect, beforeEach, vi } from 'vitest'
@@ -7,12 +8,28 @@ import { db } from '@/db/client'
 
 import { GET } from './route'
 
+const CALLBACK_URL = 'http://localhost:3000/api/github/app/callback'
+
+// Fresh key material exists only in this test process.
+const { privateKey: TEST_PRIVATE_KEY } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+})
+
 // Mock database
 vi.mock('@/db/client', () => ({
   db: {
     insert: vi.fn(),
   },
 }))
+
+function installationCallbackUrl(action: string): string {
+  const url = new URL(CALLBACK_URL)
+  url.searchParams.set('installation_id', '12345')
+  url.searchParams.set('setup_action', action)
+  return url.toString()
+}
 
 /**
  * Creates a mock Next.js request
@@ -39,7 +56,7 @@ describe('/api/github/app/callback', () => {
     // Don't use clearAllMocks as it breaks the mock chain
     // Just reset the environment and fetch mock
     process.env['GITHUB_APP_ID'] = '123456'
-    process.env['GITHUB_APP_PRIVATE_KEY'] = `TEST_PRIVATE_KEY_REMOVED`
+    process.env['GITHUB_APP_PRIVATE_KEY'] = TEST_PRIVATE_KEY
   })
 
   test('should handle successful installation', async () => {
@@ -70,7 +87,7 @@ describe('/api/github/app/callback', () => {
     global.fetch = mockFetch
 
     const request = createMockRequest(
-      'http://localhost:3000/api/github/app/callback?installation_id=12345&setup_action=install'
+      `${CALLBACK_URL}?installation_id=12345&setup_action=install`
     )
 
     const response = await GET(request)
@@ -82,9 +99,7 @@ describe('/api/github/app/callback', () => {
   })
 
   test('should handle missing installation_id', async () => {
-    const request = createMockRequest(
-      'http://localhost:3000/api/github/app/callback?setup_action=install'
-    )
+    const request = createMockRequest(`${CALLBACK_URL}?setup_action=install`)
 
     const response = await GET(request)
 
@@ -102,7 +117,7 @@ describe('/api/github/app/callback', () => {
     global.fetch = mockFetch
 
     const request = createMockRequest(
-      'http://localhost:3000/api/github/app/callback?installation_id=12345&setup_action=install'
+      `${CALLBACK_URL}?installation_id=12345&setup_action=install`
     )
 
     const response = await GET(request)
@@ -139,9 +154,7 @@ describe('/api/github/app/callback', () => {
     })
     global.fetch = mockFetch
 
-    const request = createMockRequest(
-      'http://localhost:3000/api/github/app/callback?installation_id=12345&setup_action=suspend'
-    )
+    const request = createMockRequest(installationCallbackUrl('suspend'))
 
     const response = await GET(request)
 
@@ -179,9 +192,7 @@ describe('/api/github/app/callback', () => {
     })
     global.fetch = mockFetch
 
-    const request = createMockRequest(
-      'http://localhost:3000/api/github/app/callback?installation_id=12345&setup_action=other'
-    )
+    const request = createMockRequest(installationCallbackUrl('other'))
 
     const response = await GET(request)
 
