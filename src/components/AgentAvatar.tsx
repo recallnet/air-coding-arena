@@ -14,11 +14,7 @@ import { cn } from '@/lib/utils'
  * Agent status types for color coding.
  */
 export type AgentStatus =
-  | 'pending'
-  | 'submitted'
-  | 'accepted'
-  | 'rejected'
-  | 'ignored'
+  'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
 
 /**
  * Props for the AgentAvatar component.

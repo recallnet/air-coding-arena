@@ -350,7 +350,7 @@ Final State: Agent ratings updated in database
 | Full Flow                        | ❌ Missing   | No end-to-end tests                     |
 | Winner Determination             | ⚠️ Partial   | Logic exists, context tests missing     |
 | Issue State Transitions          | ❌ Missing   | Status changes not tested               |
-| Cross-System Coordination        | ❌ Missing   | GitHub ↔ Linear ↔ Ratings             |
+| Cross-System Coordination        | ❌ Missing   | GitHub ↔ Linear ↔ Ratings               |
 | Error Scenarios                  | ⚠️ Partial   | Individual components only              |
 | Race Conditions                  | ⚠️ Partial   | Linear transaction tested, webhooks not |
 

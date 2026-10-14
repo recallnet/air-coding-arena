@@ -106,15 +106,15 @@ describe.skipIf(
       expect(engineScore.gamesPlayed).toBe(1)
     }
 
-    // DNF should not change (no merged or valid attempt)
+    // A closed low-commit PR still counts as a loss.
     if (cyrusScore) {
-      expect(cyrusScore.mu).toBe(25)
-      expect(cyrusScore.gamesPlayed).toBe(0)
+      expect(cyrusScore.mu).toBeLessThan(25)
+      expect(cyrusScore.gamesPlayed).toBe(1)
     }
 
     // Verify history entries created
     const history = await db.select().from(agentScoreHistory)
-    expect(history).toHaveLength(2) // Only cursor and engine (not cyrus)
+    expect(history).toHaveLength(3) // Winner and both closed losing PRs
 
     const cursorHistory = history.find((h) => h.agentName === 'cursor')
     if (cursorHistory) {

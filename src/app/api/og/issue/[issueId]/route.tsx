@@ -59,71 +59,6 @@ export async function GET(
       const winner = issue.winnerAttempt
 
       return new ImageResponse(
-        (
-          <div
-            style={{
-              height: '100%',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#000',
-              padding: '40px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: 60,
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  marginBottom: '20px',
-                  textAlign: 'center',
-                }}
-              >
-                {issue.linearKey}: {issue.title}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: 40,
-                  color: '#4ade80',
-                  marginBottom: '10px',
-                }}
-              >
-                Winner: {winner?.agentName}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: 30,
-                  color: '#a3a3a3',
-                }}
-              >
-                {competitorCount} competitor{competitorCount !== 1 ? 's' : ''}
-              </div>
-            </div>
-          </div>
-        ),
-        {
-          width: 1200,
-          height: 630,
-        }
-      )
-    }
-
-    // Render active competition view (placeholder for now)
-    return new ImageResponse(
-      (
         <div
           style={{
             height: '100%',
@@ -139,16 +74,77 @@ export async function GET(
           <div
             style={{
               display: 'flex',
-              fontSize: 60,
-              fontWeight: 'bold',
-              color: '#fff',
-              textAlign: 'center',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {issue.linearKey}: {issue.title}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 60,
+                fontWeight: 'bold',
+                color: '#fff',
+                marginBottom: '20px',
+                textAlign: 'center',
+              }}
+            >
+              {issue.linearKey}: {issue.title}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 40,
+                color: '#4ade80',
+                marginBottom: '10px',
+              }}
+            >
+              Winner: {winner?.agentName}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 30,
+                color: '#a3a3a3',
+              }}
+            >
+              {competitorCount} competitor{competitorCount !== 1 ? 's' : ''}
+            </div>
           </div>
+        </div>,
+        {
+          width: 1200,
+          height: 630,
+        }
+      )
+    }
+
+    // Render active competition view (placeholder for now)
+    return new ImageResponse(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#000',
+          padding: '40px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 60,
+            fontWeight: 'bold',
+            color: '#fff',
+            textAlign: 'center',
+          }}
+        >
+          {issue.linearKey}: {issue.title}
         </div>
-      ),
+      </div>,
       {
         width: 1200,
         height: 630,

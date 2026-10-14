@@ -120,9 +120,8 @@ function InstallationRow({
 export default async function GitHubSetupPage(): Promise<React.JSX.Element> {
   const installations = await getGitHubAppInstallations()
 
-  // Use env var for GitHub App name, fallback to production app (air-coding)
-  const appName = process.env['NEXT_PUBLIC_GITHUB_APP_NAME'] ?? 'air-coding'
-  const installUrl = `https://github.com/apps/${appName}`
+  const appName = process.env['NEXT_PUBLIC_GITHUB_APP_NAME']
+  const installUrl = appName ? `https://github.com/apps/${appName}` : null
 
   return (
     <div>
@@ -152,14 +151,18 @@ export default async function GitHubSetupPage(): Promise<React.JSX.Element> {
             <li>3x better rate limits (15,000 requests/hour)</li>
           </ul>
 
-          <a
-            href={installUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block rounded-geist bg-blue-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800"
-          >
-            Install GitHub App
-          </a>
+          {installUrl ? (
+            <a
+              href={installUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-geist bg-blue-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800"
+            >
+              Install GitHub App
+            </a>
+          ) : (
+            <p>Configure your GitHub App name before installing.</p>
+          )}
 
           <p className="mt-4 text-sm text-foreground-secondary">
             After installation, you'll be redirected back here to confirm the

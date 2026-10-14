@@ -13,10 +13,11 @@
 
 import { LinearClient } from '@linear/sdk'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/db/client'
 import {
+  agents as registeredAgents,
   agentScoreHistory,
   agentScores,
   attempts,
@@ -51,7 +52,29 @@ describe.skipIf(!isRealDatabase)('Full E2E Lifecycle Integration', () => {
   const TIMESTAMP_10AM = '2024-01-01T10:00:00Z'
   const TIMESTAMP_11AM = '2024-01-01T11:00:00Z'
 
+  afterEach(() => vi.unstubAllEnvs())
+
   beforeEach(async () => {
+    vi.stubEnv('LINEAR_API_KEY', 'test-sdk-credential')
+    await db.delete(registeredAgents)
+    await db.insert(registeredAgents).values([
+      {
+        name: 'cursor',
+        slug: 'cursor',
+        displayName: 'Cursor',
+        linearUserId: 'e2e-cursor',
+        isEnabled: true,
+        isActive: true,
+      },
+      {
+        name: 'engine',
+        slug: 'engine',
+        displayName: 'Engine',
+        linearUserId: 'e2e-engine',
+        isEnabled: true,
+        isActive: true,
+      },
+    ])
     // Clean up test data for main E2E test
     const existingIssue = await db
       .select()
@@ -162,8 +185,9 @@ describe.skipIf(!isRealDatabase)('Full E2E Lifecycle Integration', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as any)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Create issue in database first (syncIssueFromLinear expects it to exist)
     const [createdIssue] = await db

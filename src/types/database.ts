@@ -67,12 +67,7 @@ export type AgentName = 'cursor' | 'engine' | 'cyrus'
  * while state machine statuses represent arena competition states (open, in_progress, etc.).
  */
 export type LinearIssueStatus =
-  | 'Backlog'
-  | 'Todo'
-  | 'In Progress'
-  | 'In Review'
-  | 'Done'
-  | 'Canceled'
+  'Backlog' | 'Todo' | 'In Progress' | 'In Review' | 'Done' | 'Canceled'
 
 /**
  * Attempt status values.

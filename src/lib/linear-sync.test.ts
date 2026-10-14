@@ -148,7 +148,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -183,7 +185,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const mockLimit = vi.fn().mockResolvedValue([]) // No issue found
     const mockOrderBy = vi.fn().mockResolvedValue([
@@ -232,7 +236,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -279,7 +285,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -336,7 +344,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -398,7 +408,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -450,7 +462,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -507,7 +521,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -554,7 +570,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -601,7 +619,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -662,7 +682,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -728,7 +750,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -777,7 +801,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -826,7 +852,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -901,7 +929,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -950,7 +980,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -1007,7 +1039,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -1068,7 +1102,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockLinearIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock database state: issue exists, engine agent has status='accepted'
     const { mockSelect } = createDBQueryMocks()
@@ -1142,7 +1178,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockLinearIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock database state: issue exists, cursor agent has status='pending'
     const { mockSelect } = createDBQueryMocks()
@@ -1244,7 +1282,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock implementation needs to handle two different query patterns:
     // 1. select().from(issues).where().limit() - for fetching issue
@@ -1388,7 +1428,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     const { mockSelect } = createDBQueryMocks()
 
@@ -1467,7 +1509,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock database
     const { mockSelect } = createDBQueryMocks()
@@ -1558,7 +1602,9 @@ describe('syncIssueFromLinear', () => {
       issue: vi.fn().mockResolvedValue(mockIssue),
     }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock database: issue exists, engine has status='accepted' (already won)
     const { mockSelect } = createDBQueryMocks()

@@ -348,13 +348,12 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -433,13 +432,12 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -512,13 +510,12 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -600,13 +597,12 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -657,14 +653,13 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          users: vi.fn(),
-          createComment: vi.fn(),
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        users: vi.fn(),
+        createComment: vi.fn(),
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -741,13 +736,12 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -820,13 +814,12 @@ describe('dispatchMissingAgents', () => {
         pageInfo: { hasNextPage: false },
       }),
     })
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-          issue: mockIssue,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+        issue: mockIssue,
+      } as never
+    })
 
     const count = await dispatchMissingAgents('test-id')
 
@@ -940,12 +933,11 @@ describe('dispatchAgentsToIssue (legacy)', () => {
 
     const { LinearClient } = await import('@linear/sdk')
     const mockCreateComment = vi.fn().mockResolvedValue({})
-    vi.mocked(LinearClient).mockImplementation(
-      () =>
-        ({
-          createComment: mockCreateComment,
-        }) as never
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return {
+        createComment: mockCreateComment,
+      } as never
+    })
 
     await dispatchAgentsToIssue('test-id')
 

@@ -3,11 +3,14 @@
  */
 
 import { render, screen } from '@testing-library/react'
+import { headers } from 'next/headers'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 import type { AgentStats } from '@/types/database'
 
-import Home from './page'
+import Home, { generateMetadata } from './page'
+
+vi.mock('next/headers', () => ({ headers: vi.fn() }))
 
 // Mock the query functions
 vi.mock('@/lib/queries', () => ({
@@ -510,6 +513,36 @@ describe('Home', () => {
       expect(
         screen.getByText('Performance rankings based on merged pull requests')
       ).toBeInTheDocument()
+    })
+  })
+})
+
+describe('leaderboard sharing metadata', () => {
+  it('uses the deployed HTTPS origin for the leaderboard preview', async () => {
+    vi.mocked(headers).mockResolvedValue(
+      new globalThis.Headers({
+        host: 'arena.example',
+        'x-forwarded-proto': 'https',
+      })
+    )
+    expect(await generateMetadata()).toMatchObject({
+      openGraph: {
+        url: 'https://arena.example',
+        images: [
+          {
+            url: expect.stringContaining(
+              'https://arena.example/api/og/leaderboard?t='
+            ),
+          },
+        ],
+      },
+    })
+  })
+
+  it('keeps local previews usable without forwarded headers', async () => {
+    vi.mocked(headers).mockResolvedValue(new globalThis.Headers())
+    expect(await generateMetadata()).toMatchObject({
+      openGraph: { url: 'http://localhost:3000' },
     })
   })
 })

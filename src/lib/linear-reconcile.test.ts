@@ -88,7 +88,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db operations
     const mockWhere = vi.fn().mockReturnThis()
@@ -117,7 +119,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db operations
     const mockWhere = vi.fn().mockReturnThis()
@@ -153,7 +157,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -240,7 +246,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssuesResponse = vi.fn().mockResolvedValue({ nodes: mockIssues })
     const mockClient = { issues: mockIssuesResponse }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -307,7 +315,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -343,7 +353,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.update but it should not be called with deletion
     const mockWhere = vi.fn().mockReturnThis()
@@ -372,7 +384,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssuesResponse = vi.fn().mockResolvedValue({ nodes: mockIssues })
     const mockClient = { issues: mockIssuesResponse }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -440,7 +454,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -483,7 +499,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -524,7 +542,9 @@ describe('reconcileLinearIssues', () => {
       .mockRejectedValue(new Error('Linear API unavailable'))
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     await expect(reconcileLinearIssues()).rejects.toThrow(
       'Linear API unavailable'
@@ -540,7 +560,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssuesResponse = vi.fn().mockResolvedValue({ nodes: mockIssues })
     const mockClient = { issues: mockIssuesResponse }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -575,7 +597,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssuesResponse = vi.fn().mockResolvedValue({ nodes: mockIssues })
     const mockClient = { issues: mockIssuesResponse }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain to fail on first issue
     const mockOnConflictDoUpdate = vi
@@ -611,7 +635,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.update chain for deletion marking
     const mockWhere = vi.fn().mockReturnThis()
@@ -645,7 +671,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -732,16 +760,15 @@ describe('reconcileLinearIssues', () => {
       message: 'Not Found',
       name: 'HttpError',
     })
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -767,7 +794,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -841,16 +870,15 @@ describe('reconcileLinearIssues', () => {
       message: 'Internal Server Error',
       name: 'HttpError',
     })
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -873,7 +901,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -962,16 +992,15 @@ describe('reconcileLinearIssues', () => {
         closed_at: '2024-01-15T10:30:00Z',
       },
     })
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -995,7 +1024,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -1084,16 +1115,15 @@ describe('reconcileLinearIssues', () => {
         closed_at: '2024-01-15T11:00:00Z',
       },
     })
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -1117,7 +1147,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -1217,7 +1249,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -1285,16 +1319,15 @@ describe('reconcileLinearIssues', () => {
 
     const { Octokit } = await import('@octokit/rest')
     const mockGet = vi.fn()
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -1314,7 +1347,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -1404,16 +1439,15 @@ describe('reconcileLinearIssues', () => {
         closed_at: '2024-01-15T10:00:00Z',
       },
     })
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -1437,7 +1471,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [mockIssue] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)
@@ -1524,16 +1560,15 @@ describe('reconcileLinearIssues', () => {
         closed_at: null,
       },
     })
-    vi.mocked(Octokit).mockImplementation(
-      () =>
-        ({
-          rest: {
-            pulls: {
-              get: mockGet,
-            },
+    vi.mocked(Octokit).mockImplementation(function () {
+      return {
+        rest: {
+          pulls: {
+            get: mockGet,
           },
-        }) as never
-    )
+        },
+      } as never
+    })
 
     const count = await reconcileLinearIssues()
 
@@ -1555,7 +1590,9 @@ describe('reconcileLinearIssues', () => {
     const mockIssues = vi.fn().mockResolvedValue({ nodes: [issueWithNoAgents] })
     const mockClient = { issues: mockIssues }
 
-    vi.mocked(LinearClient).mockImplementation(() => mockClient as never)
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockClient as never
+    })
 
     // Mock db.insert chain
     const mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined)

@@ -72,8 +72,9 @@ describe('AgentRefreshButton', () => {
       const user = userEvent.setup()
 
       // Mock delayed API response
-      let resolvePromise: // eslint-disable-next-line no-unused-vars
-      | ((arg: {
+      let resolvePromise:
+        // eslint-disable-next-line no-unused-vars
+        | ((arg: {
             ok: boolean
             json: () => Promise<{
               discovered: number

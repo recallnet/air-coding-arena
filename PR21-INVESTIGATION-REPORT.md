@@ -279,15 +279,9 @@ if (realAgent && realAgent !== agentName) {
 Add a unique constraint on `(issueId, prNumber)` to the schema:
 
 ```typescript
-export const attempts = pgTable(
-  'attempts',
-  {
-    /* ... */
-  },
-  (table) => ({
-    uniqueAttempt: unique().on(table.issueId, table.prNumber), // ← Remove agentName
-  })
-)
+export const attempts = pgTable('attempts', {/* ... */}, (table) => ({
+  uniqueAttempt: unique().on(table.issueId, table.prNumber), // ← Remove agentName
+}))
 ```
 
 **Pros**: Database-level prevention, guaranteed no duplicates

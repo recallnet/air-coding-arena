@@ -48,3 +48,7 @@ node_modules/.cache
 # docs output
 docs/api
 dev.db
+
+.claude/settings.local.json
+.env*.backup
+*.env.backup

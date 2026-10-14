@@ -344,14 +344,13 @@ describe('Rating Integration E2E Tests', () => {
         expect(sortedScores[0].agentName).toBe(TEST_AGENT_1)
       }
 
-      // Verify monotonic decrease in ordinals (winner > 2nd > 3rd > 4th > 5th)
-      for (let i = 0; i < sortedScores.length - 1; i++) {
-        const currentScore = sortedScores[i]
-        const nextScore = sortedScores[i + 1]
-        if (currentScore && nextScore) {
-          expect(currentScore.ordinal).toBeGreaterThan(nextScore.ordinal)
-        }
-      }
+      // Winner outranks the tied losers; finish time does not rank losing PRs.
+      expect(sortedScores[0]?.ordinal).toBeGreaterThan(
+        sortedScores[1]?.ordinal ?? 0
+      )
+      expect(
+        new Set(sortedScores.slice(1).map((score) => score.ordinal)).size
+      ).toBe(1)
 
       // Verify history ranks match finish order
       const history = await db
@@ -366,7 +365,7 @@ describe('Rating Integration E2E Tests', () => {
 
       if (agent1History && agent5History) {
         expect(agent1History.rank).toBe(1) // Winner
-        expect(agent5History.rank).toBe(5) // Last place
+        expect(agent5History.rank).toBe(2) // All losing PRs tie
       }
 
       // All agents should have gamesPlayed = 1
@@ -389,7 +388,7 @@ describe('Rating Integration E2E Tests', () => {
       await cleanupTestData([testIssueId])
     })
 
-    it('should exclude DNF agents (minimal commits) from rating calculation', async () => {
+    it('counts a closed PR as a loss even with minimal commits', async () => {
       if (!isRealDatabase) {
         console.log(SKIP_MESSAGE)
         return
@@ -470,25 +469,25 @@ describe('Rating Integration E2E Tests', () => {
           ])
         )
 
-      // Only 2 agents should have ratings (DNF excluded)
-      expect(scores).toHaveLength(2)
+      // Every closed PR participates regardless of commit count.
+      expect(scores).toHaveLength(3)
       expect(scores.find((s) => s.agentName === TEST_AGENT_1)).toBeDefined()
       expect(scores.find((s) => s.agentName === TEST_AGENT_2)).toBeDefined()
-      expect(scores.find((s) => s.agentName === TEST_AGENT_3)).toBeUndefined()
+      expect(scores.find((s) => s.agentName === TEST_AGENT_3)).toBeDefined()
 
-      // Verify history only has 2 records
+      // History includes the low-commit closed PR.
       const history = await db
         .select()
         .from(agentScoreHistory)
         .where(eq(agentScoreHistory.issueId, testIssueId))
 
-      expect(history).toHaveLength(2)
+      expect(history).toHaveLength(3)
       expect(history.find((h) => h.agentName === TEST_AGENT_1)).toBeDefined()
       expect(history.find((h) => h.agentName === TEST_AGENT_2)).toBeDefined()
-      expect(history.find((h) => h.agentName === TEST_AGENT_3)).toBeUndefined()
+      expect(history.find((h) => h.agentName === TEST_AGENT_3)).toBeDefined()
     })
 
-    it('should exclude DNF agents (very short lifespan < 5 minutes)', async () => {
+    it('counts a closed PR as a loss even with a short lifespan', async () => {
       if (!isRealDatabase) {
         console.log(SKIP_MESSAGE)
         return
@@ -546,13 +545,13 @@ describe('Rating Integration E2E Tests', () => {
       // Run rating update
       await updateRatingsForIssue(testIssueId)
 
-      // Only agent-1 should have score (agent-4 is DNF due to quick close)
+      // Both the winner and the quickly closed PR are scored.
       const scores = await db
         .select()
         .from(agentScores)
         .where(inArray(agentScores.agentName, [TEST_AGENT_1, TEST_AGENT_4]))
 
-      expect(scores).toHaveLength(1)
+      expect(scores).toHaveLength(2)
       if (scores[0]) {
         expect(scores[0].agentName).toBe(TEST_AGENT_1)
       }
@@ -797,7 +796,7 @@ describe('Rating Integration E2E Tests', () => {
       expect(history).toHaveLength(0)
     })
 
-    it('should handle issue with only DNF attempts gracefully', async () => {
+    it('records tied losses when all PRs are closed without a winner', async () => {
       if (!isRealDatabase) {
         console.log(SKIP_MESSAGE)
         return
@@ -856,13 +855,13 @@ describe('Rating Integration E2E Tests', () => {
       // Should not throw
       await expect(updateRatingsForIssue(testIssueId)).resolves.not.toThrow()
 
-      // Verify no scores created for these agents from this issue
+      // Closed PRs participate even without a merged winner.
       const history = await db
         .select()
         .from(agentScoreHistory)
         .where(eq(agentScoreHistory.issueId, testIssueId))
 
-      expect(history).toHaveLength(0)
+      expect(history).toHaveLength(2)
     })
   })
 
@@ -1024,7 +1023,7 @@ describe('Rating Integration E2E Tests', () => {
           rank: 1,
           completedAt: new Date(),
         })
-      ).rejects.toThrow(/unique constraint/)
+      ).rejects.toMatchObject({ cause: { code: '23505' } })
 
       // Clean up
       await db.delete(agentScores).where(eq(agentScores.agentName, 'cursor'))

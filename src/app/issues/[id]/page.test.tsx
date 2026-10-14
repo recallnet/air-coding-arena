@@ -3,13 +3,16 @@
  */
 
 import { render, screen } from '@testing-library/react'
+import { headers } from 'next/headers'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 import type { IssueAgent } from '@/lib/queries'
 import { createMockIssue } from '@/test-utils/factories'
 import type { Issue, Attempt } from '@/types/database'
 
-import IssuePage from './page'
+import IssuePage, { generateMetadata } from './page'
+
+vi.mock('next/headers', () => ({ headers: vi.fn() }))
 
 // Mock the getIssueById query function
 vi.mock('@/lib/queries', () => ({
@@ -997,7 +1000,7 @@ describe('IssuePage', () => {
   })
 
   describe('PR Comparison', () => {
-    it('renders PR comparison section when agents have PRs', async () => {
+    it('does not fabricate diff or CI comparisons when agents have PRs', async () => {
       const mockIssue: Issue & { attempts: Attempt[]; agents: IssueAgent[] } = {
         ...createMockIssue({
           id: MOCK_ISSUE_ID,
@@ -1070,7 +1073,86 @@ describe('IssuePage', () => {
 
       render(await IssuePage({ params: { id: MOCK_ISSUE_ID } }))
 
-      expect(screen.getByText('PR Comparison')).toBeInTheDocument()
+      expect(screen.queryByText('PR Comparison')).not.toBeInTheDocument()
+      expect(
+        screen.getByText(/Pull request diffs and CI results are not available/)
+      ).toBeInTheDocument()
+    })
+  })
+})
+
+describe('public issue status and metadata edge cases', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it.each([
+    ['accepted', 'won'],
+    ['rejected', 'lost'],
+    ['ignored', 'dnf'],
+    ['pending', 'pending'],
+    ['submitted', 'submitted'],
+  ] as const)(
+    'shows the actual %s participant outcome',
+    async (status, display) => {
+      mockGetIssueById.mockResolvedValue({
+        ...createMockIssue(),
+        agents: [
+          {
+            agentName: 'example-agent',
+            displayName: 'Example agent',
+            slug: 'example-agent',
+            avatarUrl: null,
+            status,
+          },
+        ],
+        attempts: [],
+      })
+      render(await IssuePage({ params: { id: MOCK_ISSUE_ID } }))
+      expect(screen.getByText(display)).toBeInTheDocument()
+      expect(
+        screen.getByRole('link', { name: 'Example agent' })
+      ).toHaveAttribute('href', '/agents/example-agent')
+    }
+  )
+
+  it('returns explicit metadata for an unavailable issue', async () => {
+    mockGetIssueById.mockResolvedValue(null)
+    expect(
+      await generateMetadata({ params: { id: MOCK_ISSUE_ID } })
+    ).toMatchObject({ title: 'Issue Not Found' })
+  })
+
+  it('uses forwarded HTTPS origin and the issue description for previews', async () => {
+    mockGetIssueById.mockResolvedValue({
+      ...createMockIssue({ description: 'Actual issue description' }),
+      agents: [],
+      attempts: [],
+    })
+    vi.mocked(headers).mockResolvedValue(
+      new globalThis.Headers({
+        host: 'arena.example',
+        'x-forwarded-proto': 'https',
+      })
+    )
+    expect(
+      await generateMetadata({ params: { id: MOCK_ISSUE_ID } })
+    ).toMatchObject({
+      description: 'Actual issue description',
+      openGraph: { url: `https://arena.example/issues/${MOCK_ISSUE_ID}` },
+    })
+  })
+
+  it('uses local preview origin and explicit description when optional metadata is absent', async () => {
+    mockGetIssueById.mockResolvedValue({
+      ...createMockIssue({ description: null }),
+      agents: [],
+      attempts: [],
+    })
+    vi.mocked(headers).mockResolvedValue(new globalThis.Headers())
+    expect(
+      await generateMetadata({ params: { id: MOCK_ISSUE_ID } })
+    ).toMatchObject({
+      description: 'View issue details and competition status',
+      openGraph: { url: `http://localhost:3000/issues/${MOCK_ISSUE_ID}` },
     })
   })
 })

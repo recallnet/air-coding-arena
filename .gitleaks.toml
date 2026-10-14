@@ -1,0 +1,10 @@
+title = "Publication secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "neon-postgres-password"
+description = "Neon-generated PostgreSQL passwords, including embedded connection URLs"
+regex = '''npg_[A-Za-z0-9]{12,}'''
+keywords = ["npg_"]

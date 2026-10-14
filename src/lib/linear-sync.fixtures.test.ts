@@ -733,12 +733,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
           }),
         }
 
-        vi.mocked(LinearClient).mockImplementation(
-          () =>
-            ({
-              issue: vi.fn().mockResolvedValue(mockIssue),
-            }) as never
-        )
+        vi.mocked(LinearClient).mockImplementation(function () {
+          return {
+            issue: vi.fn().mockResolvedValue(mockIssue),
+          } as never
+        })
 
         // Clear mocks before each issue to get accurate counts
         const { db } = await import('@/db/client')
@@ -859,12 +858,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         }),
       }
 
-      vi.mocked(LinearClient).mockImplementation(
-        () =>
-          ({
-            issue: vi.fn().mockResolvedValue(mockIssue),
-          }) as never
-      )
+      vi.mocked(LinearClient).mockImplementation(function () {
+        return {
+          issue: vi.fn().mockResolvedValue(mockIssue),
+        } as never
+      })
 
       // Execute sync
       const { syncIssueFromLinear } = await import('./linear-sync')
@@ -962,12 +960,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         }),
       }
 
-      vi.mocked(LinearClient).mockImplementation(
-        () =>
-          ({
-            issue: vi.fn().mockResolvedValue(mockIssue),
-          }) as never
-      )
+      vi.mocked(LinearClient).mockImplementation(function () {
+        return {
+          issue: vi.fn().mockResolvedValue(mockIssue),
+        } as never
+      })
 
       // Execute sync
       const { syncIssueFromLinear } = await import('./linear-sync')
@@ -1049,12 +1046,11 @@ describe('Linear Sync - Fixture-Based Tests', () => {
         }),
       }
 
-      vi.mocked(LinearClient).mockImplementation(
-        () =>
-          ({
-            issue: vi.fn().mockResolvedValue(mockIssue),
-          }) as never
-      )
+      vi.mocked(LinearClient).mockImplementation(function () {
+        return {
+          issue: vi.fn().mockResolvedValue(mockIssue),
+        } as never
+      })
 
       // Execute sync
       const { syncIssueFromLinear } = await import('./linear-sync')

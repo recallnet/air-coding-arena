@@ -279,11 +279,7 @@ export async function getIssueById(
     attempts: issueAttempts,
     agents: agentsResult.map((agent) => {
       const status = agent.status as
-        | 'pending'
-        | 'submitted'
-        | 'accepted'
-        | 'rejected'
-        | 'ignored'
+        'pending' | 'submitted' | 'accepted' | 'rejected' | 'ignored'
       if (
         status !== 'pending' &&
         status !== 'submitted' &&

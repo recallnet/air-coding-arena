@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import type { ReadonlyURLSearchParams } from 'next/navigation'
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import GitHubSetupPage from './page'
 
@@ -47,6 +47,22 @@ const MOCK_DATE = '2024-01-01'
 describe('GitHub Setup Page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('NEXT_PUBLIC_GITHUB_APP_NAME', 'arena-example')
+  })
+
+  afterEach(() => vi.unstubAllEnvs())
+
+  test('does not link to a third-party App when no App name is configured', async () => {
+    const { getGitHubAppInstallations } = await import('@/lib/queries')
+    const { useSearchParams } = await import('next/navigation')
+    vi.mocked(getGitHubAppInstallations).mockResolvedValue([])
+    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams({}))
+    vi.stubEnv('NEXT_PUBLIC_GITHUB_APP_NAME', '')
+    render(await GitHubSetupPage())
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/Configure your GitHub App name/i)
+    ).toBeInTheDocument()
   })
 
   test('should render installation button', async () => {

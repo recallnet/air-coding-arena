@@ -153,9 +153,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     // Import db after mocking
     const { db } = await import('@/db/client')
@@ -238,9 +238,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 
@@ -309,9 +309,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 
@@ -382,9 +382,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 
@@ -453,9 +453,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 
@@ -511,9 +511,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 
@@ -576,9 +576,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 
@@ -647,9 +647,9 @@ describe('discoverAgents', () => {
     const mockLinearClient = {
       users: vi.fn().mockResolvedValue(mockUsers),
     }
-    vi.mocked(LinearClient).mockImplementation(
-      () => mockLinearClient as MockFunction
-    )
+    vi.mocked(LinearClient).mockImplementation(function () {
+      return mockLinearClient as MockFunction
+    })
 
     const { db } = await import('@/db/client')
 

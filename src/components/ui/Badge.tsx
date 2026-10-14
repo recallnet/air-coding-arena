@@ -18,12 +18,7 @@ export type BadgeProps = React.HTMLAttributes<HTMLDivElement> & {
    * @default 'default'
    */
   variant?:
-    | 'default'
-    | 'secondary'
-    | 'success'
-    | 'error'
-    | 'warning'
-    | 'outline'
+    'default' | 'secondary' | 'success' | 'error' | 'warning' | 'outline'
 }
 
 /**

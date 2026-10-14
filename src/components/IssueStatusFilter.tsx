@@ -15,11 +15,7 @@ import { cn } from '@/lib/utils'
  * Issue filter types matching issue statuses.
  */
 export type IssueFilter =
-  | 'all'
-  | 'open'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled'
+  'all' | 'open' | 'in_progress' | 'completed' | 'cancelled'
 
 /**
  * Props for the IssueStatusFilter component.

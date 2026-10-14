@@ -9,28 +9,41 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const cpuCount = os.cpus().length
-const maxThreads = cpuCount <= 2 ? cpuCount : Math.min(8, cpuCount - 1)
-const minThreads = Math.min(2, maxThreads)
+// Database integration files share tables and must not delete each other's rows.
+const maxWorkers = process.env['DATABASE_URL']
+  ? 1
+  : cpuCount <= 2
+    ? cpuCount
+    : Math.min(8, cpuCount - 1)
 
 export default defineConfig({
   plugins: [react()],
   test: {
     // === TEST ENVIRONMENT ===
     environment: 'node',
-    environmentMatchGlobs: [
-      ['src/app/**/*.test.tsx', 'jsdom'],
-      ['src/components/**/*.test.tsx', 'jsdom'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['src/**/*.test.tsx'],
+        },
+      },
     ],
     setupFiles: ['./src/__tests__/vitest-setup.ts'],
 
     // === WORKER POOL CONFIGURATION ===
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads,
-        minThreads,
-      },
-    },
+    maxWorkers,
     testTimeout: 10000, // 10s max per test
     teardownTimeout: 5000, // 5s to cleanup workers
 

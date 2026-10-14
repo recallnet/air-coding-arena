@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { generateMockPRComparison } from './mock-pr-data'
+import { generateMockPRComparison } from '@/__tests__/fixtures/mock-pr-data'
 
 describe('generateMockPRComparison', () => {
   it('generates mock PR data for 2 agents', () => {

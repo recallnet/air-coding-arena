@@ -117,7 +117,7 @@ describe.skipIf(
       .from(issues)
       .where(eq(issues.id, issue.id))
     if (!updatedIssue) throw new Error('Failed to fetch updated issue')
-    expect(updatedIssue.status).toBe('completed')
+    expect(updatedIssue.status).toBe('in_progress') // Preserve the Linear workflow state
     expect(updatedIssue.winnerAttemptId).toBe(winnerAttempt.id)
 
     // VERIFY: Agent statuses updated correctly
@@ -179,7 +179,7 @@ describe.skipIf(
     expect(loserHistory?.rank).toBe(2)
   })
 
-  it('should handle DNF agents correctly (< 2 commits excluded from ratings)', async () => {
+  it('counts closed low-commit PRs as losses', async () => {
     // Create issue
     const [issue] = await db
       .insert(issues)
@@ -241,12 +241,14 @@ describe.skipIf(
     const { updateWinner } = await import('@/app/api/linear/webhook/route')
     await updateWinner(issue.id)
 
-    // VERIFY: Only winner gets rating (DNF excluded)
+    // VERIFY: Both the winner and closed low-commit PR receive ratings.
     const scores = await db.select().from(agentScores)
 
-    expect(scores).toHaveLength(1)
+    expect(scores).toHaveLength(2)
     if (!scores[0]) throw new Error('No scores found')
-    expect(scores[0].agentName).toBe(WINNER)
+    expect(scores.map((score) => score.agentName).sort()).toEqual(
+      [DNF_AGENT, WINNER].sort()
+    )
 
     // VERIFY: DNF agent still marked as rejected (not ignored)
     const agents = await db

@@ -11,7 +11,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { AgentAvatar } from '@/components/AgentAvatar'
-import { PRComparisonContainer } from '@/components/PRComparisonContainer'
 import { Badge } from '@/components/ui/Badge'
 import {
   Card,
@@ -28,7 +27,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { generateMockPRComparison } from '@/lib/mock-pr-data'
 import { getIssueById } from '@/lib/queries'
 import type { AttemptStatus, LinearIssueStatus } from '@/types/database'
 
@@ -469,35 +467,11 @@ export default async function IssuePage({
         </CardContent>
       </Card>
 
-      {/* PR Comparison Section - Milestone 1 */}
       {issue.agents.length >= 2 && (
-        <div className="mt-6">
-          <PRComparisonContainer
-            agents={(() => {
-              // Milestone 1: Generate mock PR data for all agents (not just those with attempts)
-              // This allows users to preview the UI even when some agents haven't submitted PRs yet
-              const mockComparison = generateMockPRComparison(
-                issue.agents.map((a) => a.agentName)
-              )
-
-              return mockComparison.agents.map((agentData, index) => {
-                const agent = issue.agents[index]
-                if (!agent) {
-                  return {
-                    ...agentData,
-                    displayName: null,
-                    avatarUrl: null,
-                  }
-                }
-                return {
-                  ...agentData,
-                  displayName: agent.displayName ?? null,
-                  avatarUrl: agent.avatarUrl ?? null,
-                }
-              })
-            })()}
-          />
-        </div>
+        <p className="mt-6 text-foreground-secondary">
+          Pull request diffs and CI results are not available in this view. Open
+          the linked pull requests for repository data.
+        </p>
       )}
     </main>
   )

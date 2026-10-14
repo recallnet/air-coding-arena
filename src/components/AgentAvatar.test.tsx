@@ -220,3 +220,27 @@ describe('AgentAvatar', () => {
     })
   })
 })
+
+describe('AgentAvatar image status indicators', () => {
+  it.each([
+    ['accepted', 'ring-green-500'],
+    ['submitted', 'ring-blue-500'],
+    ['rejected', 'ring-red-500'],
+    ['pending', 'ring-gray-600'],
+    ['ignored', 'ring-gray-600'],
+  ] as const)('keeps %s visible with a provider avatar', (status, ring) => {
+    const { container } = render(
+      <AgentAvatar
+        name="example-agent"
+        displayName="Example agent"
+        status={status}
+        avatarUrl="https://avatars.githubusercontent.com/u/1"
+      />
+    )
+    expect(container.firstChild).toHaveClass(ring)
+    expect(screen.getByAltText(/Example agent/)).toHaveAttribute(
+      'src',
+      expect.stringContaining('avatars.githubusercontent.com')
+    )
+  })
+})
